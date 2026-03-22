@@ -1,0 +1,19 @@
+{
+  "general": {
+    "title": "General",
+    "dashboard": "Dashboard"
+  },
+  "management": {
+    "title": "Gestión",
+    "users": "Usuarios",
+    "locations": "Sucursales",
+    "products": "Productos",
+    "inventory": "Inventario",
+    "finances": "Finanzas"
+  },
+  "cashier": {
+    "title": "Caja",
+    "pos": "POS",
+    "invoices": "Facturas"
+  }
+}

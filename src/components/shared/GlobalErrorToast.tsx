@@ -20,7 +20,7 @@ export function GlobalErrorToast() {
         toast.error("Error", options);
         break;
       case "warning":
-        toast.warning("Atención", options);
+        toast.warning("Warning", options);
         break;
       case "info":
         toast.info("Info", options);

@@ -3,42 +3,42 @@ export const QUERY_KEYS = {
   ME: ["me"],
 
   // Usuarios
-  USUARIOS: ["usuarios"],
-  USUARIO: (id: string) => ["usuarios", id],
+  USERS: ["users"],
+  USER: (id: string) => ["users", id],
 
   // Sucursales
-  SUCURSALES: ["sucursales"],
-  SUCURSAL: (id: string) => ["sucursales", id],
+  LOCATIONS: ["locations"],
+  LOCATION: (id: string) => ["locations", id],
 
   // Productos
-  PRODUCTOS: ["productos"],
-  PRODUCTO: (id: string) => ["productos", id],
-  CATEGORIAS: ["categorias"],
-  CATEGORIA: (id: string) => ["categorias", id],
-  MODIFICADORES: ["modificadores"],
+  PRODUCTS: ["products"],
+  PRODUCT: (id: string) => ["products", id],
+  CATEGORIES: ["categories"],
+  CATEGORY: (id: string) => ["categories", id],
+  MODIFIERS: ["modifiers"],
 
   // Inventario
-  INVENTARIO: ["inventario"],
-  STOCK: (sucursalId: string) => ["inventario", "stock", sucursalId],
-  KARDEX: (productoId: string) => ["inventario", "kardex", productoId],
-  ALERTAS_STOCK: ["inventario", "alertas"],
+  INVENTORY: ["inventory"],
+  STOCK: (locationId: string) => ["inventory", "stock", locationId],
+  KARDEX: (productId: string) => ["inventory", "kardex", productId],
+  ALERTS_STOCK: ["inventory", "alert"],
 
   // Finanzas
-  INGRESOS: ["finanzas", "ingresos"],
-  EGRESOS: ["finanzas", "egresos"],
-  FACTURAS: ["finanzas", "facturas"],
-  REPORTES: ["finanzas", "reportes"],
+  INCOMES: ["finance", "incomes"],
+  EXPENSES: ["finance", "expenses"],
+  INVOICES: ["finance", "invoices"],
+  REPORTS: ["finance", "reports"],
 
   // POS
-  PEDIDOS: ["pedidos"],
-  PEDIDO: (id: string) => ["pedidos", id],
+  ORDERS: ["orders"],
+  ORDER: (id: string) => ["orders", id],
 
   // Caja
-  TURNOS: ["turnos"],
-  TURNO: (id: string) => ["turnos", id],
-  TURNO_ACTIVO: ["turnos", "activo"],
+  CASH_SHIFTS: ["cash-shifts"],
+  CASH_SHIFT: (id: string) => ["cash-shifts", id],
+  CASH_SHIFT_ACTIVE: ["cash-shifts", "active"],
 
   // Dashboard
   DASHBOARD: ["dashboard"],
-  DASHBOARD_VENTAS: ["dashboard", "ventas"],
+  DASHBOARD_SALES: ["dashboard", "sales"],
 } as const;

@@ -1,18 +1,18 @@
 import { RoleEnum, TokenTypeEnum } from "@/constants/enums";
 
-export interface Usuario {
+export interface User {
   id: string;
-  nombre: string;
+  name: string;
   email: string;
   rol: RoleEnum;
-  sucursalId: string;
-  activo: boolean;
+  locationId: string;
+  active: boolean;
 }
 
-export interface Sucursal {
+export interface Location {
   id: string;
-  nombre: string;
-  direccion?: string;
+  name: string;
+  address?: string;
 }
 
 // Paso 1 — login
@@ -24,7 +24,7 @@ export interface LoginDto {
 export interface LoginResponse {
   token: string;
   tokenType: TokenTypeEnum;
-  sucursales: Sucursal[];
+  locations: Location[];
 }
 
 // Paso 2 — seleccionar sucursal
@@ -36,5 +36,5 @@ export interface SelectLocationDto {
 export interface SelectLocationResponse {
   token: string;
   tokenType: TokenTypeEnum;
-  usuario: Usuario;
+  user: User;
 }

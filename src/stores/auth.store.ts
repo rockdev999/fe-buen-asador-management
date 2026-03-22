@@ -1,19 +1,19 @@
-import { Sucursal, Usuario } from "@/types/auth.types";
+import { Location, User } from "@/types/auth.types";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 interface AuthState {
   // Estado paso 1
   tempToken: string | null;
-  sucursales: Sucursal[];
+  locations: Location[];
 
   // Estado paso 2 (sesión completa)
-  usuario: Usuario | null;
+  user: User | null;
   token: string | null;
 
   // Acciones
-  setTempAuth: (tempToken: string, sucursales: Sucursal[]) => void;
-  setFullAuth: (usuario: Usuario, token: string) => void;
+  setTempAuth: (tempToken: string, locations: Location[]) => void;
+  setFullAuth: (user: User, token: string) => void;
   logout: () => void;
 }
 
@@ -21,26 +21,26 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
       tempToken: null,
-      sucursales: [],
-      usuario: null,
+      locations: [],
+      user: null,
       token: null,
 
-      setTempAuth: (tempToken, sucursales) =>
-        set({ tempToken, sucursales, usuario: null, token: null }),
+      setTempAuth: (tempToken, locations) =>
+        set({ tempToken, locations, user: null, token: null }),
 
-      setFullAuth: (usuario, token) =>
-        set({ usuario, token, tempToken: null, sucursales: [] }),
+      setFullAuth: (user, token) =>
+        set({ user, token, tempToken: null, locations: [] }),
 
       logout: () =>
-        set({ usuario: null, token: null, tempToken: null, sucursales: [] }),
+        set({ user: null, token: null, tempToken: null, locations: [] }),
     }),
     {
       name: "auth-storage",
       partialize: (state) => ({
-        usuario: state.usuario,
+        user: state.user,
         token: state.token,
         tempToken: state.tempToken,
-        sucursales: state.sucursales,
+        locations: state.locations,
       }),
     },
   ),
