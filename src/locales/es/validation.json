@@ -1,0 +1,22 @@
+{
+  "required": "Este campo es requerido.",
+  "email": "Ingresa un email válido.",
+  "minLength": "Mínimo {min} caracteres.",
+  "maxLength": "Máximo {max} caracteres.",
+  "min": "El valor mínimo es {min}.",
+  "max": "El valor máximo es {max}.",
+  "positive": "El valor debe ser mayor a 0.",
+  "integer": "Debe ser un número entero.",
+  "numeric": "Debe ser un número válido.",
+  "uuid": "ID inválido.",
+  "url": "Ingresa una URL válida.",
+  "phone": "Ingresa un teléfono válido.",
+  "passwordMin": "La contraseña debe tener al menos 8 caracteres.",
+  "passwordUpper": "Debe contener al menos una letra mayúscula.",
+  "passwordNumber": "Debe contener al menos un número.",
+  "passwordMatch": "Las contraseñas no coinciden.",
+  "dateInvalid": "Fecha inválida.",
+  "dateFuture": "La fecha debe ser futura.",
+  "datePast": "La fecha debe ser pasada.",
+  "selectOption": "Selecciona una opción válida."
+}

@@ -1,0 +1,58 @@
+{
+  "actions": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "create": "Crear",
+    "update": "Actualizar",
+    "disable": "Desactivar",
+    "enable": "Activar",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "export": "Exportar",
+    "back": "Volver",
+    "confirm": "Confirmar",
+    "close": "Cerrar",
+    "loading": "Cargando...",
+    "retry": "Reintentar"
+  },
+  "status": {
+    "active": "Activo",
+    "inactive": "Inactivo",
+    "pending": "Pendiente",
+    "open": "Abierto",
+    "closed": "Cerrado",
+    "cancelled": "Cancelado"
+  },
+  "table": {
+    "noResults": "Sin resultados",
+    "noData": "No hay datos disponibles",
+    "rowsPerPage": "Filas por página",
+    "of": "de",
+    "page": "Página"
+  },
+  "confirm": {
+    "delete": "¿Estás seguro de que deseas eliminar este registro? Esta acción no se puede deshacer.",
+    "disable": "¿Deseas desactivar este registro?",
+    "enable": "¿Deseas activar este registro?"
+  },
+  "success": {
+    "created": "Registro creado exitosamente.",
+    "updated": "Registro actualizado exitosamente.",
+    "deleted": "Registro eliminado exitosamente.",
+    "saved": "Cambios guardados exitosamente."
+  },
+  "error": {
+    "generic": "Ocurrió un error inesperado. Intenta de nuevo.",
+    "noConnection": "Sin conexión al servidor. Verifica tu red.",
+    "timeout": "La solicitud tardó demasiado. Intenta de nuevo.",
+    "cancelled": "La solicitud fue cancelada.",
+    "unauthorized": "No tienes permisos para realizar esta acción.",
+    "sessionExpired": "Tu sesión expiró. Inicia sesión nuevamente.",
+    "notFound": "El recurso solicitado no existe.",
+    "conflict": "Ya existe un registro con esos datos.",
+    "badRequest": "Solicitud inválida. Verifica los datos enviados.",
+    "serverError": "Error interno del servidor. Intenta más tarde."
+  }
+}

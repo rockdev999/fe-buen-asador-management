@@ -1,0 +1,48 @@
+{
+  "title": "Usuarios",
+  "createTitle": "Crear usuario",
+  "editTitle": "Editar usuario",
+  "fields": {
+    "name": "Nombre completo",
+    "email": "Correo electrónico",
+    "password": "Contraseña",
+    "role": "Rol",
+    "location": "Sucursal",
+    "status": "Estado"
+  },
+  "placeholders": {
+    "name": "Juan Pérez",
+    "email": "juan@email.com",
+    "password": "••••••••",
+    "role": "Selecciona un rol",
+    "location": "Selecciona una sucursal"
+  },
+  "roles": {
+    "MANAGER": "Gerente",
+    "ADMIN": "Admin sucursal",
+    "CASHIER": "Cajero"
+  },
+  "success": {
+    "created": "Usuario creado exitosamente.",
+    "updated": "Usuario actualizado exitosamente.",
+    "disabled": "Usuario desactivado exitosamente.",
+    "enabled": "Usuario activado exitosamente.",
+    "locationAssigned": "Sucursal asignada exitosamente.",
+    "locationRevoked": "Acceso a sucursal revocado exitosamente."
+  },
+  "confirm": {
+    "disable": "¿Deseas desactivar este usuario? No podrá iniciar sesión.",
+    "enable": "¿Deseas activar este usuario nuevamente?",
+    "revokeLocation": "¿Deseas revocar el acceso de este usuario a la sucursal?"
+  },
+  "validation": {
+    "nameRequired": "El nombre es requerido.",
+    "nameMin": "El nombre debe tener al menos 2 caracteres.",
+    "emailRequired": "El email es requerido.",
+    "emailInvalid": "Ingresa un email válido.",
+    "passwordRequired": "La contraseña es requerida.",
+    "passwordMin": "La contraseña debe tener al menos 8 caracteres.",
+    "roleRequired": "Selecciona un rol.",
+    "locationRequired": "Selecciona una sucursal."
+  }
+}

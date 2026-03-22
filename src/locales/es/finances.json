@@ -1,0 +1,61 @@
+{
+  "title": "Finanzas",
+  "income": {
+    "title": "Ingresos",
+    "fields": {
+      "date": "Fecha",
+      "location": "Sucursal",
+      "total": "Total",
+      "method": "Método de pago"
+    },
+    "methods": {
+      "CASH": "Efectivo",
+      "BANK_TRANSFER": "Transferencia",
+      "QR": "QR"
+    }
+  },
+  "expense": {
+    "title": "Egresos",
+    "createTitle": "Registrar egreso",
+    "fields": {
+      "description": "Descripción",
+      "amount": "Monto",
+      "category": "Categoría",
+      "date": "Fecha",
+      "location": "Sucursal"
+    },
+    "categories": {
+      "SERVICES": "Servicios",
+      "PERSONNEL": "Personal",
+      "SUPPLIES": "Insumos",
+      "MAINTENANCE": "Mantenimiento",
+      "OTHER": "Otro"
+    },
+    "success": {
+      "created": "Egreso registrado exitosamente.",
+      "updated": "Egreso actualizado exitosamente.",
+      "deleted": "Egreso eliminado exitosamente."
+    },
+    "validation": {
+      "descriptionRequired": "La descripción es requerida.",
+      "amountRequired": "El monto es requerido.",
+      "amountPositive": "El monto debe ser mayor a 0.",
+      "categoryRequired": "Selecciona una categoría.",
+      "dateRequired": "La fecha es requerida."
+    }
+  },
+  "invoice": {
+    "title": "Facturas",
+    "status": {
+      "PENDING": "Pendiente",
+      "ISSUED": "Emitida",
+      "CANCELLED": "Anulada"
+    }
+  },
+  "reports": {
+    "title": "Reportes",
+    "byPeriod": "Por período",
+    "byLocation": "Por sucursal",
+    "byProduct": "Por producto"
+  }
+}
