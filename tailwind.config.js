@@ -36,6 +36,7 @@ module.exports = {
           dark: "#CC3D00",
         },
         highlight: "#FFD000",
+        inkblack: "#1A0A00",
         surface: "#FFF5EE",
       },
       borderRadius: {

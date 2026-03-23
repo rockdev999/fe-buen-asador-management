@@ -8,16 +8,17 @@ export function useAuth() {
   const isTempAuth = !!tempToken && !token; // está en paso 2
 
   function hasRole(...roles: RoleEnum[]): boolean {
-    return !!user?.rol && roles.includes(user.rol);
+    return !!user?.role && roles.includes(user.role);
   }
 
-  const isManager = user?.rol === RoleEnum.MANAGER;
-  const isAdmin = user?.rol === RoleEnum.ADMIN;
-  const isCashier = user?.rol === RoleEnum.CASHIER;
+  const isManager = user?.role === RoleEnum.MANAGER;
+  const isAdmin = user?.role === RoleEnum.ADMIN;
+  const isCashier = user?.role === RoleEnum.CASHIER;
 
   return {
     user,
     token,
+    tempToken,
     locations,
     isAuthenticated,
     isTempAuth,

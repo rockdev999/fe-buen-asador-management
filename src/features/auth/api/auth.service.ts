@@ -1,23 +1,21 @@
 import { httpClient } from "@/services/http.client";
 import { ApiResponse } from "@/types/api.types";
-import {
-  LoginDto,
-  LoginResponse,
-  SelectLocationDto,
-  SelectLocationResponse,
-} from "@/types/auth.types";
 import { AUTH_ENDPOINTS } from "./auth.endpoints";
+import {
+  LoginLocationsDTO,
+  LoginRequestDTO,
+  SelectLocationDTO,
+  SelectLocationRequestDTO,
+} from "../dto/login.dto";
 
 export const authFetch = {
-  login: (dto: LoginDto) =>
+  login: (dto: LoginRequestDTO) =>
     httpClient
-      .post<ApiResponse<LoginResponse>>(AUTH_ENDPOINTS.LOGIN, dto)
+      .post<ApiResponse<LoginLocationsDTO>>(AUTH_ENDPOINTS.LOGIN, dto)
       .then((r) => r.data.data!),
 
-  selectLocation: (dto: SelectLocationDto) =>
+  selectLocation: (dto: SelectLocationRequestDTO) =>
     httpClient
-      .post<
-        ApiResponse<SelectLocationResponse>
-      >(AUTH_ENDPOINTS.SELECT_LOCATION, dto)
+      .post<ApiResponse<SelectLocationDTO>>(AUTH_ENDPOINTS.SELECT_LOCATION, dto)
       .then((r) => r.data.data!),
 };

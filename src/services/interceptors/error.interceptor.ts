@@ -16,13 +16,7 @@ function getErrorMessage(error: AxiosError<ApiErrorResponse>): string {
     return MESSAGES.ERROR.OFFLINE;
   }
 
-  // Token inválido o expirado
-  if (
-    status === HTTP_STATUS.UNAUTHORIZED ||
-    errorCode === API_ERROR_CODES.UNAUTHORIZED
-  ) {
-    return MESSAGES.ERROR.SESSION_EXPIRED;
-  }
+  if (beMessage && errorCode) return beMessage;
 
   switch (status) {
     case HTTP_STATUS.FORBIDDEN:
@@ -49,6 +43,12 @@ function getErrorType(status?: number): "error" | "warning" | "info" {
   return "error";
 }
 
+const PUBLIC_PATHS = ["/login", "/select-location"];
+
+function isPublicPath(): boolean {
+  return PUBLIC_PATHS.some((path) => window.location.pathname.startsWith(path));
+}
+
 export function errorInterceptor(error: AxiosError<ApiErrorResponse>) {
   const status = error.response?.status;
   const errorCode = error.response?.data?.errorCode;
@@ -60,7 +60,7 @@ export function errorInterceptor(error: AxiosError<ApiErrorResponse>) {
     status === HTTP_STATUS.UNAUTHORIZED ||
     errorCode === API_ERROR_CODES.UNAUTHORIZED;
 
-  if (isUnauthorized) {
+  if (isUnauthorized && !isPublicPath()) {
     useAuthStore.getState().logout();
     setTimeout(() => {
       window.location.href = "/login";

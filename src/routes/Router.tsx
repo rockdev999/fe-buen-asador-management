@@ -1,14 +1,20 @@
-import { createBrowserRouter, Navigate } from "react-router-dom";
+import {
+  createBrowserRouter,
+  Navigate,
+  RouterProvider,
+} from "react-router-dom";
 import { PATHS } from "./paths";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { RoleRoute } from "./RoleRoute";
 import { RoleEnum } from "@/constants";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { Login } from "@/features/auth/pages/Login";
+import { SelectLocation } from "@/features/auth/pages/SelectLocation";
 
-export const Router = createBrowserRouter([
+export const router = createBrowserRouter([
   // Públicas
-  { path: PATHS.LOGIN, element: <div>login</div> },
-  { path: PATHS.SELECT_LOCATION, element: <div>select location</div> },
+  { path: PATHS.LOGIN, element: <Login /> },
+  { path: PATHS.SELECT_LOCATION, element: <SelectLocation /> },
 
   // Privadas
   {
@@ -55,3 +61,7 @@ export const Router = createBrowserRouter([
 
   { path: "*", element: <Navigate to={PATHS.LOGIN} replace /> },
 ]);
+
+export function AppRouter() {
+  return <RouterProvider router={router} />;
+}
