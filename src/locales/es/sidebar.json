@@ -13,7 +13,7 @@
   },
   "cashier": {
     "title": "Caja",
-    "pos": "POS",
+    "pos": "Ventas",
     "invoices": "Facturas"
   }
 }

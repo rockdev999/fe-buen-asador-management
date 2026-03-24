@@ -76,8 +76,8 @@ export const NAV_SECTIONS = [
         roles: [RoleEnum.CASHIER],
       },
       {
-        label: t.sidebar.cashier.invoices,
-        path: PATHS.INVOICES,
+        label: t.sidebar.cashier.title,
+        path: PATHS.CASHIER,
         icon: Archive,
         roles: [RoleEnum.CASHIER, RoleEnum.ADMIN],
       },

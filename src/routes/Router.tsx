@@ -9,12 +9,10 @@ import { RoleRoute } from "./RoleRoute";
 import { RoleEnum } from "@/constants";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Login } from "@/features/auth/pages/Login";
-import { SelectLocation } from "@/features/auth/pages/SelectLocation";
 
 export const router = createBrowserRouter([
   // Públicas
   { path: PATHS.LOGIN, element: <Login /> },
-  { path: PATHS.SELECT_LOCATION, element: <SelectLocation /> },
 
   // Privadas
   {

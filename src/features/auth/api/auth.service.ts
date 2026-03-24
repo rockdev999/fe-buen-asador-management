@@ -1,5 +1,4 @@
 import { httpClient } from "@/services/http.client";
-import { ApiResponse } from "@/types/api.types";
 import { AUTH_ENDPOINTS } from "./auth.endpoints";
 import {
   LoginLocationsDTO,
@@ -11,11 +10,11 @@ import {
 export const authFetch = {
   login: (dto: LoginRequestDTO) =>
     httpClient
-      .post<ApiResponse<LoginLocationsDTO>>(AUTH_ENDPOINTS.LOGIN, dto)
-      .then((r) => r.data.data!),
+      .post<LoginLocationsDTO>(AUTH_ENDPOINTS.LOGIN, dto)
+      .then((r) => r.data),
 
   selectLocation: (dto: SelectLocationRequestDTO) =>
     httpClient
-      .post<ApiResponse<SelectLocationDTO>>(AUTH_ENDPOINTS.SELECT_LOCATION, dto)
-      .then((r) => r.data.data!),
+      .post<SelectLocationDTO>(AUTH_ENDPOINTS.SELECT_LOCATION, dto)
+      .then((r) => r.data),
 };

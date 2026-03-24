@@ -87,7 +87,7 @@ export function Sidebar() {
             <p className="text-white text-xs font-medium truncate">
               {user.name}
             </p>
-            <p className="text-white/40 text-[10px] truncate">{user.rol}</p>
+            <p className="text-white/40 text-[10px] truncate">{user.role}</p>
           </div>
         )}
       </div>
