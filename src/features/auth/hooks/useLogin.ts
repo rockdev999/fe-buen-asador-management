@@ -11,7 +11,6 @@ export function useLogin() {
   return useMutationHandler({
     mutationFn: (form: LoginForm) => authFetch.login(mapLoginFormToDTO(form)),
     onSuccessCallback: (data) => {
-      console.log(data);
       setTempAuth(
         data.temporaryToken,
         data.locations.map(mapLocationDTOToModel),

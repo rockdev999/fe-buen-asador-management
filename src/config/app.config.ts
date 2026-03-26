@@ -1,7 +1,8 @@
 export const appConfig = {
   name: "Buen Asador",
-  locale: "es-BO",
+  locale: "en-US",
   currency: "BOB",
+  currencyLocal: "Bs.",
   timezone: "America/La_Paz",
   http: {
     timeout: 10_000,

@@ -1,35 +1,35 @@
 import { t } from "@/locales/es";
 import { useLogin } from "../hooks/useLogin";
-import { useForm } from "react-hook-form";
 import { LoginForm } from "../forms/login.form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { loginSchema } from "../validators/login.schema";
-import { useFieldErrors } from "@/hooks/useFieldErrors";
-import { FormField } from "@/components/shared/FormField";
-import { PasswordField } from "@/components/shared/PasswordField";
 import { Button } from "@/components/ui/button";
+import { FormField } from "@/components/shared/Basics/FormField";
+import { PasswordField } from "@/components/shared/Interactives/PasswordField";
+import { useFormik } from "formik";
+import { loginFormConfig } from "../forms/login.form-config";
 
 const trans = t.auth.login;
 
 export function LoginCard() {
-  const { mutate: login, status, error } = useLogin();
+  const { mutate: login, status } = useLogin();
 
   const {
-    register,
-    handleSubmit,
-    setError,
-    formState: { errors },
-  } = useForm<LoginForm>({ resolver: zodResolver(loginSchema) });
-
-  useFieldErrors(error, setError);
-
-  function onSubmit(data: LoginForm) {
-    login(data);
-  }
+    values: formValues,
+    touched: formTouched,
+    errors: formErrors,
+    handleBlur: formHandlerBlur,
+    handleChange: formHandleChange,
+    handleSubmit: formHandleSubmit,
+  } = useFormik<LoginForm>({
+    initialValues: loginFormConfig.initialValues,
+    validationSchema: zodResolver(loginSchema),
+    onSubmit: (data) => login(data),
+  });
 
   return (
     <form
-      onSubmit={handleSubmit(onSubmit)}
+      onSubmit={formHandleSubmit}
       noValidate
       className="flex flex-col gap-1"
     >
@@ -42,23 +42,29 @@ export function LoginCard() {
 
       <FormField
         id="email"
+        name="email"
         type="email"
         label={trans.email}
         placeholder={trans.emailPlaceholder}
         autoComplete="email"
-        error={errors.email?.message}
+        value={formValues.email}
+        error={formTouched.email ? formErrors.email : undefined}
         required
-        {...register("email")}
+        onChange={formHandleChange}
+        onBlur={formHandlerBlur}
       />
 
       <PasswordField
         id="password"
+        name="password"
         label={trans.password}
         placeholder={trans.passwordPlaceholder}
         autoComplete="current-password"
-        error={errors.password?.message}
+        value={formValues.password}
+        error={formTouched.password ? formErrors.password : undefined}
         required
-        {...register("password")}
+        onChange={formHandleChange}
+        onBlur={formHandlerBlur}
       />
 
       <div className="text-right -mt-1 mb-4">

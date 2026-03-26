@@ -1,7 +1,7 @@
 import { forwardRef, InputHTMLAttributes } from "react";
-import { Label } from "../ui/label";
-import { Input } from "../ui/input";
 import { cn } from "@/lib/utils";
+import { AppLabel } from "./AppLabel";
+import { Input } from "@/components/ui/input";
 
 interface FormFieldProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string;
@@ -15,10 +15,11 @@ export const FormField = forwardRef<HTMLInputElement, FormFieldProps>(
     return (
       <div className="flex flex-col gap-1.5">
         {label && (
-          <Label htmlFor={id} className="text-xs font-medium text-dark">
-            {label}
-            {required && <span className="text-destructive ml-0.5">*</span>}
-          </Label>
+          <AppLabel
+            htmlFor={id}
+            required={required}
+            className="text-xs font-medium text-dark"
+          ></AppLabel>
         )}
 
         <Input

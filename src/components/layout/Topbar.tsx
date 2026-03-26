@@ -25,13 +25,15 @@ export function Topbar() {
     <header className="h-14 bg-white border-b border-surface flex items-center px-5 gap-3 flex-shrink-0">
       {/* Brand + location */}
       <div className="flex items-center gap-2">
-        <span className="text-sm font-medium text-dark">Buen Asador</span>
         {user?.locationId && (
-          <div className="flex items-center gap-1 bg-surface text-brand-dark text-[11px] font-medium px-2 py-0.5 rounded-full">
+          <div className="flex items-center gap-1 bg-surface text-brand-dark text-[11px] font-medium px-2 py-0.5 rounded-full mt-1">
             <Building2 size={11} />
             <span>Sucursal</span>
           </div>
         )}
+        <span className="text-lg font-medium text-dark">
+          {user?.locationName}
+        </span>
       </div>
 
       {/* Right side */}

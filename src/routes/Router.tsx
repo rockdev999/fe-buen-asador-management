@@ -9,6 +9,7 @@ import { RoleRoute } from "./RoleRoute";
 import { RoleEnum } from "@/constants";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Login } from "@/features/auth/pages/Login";
+import { Pos } from "@/features/pos/page/Pos";
 
 export const router = createBrowserRouter([
   // Públicas
@@ -48,7 +49,7 @@ export const router = createBrowserRouter([
           {
             element: <RoleRoute roles={[RoleEnum.CASHIER]} />,
             children: [
-              { path: PATHS.POS, element: <div>POS</div> },
+              { path: PATHS.POS, element: <Pos /> },
               { path: PATHS.INVOICES, element: <div>Facturas</div> },
             ],
           },

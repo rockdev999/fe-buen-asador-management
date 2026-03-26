@@ -1,22 +1,20 @@
 import { API_ERROR_CODES, HTTP_STATUS, MESSAGES } from "@/constants";
 import { useAuthStore } from "@/stores/auth.store";
-import { useErrorStore } from "@/stores/error.store";
 import { ApiErrorResponse } from "@/types/api.types";
 import axios, { AxiosError } from "axios";
+import { toast } from "sonner";
 
 function getErrorMessage(error: AxiosError<ApiErrorResponse>): string {
   const status = error.response?.status;
-  const errorCode = error.response?.data?.errorCode;
   const beMessage = error.response?.data?.message;
 
-  // Sin respuesta del servidor
   if (!error.response) {
     if (axios.isCancel(error)) return MESSAGES.ERROR.CANCELED;
     if (error.code === "ECONNABORTED") return MESSAGES.ERROR.TIMEOUT;
     return MESSAGES.ERROR.OFFLINE;
   }
 
-  if (beMessage && errorCode) return beMessage;
+  if (beMessage) return beMessage;
 
   switch (status) {
     case HTTP_STATUS.FORBIDDEN:
@@ -36,13 +34,6 @@ function getErrorMessage(error: AxiosError<ApiErrorResponse>): string {
   }
 }
 
-function getErrorType(status?: number): "error" | "warning" | "info" {
-  if (!status || status >= 500) return "error";
-  if (status === HTTP_STATUS.FORBIDDEN || status === HTTP_STATUS.NOT_FOUND)
-    return "warning";
-  return "error";
-}
-
 const PUBLIC_PATHS = ["/login", "/select-location"];
 
 function isPublicPath(): boolean {
@@ -55,7 +46,6 @@ export function errorInterceptor(error: AxiosError<ApiErrorResponse>) {
   const fields = error.response?.data?.errors ?? [];
   const message = getErrorMessage(error);
 
-  // Token inválido → logout + redirect
   const isUnauthorized =
     status === HTTP_STATUS.UNAUTHORIZED ||
     errorCode === API_ERROR_CODES.UNAUTHORIZED;
@@ -67,21 +57,20 @@ export function errorInterceptor(error: AxiosError<ApiErrorResponse>) {
     }, 1500);
   }
 
-  // Errores de campo (400 / 422) con detalle → el formulario los maneja,
-  // no mostramos toast global
-  const hasFieldErrors =
-    fields.length > 0 &&
-    (status === HTTP_STATUS.BAD_REQUEST ||
-      status === HTTP_STATUS.UNPROCESSABLE_ENTITY);
+  const hasFieldErrors = fields.length > 0;
 
-  if (!hasFieldErrors) {
-    useErrorStore.getState().setError({
-      message,
-      type: getErrorType(status),
+  if (hasFieldErrors) {
+    fields.forEach(({ field, message: fieldMessage }) => {
+      toast.error(`${field}: ${fieldMessage}`);
     });
+  } else {
+    const isWarning =
+      status === HTTP_STATUS.FORBIDDEN || status === HTTP_STATUS.NOT_FOUND;
+
+    if (isWarning) toast.warning(message);
+    else toast.error(message);
   }
 
-  // Rechazamos con un objeto estructurado para que los hooks puedan leerlo
   return Promise.reject({
     message,
     fields,

@@ -1,13 +1,13 @@
 import { NAV_SECTIONS } from "@/config/navigation/navSections";
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import { cn, getInitials } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { useUiStore } from "@/stores/ui.store";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 export function Sidebar() {
   const { sidebarOpen, toggleSidebar } = useUiStore();
-  const { user, hasRole } = useAuth();
+  const { hasRole } = useAuth();
 
   const visibleSections = NAV_SECTIONS.map((section) => ({
     ...section,
@@ -76,7 +76,7 @@ export function Sidebar() {
       </button>
 
       {/* Footer — user info */}
-      <div className="flex items-center gap-2.5 px-3.5 py-3 border-t border-white/8">
+      {/* <div className="flex items-center gap-2.5 px-3.5 py-3 border-t border-white/8">
         <div className="w-7 h-7 bg-brand rounded-full flex items-center justify-center flex-shrink-0">
           <span className="text-white text-[11px] font-medium">
             {user ? getInitials(user.name) : "U"}
@@ -90,7 +90,7 @@ export function Sidebar() {
             <p className="text-white/40 text-[10px] truncate">{user.role}</p>
           </div>
         )}
-      </div>
+      </div> */}
     </aside>
   );
 }

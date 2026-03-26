@@ -1,0 +1,8 @@
+{
+  "shiftModal": {
+    "title": "Iniciar turno",
+    "description": "Declara el monto inicial de caja para comenzar a operar",
+    "initialAmountPlaceholder": "0.00",
+    "startButton": "Iniciar turno"
+  }
+}
