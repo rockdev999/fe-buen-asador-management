@@ -23,7 +23,6 @@ export const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(
             className="text-xs font-medium text-dark"
           >
             {label}
-            {required && <span className="text-destructive ml-0.5">*</span>}
           </AppLabel>
         )}
 

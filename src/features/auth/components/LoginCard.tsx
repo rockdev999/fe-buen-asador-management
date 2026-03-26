@@ -1,8 +1,6 @@
 import { t } from "@/locales/es";
 import { useLogin } from "../hooks/useLogin";
 import { LoginForm } from "../forms/login.form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { loginSchema } from "../validators/login.schema";
 import { Button } from "@/components/ui/button";
 import { FormField } from "@/components/shared/Basics/FormField";
 import { PasswordField } from "@/components/shared/Interactives/PasswordField";
@@ -23,7 +21,7 @@ export function LoginCard() {
     handleSubmit: formHandleSubmit,
   } = useFormik<LoginForm>({
     initialValues: loginFormConfig.initialValues,
-    validationSchema: zodResolver(loginSchema),
+    validate: loginFormConfig.validationSchema,
     onSubmit: (data) => login(data),
   });
 

@@ -1,4 +1,3 @@
-import { t } from "@/locales/es";
 import { ApiErrorResponse } from "@/types/api.types";
 import { useMutation, UseMutationOptions } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -19,7 +18,6 @@ interface UseMutationHandlerOptions<TData, TVariables> extends Omit<
 export function useMutationHandler<TData, TVariables>({
   mutationFn,
   successMessage,
-  errorMessage,
   onSuccessCallback,
   onErrorCallback,
   ...options
@@ -31,11 +29,6 @@ export function useMutationHandler<TData, TVariables>({
       onSuccessCallback?.(data);
     },
     onError: (error) => {
-      // Errores de campo (400/422) los maneja el form, no el toast
-      const hasFieldErrors = error.errors?.length > 0;
-      if (!hasFieldErrors) {
-        toast.error(error.message ?? errorMessage ?? t.common.error.generic);
-      }
       onErrorCallback?.(error);
     },
     ...options,

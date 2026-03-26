@@ -19,7 +19,9 @@ export const FormField = forwardRef<HTMLInputElement, FormFieldProps>(
             htmlFor={id}
             required={required}
             className="text-xs font-medium text-dark"
-          ></AppLabel>
+          >
+            {label}
+          </AppLabel>
         )}
 
         <Input
