@@ -11,7 +11,7 @@ interface PasswordFieldProps extends InputHTMLAttributes<HTMLInputElement> {
 }
 
 export const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(
-  ({ label, error, required, className, id, ...props }, ref) => {
+  ({ label, required, className, id, ...props }, ref) => {
     const [show, setShow] = useState(false);
 
     return (
@@ -33,8 +33,6 @@ export const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(
             type={show ? "text" : "password"}
             className={cn(
               "bg-surface border-surface focus-visible:border-brand focus-visible:ring-0 focus-visible:bg-white transition-colors pr-10",
-              error &&
-                "border-destructive focus-visible:border-destructive bg-white",
               className,
             )}
             {...props}
@@ -51,15 +49,6 @@ export const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(
             {show ? <EyeOff size={15} /> : <Eye size={15} />}
           </button>
         </div>
-
-        <p
-          className={cn(
-            "text-xs min-h-[16px] leading-none",
-            error ? "text-destructive" : "text-muted-foreground",
-          )}
-        >
-          {error ?? ""}
-        </p>
       </div>
     );
   },

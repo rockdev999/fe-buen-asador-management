@@ -6,6 +6,9 @@ import { FormField } from "@/components/shared/Basics/FormField";
 import { PasswordField } from "@/components/shared/Interactives/PasswordField";
 import { useFormik } from "formik";
 import { loginFormConfig } from "../forms/login.form-config";
+import { Input } from "@/components/ui/input";
+import { Error } from "@/components/shared/Basics/Error";
+import { AppLabel } from "@/components/shared/Basics/AppLabel";
 
 const trans = t.auth.login;
 
@@ -37,33 +40,33 @@ export function LoginCard() {
         </h2>
         <p className="text-sm text-muted-foreground">{trans.subtitle}</p>
       </div>
-
-      <FormField
-        id="email"
-        name="email"
-        type="email"
-        label={trans.email}
-        placeholder={trans.emailPlaceholder}
-        autoComplete="email"
-        value={formValues.email}
-        error={formTouched.email ? formErrors.email : undefined}
-        required
-        onChange={formHandleChange}
-        onBlur={formHandlerBlur}
-      />
-
-      <PasswordField
-        id="password"
-        name="password"
-        label={trans.password}
-        placeholder={trans.passwordPlaceholder}
-        autoComplete="current-password"
-        value={formValues.password}
-        error={formTouched.password ? formErrors.password : undefined}
-        required
-        onChange={formHandleChange}
-        onBlur={formHandlerBlur}
-      />
+      <FormField>
+        <AppLabel required>{trans.email}</AppLabel>
+        <Input
+          id="email"
+          name="email"
+          value={formValues.email}
+          placeholder={trans.emailPlaceholder}
+          type="email"
+          autoComplete="email"
+          onBlur={formHandlerBlur}
+          onChange={formHandleChange}
+        />
+        <Error touched={formTouched.email} error={formErrors.email} />
+      </FormField>
+      <FormField>
+        <AppLabel required>{trans.password}</AppLabel>
+        <PasswordField
+          id="password"
+          name="password"
+          placeholder={trans.passwordPlaceholder}
+          autoComplete="current-password"
+          value={formValues.password}
+          onChange={formHandleChange}
+          onBlur={formHandlerBlur}
+        />
+        <Error touched={formTouched.password} error={formErrors.password} />
+      </FormField>
 
       <div className="text-right -mt-1 mb-4">
         <button

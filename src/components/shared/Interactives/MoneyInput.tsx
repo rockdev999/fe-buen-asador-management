@@ -19,7 +19,6 @@ export const MoneyInput = forwardRef<HTMLInputElement, MoneyInputProps>(
   (
     {
       label,
-      error,
       currency = "Bs.",
       required,
       className,
@@ -89,7 +88,6 @@ export const MoneyInput = forwardRef<HTMLInputElement, MoneyInputProps>(
               "bg-background border-input",
               "focus-visible:border-ring focus-visible:ring-0",
               "transition-colors",
-              error && "border-destructive focus-visible:border-destructive",
               className,
             )}
             onChange={handleChange}
@@ -98,15 +96,6 @@ export const MoneyInput = forwardRef<HTMLInputElement, MoneyInputProps>(
             {...props}
           />
         </div>
-
-        <p
-          className={cn(
-            "text-xs min-h-[16px] leading-none",
-            error ? "text-destructive" : "text-muted-foreground",
-          )}
-        >
-          {error ?? ""}
-        </p>
       </div>
     );
   },

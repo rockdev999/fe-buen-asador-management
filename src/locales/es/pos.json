@@ -3,6 +3,10 @@
     "title": "Iniciar turno",
     "description": "Declara el monto inicial de caja para comenzar a operar",
     "initialAmountPlaceholder": "0.00",
-    "startButton": "Iniciar turno"
+    "startButton": "Iniciar turno",
+    "validation": {
+      "initialAmountMin": "El monto inicial no puede ser cero o negativo",
+      "initialAmountMax": "El monto inicial no puede exceder los 100,000"
+    }
   }
 }

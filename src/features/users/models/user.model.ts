@@ -15,3 +15,8 @@ export interface UserDetails {
   locationId: UUID;
   locationName: string;
 }
+
+export interface UserShort {
+  id: UUID;
+  name: string;
+}

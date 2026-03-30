@@ -1,25 +1,38 @@
 import { MoneyInput } from "@/components/shared/Interactives/MoneyInput";
 import { Button } from "@/components/ui/button";
 import { t } from "@/locales/es";
+import { useFormik } from "formik";
+import { ShiftOpenForm } from "../forms/shift.form";
+import { OpenShiftFormConfig } from "../forms/shift.form-config";
+import { Image } from "@/components/shared/Basics/Image";
+import { ICONS } from "@/components/icons";
+import { FormField } from "@/components/shared/Basics/FormField";
+import { Error } from "@/components/shared/Basics/Error";
+import { useOpenShiftHandler } from "../hooks/useShift";
 
 const trans = t.pos;
 
 export const ShiftModal = () => {
+  const { mutate: openShift, status: openShiftStatus } = useOpenShiftHandler();
+
+  const {
+    touched: formTouched,
+    errors: formErrors,
+    setFieldValue: formSetFieldValue,
+    setFieldTouched: formSetFieldTouched,
+    handleSubmit: formHandleSubmit,
+  } = useFormik<ShiftOpenForm>({
+    enableReinitialize: true,
+    initialValues: OpenShiftFormConfig.initialValues,
+    validate: OpenShiftFormConfig.validationSchema,
+    onSubmit: (data) => openShift(data),
+  });
+
   return (
     <div className="absolute inset-0 bg-inkblack/60 flex items-center justify-center z-50">
       <div className="bg-white rounded-2xl p-8 w-80 text-center">
-        <div className="w-12 h-12 bg-brand/10 rounded-xl flex items-center justify-center mx-auto mb-4">
-          <svg
-            className="w-6 h-6 text-brand"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-          >
-            <path
-              fillRule="evenodd"
-              d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z"
-              clipRule="evenodd"
-            />
-          </svg>
+        <div className="w-12 h-12 bg-brand/10 rounded-xl flex items-center justify-center mx-auto mb-2">
+          <Image src={ICONS.shift} size={24} alt="Shift" />
         </div>
 
         <h2 className="text-lg font-medium text-inkblack mb-1">
@@ -29,22 +42,26 @@ export const ShiftModal = () => {
           {trans.shiftModal.description}
         </p>
 
-        <form>
-          <MoneyInput
-            placeholder="0.00"
-            error="asdasd"
-            onChange={(value) =>
-              //   setValue("initialAmount", value, { shouldValidate: true })
-              console.log(value)
-            }
-          />
-
+        <form onSubmit={formHandleSubmit}>
+          <FormField>
+            <MoneyInput
+              id="amount"
+              name="initialAmount"
+              placeholder="0.00"
+              onChange={(value) => formSetFieldValue("initialAmount", value)}
+              onBlur={() => formSetFieldTouched("initialAmount", true)}
+            />
+            <Error
+              touched={formTouched.initialAmount}
+              error={formErrors.initialAmount}
+            />
+          </FormField>
           <Button
             type="submit"
-            // disabled={isLoading}
             className="w-full mt-2 bg-brand hover:bg-brand-dark text-white font-medium"
+            loading={openShiftStatus === "pending"}
           >
-            {true ? trans.shiftModal.startButton : trans.shiftModal.startButton}
+            {trans.shiftModal.startButton}
           </Button>
         </form>
       </div>

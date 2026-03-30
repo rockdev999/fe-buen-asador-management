@@ -15,3 +15,8 @@ export interface UserDetailsDTO {
   role: RoleEnum;
   location: LocationDTO;
 }
+
+export interface UserShortDTO {
+  id: UUID;
+  name: string;
+}

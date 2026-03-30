@@ -5,7 +5,7 @@ export function useAuth() {
   const { user, token, tempToken, locations, logout } = useAuthStore();
 
   const isAuthenticated = !!token && !!user;
-  const isTempAuth = !!tempToken && !token; // está en paso 2
+  const isTempAuth = !!tempToken && !token;
 
   function hasRole(...roles: RoleEnum[]): boolean {
     return !!user?.role && roles.includes(user.role);

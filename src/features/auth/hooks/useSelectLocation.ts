@@ -1,18 +1,20 @@
-import { useMutationHandler } from "@/hooks/useMutationStatus";
 import { useAuthStore } from "@/stores/auth.store";
-import { authFetch } from "../api/auth.service";
 import { useNavigate } from "react-router-dom";
 import { mapUserDetailsDTOToModel } from "@/features/users/mappers/user.mapper";
 import { RoleEnum } from "@/constants";
 import { PATHS } from "@/routes";
+import { usePostHandler } from "@/hooks/api.handlers";
+import { httpClient } from "@/services/http.client";
 
 export function useSelectLocation() {
   const { setFullAuth } = useAuthStore();
   const navigate = useNavigate();
 
-  return useMutationHandler({
+  return usePostHandler({
     mutationFn: (locationId: string) =>
-      authFetch.selectLocation({ locationId }),
+      httpClient
+        .post("/auth/select-location", { locationId })
+        .then((r) => r.data),
 
     onSuccessCallback: (data) => {
       const user = mapUserDetailsDTOToModel(data.user);

@@ -1,4 +1,4 @@
-import { Location } from "@/features/locations/models/location.model";
+import { LocationWithRole } from "@/features/locations/models/location.model";
 import { UserDetails } from "@/features/users/models/user.model";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
@@ -6,14 +6,14 @@ import { persist } from "zustand/middleware";
 interface AuthState {
   // Estado paso 1
   tempToken: string | null;
-  locations: Location[];
+  locations: LocationWithRole[];
 
   // Estado paso 2 (sesión completa)
   user: UserDetails | null;
   token: string | null;
 
   // Acciones
-  setTempAuth: (tempToken: string, locations: Location[]) => void;
+  setTempAuth: (tempToken: string, locations: LocationWithRole[]) => void;
   setFullAuth: (user: UserDetails, token: string) => void;
   logout: () => void;
 }
