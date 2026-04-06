@@ -8,5 +8,13 @@
       "initialAmountMin": "El monto inicial no puede ser cero o negativo",
       "initialAmountMax": "El monto inicial no puede exceder los 100,000"
     }
+  },
+  "products": {
+    "noProducts": "Sin productos",
+    "addProducts": "Agrega productos al pedido",
+    "subtotal": "Subtotal",
+    "total": "Total",
+    "discount": "Descuento",
+    "checkout": "Cobrar pedido"
   }
 }

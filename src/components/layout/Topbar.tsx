@@ -11,6 +11,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { getInitials } from "@/lib/utils";
+import { RoleEnum } from "@/constants";
 
 export function Topbar() {
   const { user, logout } = useAuth();
@@ -38,13 +39,26 @@ export function Topbar() {
 
       {/* Right side */}
       <div className="ml-auto flex items-center gap-3">
+        <div>
+          {user?.role === RoleEnum.CASHIER && (
+            <span
+              className="text-xs font-medium text-muted-foreground bg-inkblack px-2 py-1 rounded flex items-center gap-1"
+              style={{ color: "#4ade80" }}
+            >
+              Turno abierto
+            </span>
+          )}
+        </div>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="w-8 h-8 bg-brand rounded-full flex items-center justify-center text-white text-xs font-medium hover:bg-brand-dark transition-colors">
               {user ? getInitials(user.name) : "U"}
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuContent
+            align="end"
+            className="w-48 bg-surface rounded-lg border shadow-md"
+          >
             <DropdownMenuLabel className="font-normal">
               <p className="text-sm font-medium">{user?.name}</p>
               <p className="text-xs text-muted-foreground">{user?.email}</p>

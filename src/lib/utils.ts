@@ -6,11 +6,13 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatMoney(amount: number, currency = "BOB"): string {
-  return new Intl.NumberFormat("es-BO", {
+  return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency,
     minimumFractionDigits: 2,
-  }).format(amount);
+  })
+    .format(amount)
+    .replace("BOB", "Bs.");
 }
 
 export function formatDate(date: string | Date): string {

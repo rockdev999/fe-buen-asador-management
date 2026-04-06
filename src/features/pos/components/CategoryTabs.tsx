@@ -1,12 +1,11 @@
 import { Category } from "@/features/categories/models/category.model";
 import { cn } from "@/lib/utils";
-
-const ALL = { id: "all", name: "Todos" };
+import { UUID } from "@/types/common";
 
 interface CategoryTabsProps {
   categories: Category[];
-  selected: string;
-  onSelect: (id: string) => void;
+  selected: UUID | null;
+  onSelect: (id: UUID) => void;
 }
 
 export function CategoryTabs({
@@ -14,7 +13,8 @@ export function CategoryTabs({
   selected,
   onSelect,
 }: CategoryTabsProps) {
-  const tabs = [ALL, ...categories];
+  const tabs = [...categories];
+
   return (
     <div className="flex bg-white border-b border-surface overflow-x-auto flex-shrink-0">
       {tabs.map((cat) => (

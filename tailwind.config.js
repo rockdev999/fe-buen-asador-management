@@ -38,6 +38,8 @@ module.exports = {
         highlight: "#FFD000",
         inkblack: "#1A0A00",
         surface: "#FFF5EE",
+        edit: "#6B7280",
+        danger: "#EF4444",
       },
       borderRadius: {
         lg: "var(--radius)",

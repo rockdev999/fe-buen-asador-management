@@ -1,10 +1,12 @@
-import { Input } from "@/components/ui/input";
 import { Category } from "@/features/categories/models/category.model";
 import { Product } from "@/features/products/models/product.model";
-import { Search } from "lucide-react";
 import { useMemo, useState } from "react";
 import { CategoryTabs } from "../CategoryTabs";
 import { ProductCard } from "../ProductCard";
+import { UUID } from "@/types/common";
+import { t } from "@/locales/es";
+
+const trans = t.pos.products;
 
 interface ProductGridProps {
   categories: Category[];
@@ -17,23 +19,32 @@ export function ProductGrid({
   products,
   onAddItem,
 }: ProductGridProps) {
-  const [selectedCat, setSelectedCat] = useState("all");
-  const [search, setSearch] = useState("");
+  const [selectedCat, setSelectedCat] = useState<UUID | null>(
+    categories[0]?.id ?? null,
+  );
+  // const [search, setSearch] = useState("");
 
   const filtered = useMemo(
     () =>
       products.filter((p) => {
-        const matchCat = selectedCat === "all" || p.id === selectedCat;
-        const matchSearch = p.name.toLowerCase().includes(search.toLowerCase());
-        return matchCat && matchSearch;
+        const matchCat = p.category.id === selectedCat;
+        // TODO: Implement search functionality
+        // const matchSearch = p.name.toLowerCase().includes(search.toLowerCase());
+        return matchCat;
+        // && matchSearch;
       }),
-    [products, selectedCat, search],
+    [
+      products,
+      selectedCat,
+      // search
+    ],
   );
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
+      {/* TODO: Implement search functionality */}
+      {/* <div className="relative">
       <div className="p-2 bg-white border-b border-surface flex-shrink-0">
-        <div className="relative">
           <Search
             size={13}
             className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground"
@@ -45,7 +56,7 @@ export function ProductGrid({
             className="pl-7 h-8 text-xs bg-surface border-surface focus-visible:border-brand focus-visible:ring-0"
           />
         </div>
-      </div>
+      </div> */}
 
       <CategoryTabs
         categories={categories}
@@ -56,7 +67,7 @@ export function ProductGrid({
       <div className="flex-1 overflow-y-auto p-2.5 bg-surface">
         {filtered.length === 0 ? (
           <div className="flex items-center justify-center h-full text-xs text-muted-foreground">
-            Sin productos
+            {trans.noProducts}
           </div>
         ) : (
           <div

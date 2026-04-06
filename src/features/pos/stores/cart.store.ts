@@ -2,23 +2,33 @@ import { OrderEnum, OrderTypeEnum } from "@/constants";
 import { CartItem } from "../models/cart";
 import { Product } from "@/features/products/models/product.model";
 import { create } from "zustand";
+import { Modifier } from "../models/modifier";
 
 interface CartState {
   items: CartItem[];
   orderType: OrderTypeEnum;
   orderChannel: OrderEnum;
-  customerName: string; // TODO: creo que no es necesario aqui
+  customerName: string;
 
   addItem: (product: Product) => void;
   removeItem: (productId: string) => void;
   updateQty: (productId: string, qty: number) => void;
-  updateNotes: (productId: string, notes: string) => void;
+  updateItem: (
+    productId: string,
+    notes: string,
+    modifiers: Modifier[],
+    quantity: number,
+  ) => void;
   setOrderType: (type: OrderTypeEnum, channel: OrderEnum) => void;
   setCustomer: (name: string) => void;
   clearCart: () => void;
 
-  total: number;
-  itemCount: number;
+  discount: number;
+  updateDiscount: (amount: number) => void;
+
+  getSubtotal: () => number;
+  getTotal: () => number;
+  getItemCount: () => number;
 }
 
 export const useCartStore = create<CartState>((set, get) => ({
@@ -26,9 +36,11 @@ export const useCartStore = create<CartState>((set, get) => ({
   orderType: OrderTypeEnum.DINE_IN,
   orderChannel: OrderEnum.IN_STORE,
   customerName: "Cliente",
+  discount: 0,
 
   addItem: (product) => {
     const existing = get().items.find((i) => i.productId === product.id);
+
     if (existing) {
       set((s) => ({
         items: s.items.map((i) =>
@@ -42,9 +54,10 @@ export const useCartStore = create<CartState>((set, get) => ({
           {
             productId: product.id,
             name: product.name,
-            price: product.price,
+            price: Number(product.price) || 0,
             quantity: 1,
             notes: "",
+            modifiers: [],
           },
         ],
       }));
@@ -52,13 +65,16 @@ export const useCartStore = create<CartState>((set, get) => ({
   },
 
   removeItem: (productId) =>
-    set((s) => ({ items: s.items.filter((i) => i.productId !== productId) })),
+    set((s) => ({
+      items: s.items.filter((i) => i.productId !== productId),
+    })),
 
   updateQty: (productId, qty) => {
     if (qty <= 0) {
       get().removeItem(productId);
       return;
     }
+
     set((s) => ({
       items: s.items.map((i) =>
         i.productId === productId ? { ...i, quantity: qty } : i,
@@ -66,10 +82,10 @@ export const useCartStore = create<CartState>((set, get) => ({
     }));
   },
 
-  updateNotes: (productId, notes) =>
+  updateItem: (productId, notes, modifiers, quantity) =>
     set((s) => ({
       items: s.items.map((i) =>
-        i.productId === productId ? { ...i, notes } : i,
+        i.productId === productId ? { ...i, notes, modifiers, quantity } : i,
       ),
     })),
 
@@ -78,17 +94,33 @@ export const useCartStore = create<CartState>((set, get) => ({
 
   setCustomer: (name) => set({ customerName: name }),
 
-  clearCart: () => set({ items: [], customerName: "Cliente" }),
+  clearCart: () => set({ items: [], customerName: "Cliente", discount: 0 }),
 
-  get total() {
+  updateDiscount: (amount) => {
+    const subtotal = get().getSubtotal();
+    const safeAmount = Math.max(0, Math.min(Number(amount) || 0, subtotal));
+    set({ discount: safeAmount });
+  },
+
+  getSubtotal: () => {
     return (
       Math.round(
-        get().items.reduce((s, i) => s + i.price * i.quantity, 0) * 100,
+        get().items.reduce((sum, item) => {
+          const price = Number(item.price) || 0;
+          const qty = Number(item.quantity) || 0;
+          return sum + price * qty;
+        }, 0) * 100,
       ) / 100
     );
   },
 
-  get itemCount() {
-    return get().items.reduce((s, i) => s + i.quantity, 0);
+  getTotal: () => {
+    const subtotal = get().getSubtotal();
+    const discount = Number(get().discount) || 0;
+    return Math.round((subtotal - discount) * 100) / 100;
+  },
+
+  getItemCount: () => {
+    return get().items.reduce((sum, item) => sum + item.quantity, 0);
   },
 }));
