@@ -2,16 +2,19 @@ import { RoleEnum } from "@/constants";
 import { PATHS } from "@/routes";
 import {
   Archive,
+  BarChart3,
   Building2,
+  ChefHat,
+  ClipboardList,
   CreditCard,
-  DollarSign,
-  FileText,
   LayoutDashboard,
   Package,
+  Receipt,
   ShoppingBag,
+  UserCheck,
   Users,
+  Wallet,
 } from "lucide-react";
-import { t } from "../../locales/es";
 
 interface NavItem {
   label: string;
@@ -20,73 +23,125 @@ interface NavItem {
   roles?: RoleEnum[];
 }
 
-export const NAV_SECTIONS = [
+interface NavSection {
+  title: string;
+  items: NavItem[];
+}
+
+export const NAV_SECTIONS: NavSection[] = [
   {
-    title: t.sidebar.general.title,
+    title: "General",
     items: [
       {
-        label: t.sidebar.general.dashboard,
+        label: "Dashboard",
         path: PATHS.DASHBOARD,
         icon: LayoutDashboard,
+        roles: [RoleEnum.MANAGER, RoleEnum.ADMIN],
       },
-    ] as NavItem[],
+    ],
   },
   {
-    title: t.sidebar.management.title,
+    title: "Administración",
     items: [
       {
-        label: t.sidebar.management.users,
+        label: "Usuarios",
         path: PATHS.USERS,
         icon: Users,
         roles: [RoleEnum.MANAGER],
       },
       {
-        label: t.sidebar.management.locations,
+        label: "Sucursales",
         path: PATHS.LOCATIONS,
         icon: Building2,
         roles: [RoleEnum.MANAGER],
       },
       {
-        label: t.sidebar.management.products,
+        label: "Productos",
         path: PATHS.PRODUCTS,
         icon: ShoppingBag,
         roles: [RoleEnum.MANAGER, RoleEnum.ADMIN],
       },
       {
-        label: t.sidebar.management.inventory,
+        label: "Inventario",
         path: PATHS.INVENTORY,
         icon: Package,
         roles: [RoleEnum.MANAGER, RoleEnum.ADMIN],
       },
       {
-        label: t.sidebar.management.finances,
-        path: PATHS.FINANCES,
-        icon: DollarSign,
+        label: "Insumos",
+        path: PATHS.INGREDIENTS,
+        icon: ChefHat,
         roles: [RoleEnum.MANAGER, RoleEnum.ADMIN],
       },
-    ] as NavItem[],
+    ],
   },
   {
-    title: t.sidebar.cashier.title,
+    title: "Finanzas",
     items: [
       {
-        label: t.sidebar.cashier.pos,
+        label: "Egresos",
+        path: PATHS.EXPENSES,
+        icon: Wallet,
+        roles: [RoleEnum.MANAGER, RoleEnum.ADMIN],
+      },
+      {
+        label: "Nómina",
+        path: PATHS.PAYROLL,
+        icon: UserCheck,
+        roles: [RoleEnum.MANAGER, RoleEnum.ADMIN],
+      },
+      {
+        label: "Reportes",
+        path: PATHS.REPORTS,
+        icon: BarChart3,
+        roles: [RoleEnum.MANAGER, RoleEnum.ADMIN],
+      },
+    ],
+  },
+  {
+    title: "Operaciones",
+    items: [
+      {
+        label: "Turnos",
+        path: PATHS.SHIFTS,
+        icon: Archive,
+        roles: [RoleEnum.CASHIER, RoleEnum.ADMIN],
+      },
+      {
+        label: "Pedidos",
+        path: PATHS.ORDERS,
+        icon: ClipboardList,
+        roles: [RoleEnum.CASHIER, RoleEnum.ADMIN, RoleEnum.MANAGER],
+      },
+      {
+        label: "Ventas",
+        path: PATHS.SALES,
+        icon: Receipt,
+        roles: [RoleEnum.CASHIER, RoleEnum.ADMIN, RoleEnum.MANAGER],
+      },
+    ],
+  },
+  {
+    title: "POS",
+    items: [
+      {
+        label: "Punto de Venta",
         path: PATHS.POS,
         icon: CreditCard,
         roles: [RoleEnum.CASHIER],
       },
       {
-        label: t.sidebar.cashier.title,
-        path: PATHS.CASHIER,
-        icon: Archive,
-        roles: [RoleEnum.CASHIER, RoleEnum.ADMIN],
+        label: "Egresos",
+        path: PATHS.EXPENSES,
+        icon: Wallet,
+        roles: [RoleEnum.CASHIER],
       },
       {
-        label: t.sidebar.cashier.invoices,
-        path: PATHS.INVOICES,
-        icon: FileText,
-        roles: [RoleEnum.CASHIER, RoleEnum.ADMIN],
+        label: "Nómina",
+        path: PATHS.PAYROLL,
+        icon: UserCheck,
+        roles: [RoleEnum.CASHIER],
       },
-    ] as NavItem[],
+    ],
   },
 ];

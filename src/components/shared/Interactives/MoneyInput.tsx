@@ -12,6 +12,7 @@ interface MoneyInputProps extends Omit<
   error?: string;
   currency?: string;
   required?: boolean;
+  max?: number;
   onChange?: (value: number) => void;
 }
 
@@ -39,7 +40,12 @@ export const MoneyInput = forwardRef<HTMLInputElement, MoneyInputProps>(
 
     function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
       const raw = formatMoneyInput(e.target.value);
-      const numeric = parseMoney(raw);
+      let numeric = parseMoney(raw);
+
+      if (props.max !== undefined) {
+        numeric = Math.min(numeric, props.max);
+      }
+
       setDisplayValue(raw);
       setNumericValue(numeric);
       e.target.value = raw;
@@ -54,11 +60,16 @@ export const MoneyInput = forwardRef<HTMLInputElement, MoneyInputProps>(
     }
 
     function handleBlur(e: React.FocusEvent<HTMLInputElement>) {
-      const formatted =
-        numericValue === 0 ? "" : formatMoneyDisplay(numericValue);
+      let safe = numericValue;
+      if (props.max !== undefined) {
+        safe = Math.min(numericValue, props.max);
+      }
+
+      const formatted = numericValue === 0 ? "" : formatMoneyDisplay(safe);
       setDisplayValue(formatted);
+      setNumericValue(safe);
       e.target.value = formatted;
-      onChange?.(numericValue);
+      onChange?.(safe);
       onBlur?.(e);
     }
 

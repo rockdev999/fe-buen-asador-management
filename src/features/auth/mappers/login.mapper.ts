@@ -6,7 +6,7 @@ import {
 } from "../dto/login.dto";
 import { LoginForm } from "../forms/login.form";
 import { LoginLocations } from "../models/login.model";
-import { mapLocationDTOToModel } from "@/features/locations/mappers/location.mapper";
+import { mapLocationWithRoleDTOToModel } from "@/features/locations/mappers/location.mapper";
 import { AuthUser } from "../models/auth.model";
 
 export const mapLoginFormToDTO = (form: LoginForm): LoginRequestDTO => ({
@@ -17,7 +17,7 @@ export const mapLoginFormToDTO = (form: LoginForm): LoginRequestDTO => ({
 export const mapLoginDTOToModel = (dto: LoginLocationsDTO): LoginLocations => ({
   temporaryToken: dto.temporaryToken,
   user: mapUserDTOToModel(dto.user),
-  locations: dto.locations.map(mapLocationDTOToModel),
+  locations: dto.locations.map(mapLocationWithRoleDTOToModel),
 });
 
 export const mapAuthUserDTOToModel = (dto: SelectLocationDTO): AuthUser => ({

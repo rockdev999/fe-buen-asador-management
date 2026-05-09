@@ -4,6 +4,7 @@ import "./index.css";
 import { Toaster } from "./components/ui/sonner.tsx";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { AppRouter } from "./routes/Router.tsx";
+import "@/features/pos/styles/ticket.css";
 
 const queryClient = new QueryClient({
   defaultOptions: {

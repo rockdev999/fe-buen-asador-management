@@ -40,6 +40,9 @@ module.exports = {
         surface: "#FFF5EE",
         edit: "#6B7280",
         danger: "#EF4444",
+        success: "#10B981", // verde principal
+        successLight: "#D1FAE5", // fondo suave
+        successDark: "#059669", // hover fuerte
       },
       borderRadius: {
         lg: "var(--radius)",

@@ -18,6 +18,10 @@ export const QUERY_KEYS = {
   MODIFIERS: ["modifiers"],
   MODIFIER: (id: string) => ["modifiers", id],
 
+  // Sales
+  SALES: ["sales"],
+  SALE: (id: string) => ["sales", id],
+
   // Inventario
   INVENTORY: ["inventory"],
   STOCK: (locationId: string) => ["inventory", "stock", locationId],
