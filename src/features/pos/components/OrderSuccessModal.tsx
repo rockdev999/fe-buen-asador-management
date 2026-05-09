@@ -1,17 +1,19 @@
 import { CheckCircle } from "lucide-react";
-import { Order } from "../models/order";
 import { formatMoney } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Sale } from "../models/sale";
 
 interface OrderSuccessModalProps {
-  order: Order;
+  sale: Sale;
+  customerName?: string | null;
   onPrintTicket: () => void;
   onEmitInvoice: () => void;
   onClose: () => void;
 }
 
 export function OrderSuccessModal({
-  order,
+  sale,
+  customerName,
   onPrintTicket,
   onEmitInvoice,
   onClose,
@@ -26,23 +28,43 @@ export function OrderSuccessModal({
         <h2 className="text-base font-medium text-inkblack mb-1">
           Pago registrado
         </h2>
-        <p className="text-sm text-muted-foreground mb-1">
-          {order.customerName}
-        </p>
+        {customerName && (
+          <p className="text-sm text-muted-foreground mb-1">{customerName}</p>
+        )}
         <p className="text-xl font-medium text-brand mb-5">
-          {formatMoney(order.total)}
+          {formatMoney(sale.total)}
         </p>
 
         {/* Items resumen */}
         <div className="bg-surface rounded-xl p-3 mb-5 text-left">
-          {order.items.map((item) => (
-            <div key={item.id} className="flex justify-between text-xs py-0.5">
-              <span className="text-inkblack">
-                {item.name} × {item.quantity}
-              </span>
-              <span className="text-muted-foreground">
-                {formatMoney(item.subtotal)}
-              </span>
+          {sale.groups.map((group) => (
+            <div key={group.productId} className="mb-2 last:mb-0">
+              {/* Producto header */}
+              <div className="flex justify-between items-center py-0.5">
+                <span className="text-xs font-medium text-inkblack">
+                  {group.unitCount} {group.name}
+                </span>
+                <span className="text-xs font-medium text-brand">
+                  {formatMoney(group.total)}
+                </span>
+              </div>
+
+              {/* Unidades */}
+              <div className="pl-2 border-l border-surface ml-1">
+                {group.units.map((unit, idx) => (
+                  <div
+                    key={idx}
+                    className="flex justify-between items-center py-0.5"
+                  >
+                    <span className="text-[10px] text-muted-foreground">
+                      {unit.modifierLabel}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground">
+                      {formatMoney(unit.subtotal)}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           ))}
         </div>

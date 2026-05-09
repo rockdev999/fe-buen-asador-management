@@ -10,6 +10,7 @@ export interface ProductDTO {
   price: number;
   available: boolean;
   isQuantifiable: boolean;
+  haveModifiers: boolean;
   category: CategoryShortDTO;
   locationId: UUID;
   createdAt: ISODateTimeString;

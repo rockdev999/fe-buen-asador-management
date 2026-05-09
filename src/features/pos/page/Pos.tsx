@@ -1,86 +1,145 @@
 import { useCategoriesHandler } from "@/features/categories/hooks/useCategories";
 import { ShiftModal } from "../components/ShiftModal";
 import { useActiveShift } from "../hooks/useShift";
-import { CategoryTabs } from "../components/CategoryTabs";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useProductsHandler } from "@/features/products/hooks/useProducts";
 import { ProductGrid } from "../components/products/ProductGrid";
 import { Product } from "@/features/products/models/product.model";
 import { useCartStore } from "../stores/cart.store";
 import { CartPanel } from "../components/CartPanel";
-import {
-  useCreateOrderInPerson,
-  useUpdateOrderStatus,
-} from "../hooks/useOrder";
+import { useCreateOrder, useUpdateOrderStatus } from "../hooks/useOrder";
 import { PaymentModal } from "../components/PaymentModal";
 import { OrderSuccessModal } from "../components/OrderSuccessModal";
 import { InvoiceOffcanvas } from "../components/InvoiceOffcanvas";
 import { OrderStatusEnum, PaymentMethodEnum } from "@/constants";
-import { mapCartToCreateOrderInPersonDTO } from "../mappers/order.mapper";
-import { Order } from "../models/order";
+import { mapCartToCreateOrderDTO } from "../mappers/order.mapper";
+import { OrderSnapshot } from "../models/order-snapshot";
+import { ReviewOrderModal } from "../components/ReviewOrderModal";
+import { usePrintTicket } from "../hooks/usePrintTicket";
+import { TicketPrint } from "../components/TicketPrint";
+import { useCreateSale } from "../hooks/useSale";
+import { Sale } from "../models/sale";
 
-type PosView = "idle" | "payment" | "success" | "invoice";
+type PosView = "idle" | "review" | "payment" | "success" | "invoice";
 
 export const Pos = () => {
   const { isOpen, status: shiftStatus } = useActiveShift();
   const { data: categories, status: catStatus } = useCategoriesHandler(isOpen);
   const { data: products, status: prodStatus } = useProductsHandler(isOpen);
-  const { items, total, orderType, orderChannel, customerName, addItem } =
-    useCartStore();
+  const {
+    items,
+    orderType,
+    orderChannel,
+    customerName,
+    customerPhone,
+    customerAddress,
+    deliveryReference,
+
+    discount,
+    addItem,
+    setCustomer,
+    getSubtotal,
+    getTotal,
+    removeItem,
+    updateDiscount,
+    clearCart,
+    setCustomerPhone,
+    setCustomerAddress,
+    setDeliveryReference,
+  } = useCartStore();
 
   const {
     mutate: createOrder,
     status: createStatus,
     data: createdOrder,
-  } = useCreateOrderInPerson();
+  } = useCreateOrder();
+
   const { mutate: updateStatus, status: updateOrderStatus } =
     useUpdateOrderStatus();
 
+  const {
+    mutate: createSale,
+    status: createSaleStatus,
+    data: sale,
+  } = useCreateSale();
+
   const [showPayment, setShowPayment] = useState(false);
+  const { ticketRef, print } = usePrintTicket();
 
   const [view, setView] = useState<PosView>("idle");
-  const [paidOrder, setPaidOrder] = useState<Order | null>(null);
-
-  if (shiftStatus === "pending") {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <p className="text-sm text-muted-foreground">Cargando...</p>
-      </div>
-    );
-  }
+  const [paidOrder, setPaidOrder] = useState<Sale | null>(null);
+  const [orderSnapshot, setOrderSnapshot] = useState<OrderSnapshot | null>(
+    null,
+  );
 
   function handleCheckout() {
     if (!items.length) return;
-    const dto = mapCartToCreateOrderInPersonDTO(
+
+    // Captura todo el estado del carrito ANTES de crear la orden
+    setOrderSnapshot({
+      items: [...items],
+      orderType,
+      orderChannel,
+      customerName,
+      customerPhone,
+      customerAddress,
+      deliveryReference,
+
+      subtotal: getSubtotal(),
+
+      total: getTotal(),
+    });
+
+    setView("review");
+  }
+
+  function handleCreateOrder() {
+    const dto = mapCartToCreateOrderDTO(
       items,
       orderType,
       orderChannel,
       customerName,
+      customerPhone,
+      customerAddress,
+      deliveryReference,
     );
-    createOrder(dto, {
-      onSuccess: () => setView("payment"),
-    });
+    createOrder(dto, {});
   }
 
   // 2. Cajero confirma método de pago → cambia estado a PAID
   function handleConfirmPayment(method: PaymentMethodEnum) {
     if (!createdOrder) return;
-    updateStatus(
-      { id: createdOrder.id, status: OrderStatusEnum.PAID },
+
+    createSale(
       {
-        onSuccess: (data) => {
-          setPaidOrder(data);
+        orderId: createdOrder.id,
+        paymentMethod: method,
+        receivedAmount: getTotal(),
+        totalDiscount: discount,
+      },
+      {
+        onSuccess: () => {
           setView("success");
         },
       },
     );
+
+    // updateStatus(
+    //   { id: createdOrder.id, status: OrderStatusEnum.PAID },
+    //   {
+    //     onSuccess: (data) => {
+    //       setPaidOrder(data);
+    //       setView("success");
+    //     },
+    //   },
+    // );
   }
 
   // 3. Imprimir ticket
-  function handlePrintTicket() {
-    // TODO: react-thermal-printer
-    console.log("Imprimir ticket", paidOrder);
-  }
+  // function handlePrintTicket() {
+  //   // TODO: react-thermal-printer
+  //   console.log("Imprimir ticket", paidOrder);
+  // }
 
   // 4. Emitir factura
   function handleEmitInvoice() {
@@ -101,6 +160,7 @@ export const Pos = () => {
   // 6. Nuevo pedido
   function handleNewOrder() {
     setPaidOrder(null);
+    clearCart();
     setView("idle");
   }
 
@@ -108,8 +168,65 @@ export const Pos = () => {
     addItem(product);
   }
 
+  function handleUpdateDiscount(discount: number) {
+    updateDiscount(discount);
+  }
+
+  function handlePrintTicket() {
+    print();
+  }
+
+  const updateCustomerDetails = (
+    name: string,
+    phone: string,
+    address: string,
+    reference: string,
+  ) => {
+    setCustomer(name);
+    setCustomerPhone(phone);
+    setCustomerAddress(address);
+    setDeliveryReference(reference);
+    setOrderSnapshot((prev) =>
+      prev
+        ? {
+            ...prev,
+            customerName: name,
+            customerPhone: phone,
+            customerAddress: address,
+            deliveryReference: reference,
+          }
+        : prev,
+    );
+  };
+
+  useEffect(() => {
+    if (createdOrder && createStatus === "success") {
+      updateStatus(
+        { id: createdOrder.id, status: OrderStatusEnum.READY },
+        {
+          onSuccess: () => {
+            setView("payment");
+          },
+        },
+      );
+    }
+  }, [createdOrder, createStatus]);
+
+  if (shiftStatus === "pending") {
+    return (
+      <div className="flex h-full items-center justify-center">
+        <p className="text-sm text-muted-foreground">Cargando...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="relative flex h-full overflow-hidden">
+      {sale && (
+        <div style={{ position: "absolute", left: "-9999px", top: 0 }}>
+          <TicketPrint ref={ticketRef} sale={sale} />
+        </div>
+      )}
       {/* Left — catálogo */}
       <div className="flex-1 flex flex-col overflow-hidden bg-surface">
         {catStatus === "pending" || prodStatus === "pending" ? (
@@ -133,20 +250,55 @@ export const Pos = () => {
       {/* Modal turno — bloqueante */}
       {!isOpen && <ShiftModal />}
 
+      {/* Modal: revision */}
+      {view === "review" && orderSnapshot && (
+        <ReviewOrderModal
+          order={orderSnapshot}
+          discount={discount}
+          onUpdateDiscount={updateDiscount}
+          onUpdateCustomerDetails={updateCustomerDetails}
+          onClose={() => setView("idle")}
+          onConfirm={handleCreateOrder}
+          onRemoveItem={(productId) => {
+            removeItem(productId);
+            // Actualizar el snapshot también
+            setOrderSnapshot((prev) =>
+              prev
+                ? {
+                    ...prev,
+                    items: prev.items.filter((i) => i.productId !== productId),
+                  }
+                : prev,
+            );
+          }}
+          isLoading={createStatus === "pending"}
+        />
+      )}
+
       {/* Modal: pago */}
-      {view === "payment" && (
+      {view === "payment" && orderSnapshot && (
+        <PaymentModal
+          getTotal={getTotal}
+          onConfirm={handleConfirmPayment}
+          onClose={() => setView("idle")}
+          isLoading={createSaleStatus === "pending"}
+        />
+      )}
+
+      {/* {view === "payment" && orderSnapshot && (
         <PaymentModal
           total={total}
           onConfirm={handleConfirmPayment}
           onClose={() => setView("idle")}
           isLoading={updateOrderStatus === "pending"}
         />
-      )}
+      )} */}
 
       {/* Modal: éxito */}
-      {view === "success" && paidOrder && (
+      {view === "success" && sale && (
         <OrderSuccessModal
-          order={paidOrder}
+          sale={sale}
+          customerName={orderSnapshot?.customerName ?? null}
           onPrintTicket={handlePrintTicket}
           onEmitInvoice={handleEmitInvoice}
           onClose={handleNewOrder}

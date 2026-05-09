@@ -10,6 +10,7 @@ export const mapProductDTOToModel = (dto: ProductDTO): Product => ({
   price: dto.price,
   available: dto.available,
   isQuantifiable: dto.isQuantifiable,
+  haveModifiers: dto.haveModifiers,
   category: {
     id: dto.category.id,
     name: dto.category.name,

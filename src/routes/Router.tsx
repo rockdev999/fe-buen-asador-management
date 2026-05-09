@@ -10,20 +10,30 @@ import { RoleEnum } from "@/constants";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Login } from "@/features/auth/pages/Login";
 import { Pos } from "@/features/pos/page/Pos";
+import { NotFound } from "@/features/errors/NotFound";
+import { RoleBasedRedirect } from "./RoleBasedRedirect";
 
 export const router = createBrowserRouter([
-  // Públicas
   { path: PATHS.LOGIN, element: <Login /> },
 
-  // Privadas
   {
     element: <ProtectedRoute />,
     children: [
       {
         element: <AppLayout />,
         children: [
-          { index: true, element: <Navigate to={PATHS.DASHBOARD} replace /> },
-          { path: PATHS.DASHBOARD, element: <div>Dashboard</div> },
+          {
+            index: true,
+            element: <RoleBasedRedirect />,
+          },
+
+          // Dashboard — solo Manager y Admin
+          {
+            element: <RoleRoute roles={[RoleEnum.MANAGER, RoleEnum.ADMIN]} />,
+            children: [
+              { path: PATHS.DASHBOARD, element: <div>Dashboard</div> },
+            ],
+          },
 
           // Manager únicamente
           {
@@ -31,7 +41,6 @@ export const router = createBrowserRouter([
             children: [
               { path: PATHS.USERS, element: <div>Usuarios</div> },
               { path: PATHS.LOCATIONS, element: <div>Sucursales</div> },
-              { path: PATHS.FINANCES, element: <div>Finanzas</div> },
             ],
           },
 
@@ -41,18 +50,34 @@ export const router = createBrowserRouter([
             children: [
               { path: PATHS.PRODUCTS, element: <div>Productos</div> },
               { path: PATHS.INVENTORY, element: <div>Inventario</div> },
-              { path: PATHS.CASHIER, element: <div>Caja</div> },
+              { path: PATHS.INGREDIENTS, element: <div>Insumos</div> },
+              { path: PATHS.REPORTS, element: <div>Reportes</div> },
             ],
           },
 
-          // Cashier
+          // Manager + Admin + Cashier
           {
-            element: <RoleRoute roles={[RoleEnum.CASHIER]} />,
+            element: (
+              <RoleRoute
+                roles={[RoleEnum.MANAGER, RoleEnum.ADMIN, RoleEnum.CASHIER]}
+              />
+            ),
             children: [
-              { path: PATHS.POS, element: <Pos /> },
-              { path: PATHS.INVOICES, element: <div>Facturas</div> },
+              { path: PATHS.ORDERS, element: <div>Pedidos</div> },
+              { path: PATHS.SALES, element: <div>Ventas</div> },
+              { path: PATHS.SHIFTS, element: <div>Turnos</div> },
+              { path: PATHS.EXPENSES, element: <div>Egresos</div> },
+              { path: PATHS.PAYROLL, element: <div>Nómina</div> },
             ],
           },
+
+          // Cashier únicamente
+          {
+            element: <RoleRoute roles={[RoleEnum.CASHIER]} />,
+            children: [{ path: PATHS.POS, element: <Pos /> }],
+          },
+
+          { path: "*", element: <NotFound /> },
         ],
       },
     ],

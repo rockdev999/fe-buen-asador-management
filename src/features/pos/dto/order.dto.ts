@@ -20,26 +20,22 @@ export interface CreateOrderItemDTO {
   productId: UUID;
   quantity: number;
   notes: string;
-  modifiers: ModifierItemDTO[];
+  modifiers:
+    | {
+        modifierId: UUID;
+      }[]
+    | [];
 }
 
-interface BaseOrderDTO {
+export interface CreateOrderDTO {
   type: OrderTypeEnum;
   channel: OrderEnum;
   items: CreateOrderItemDTO[];
+  customerName?: string | null;
+  customerPhone?: string | null;
+  customerAddress?: string | null;
+  deliveryReference?: string | null;
 }
-
-export interface CreateOrderInPersonDTO extends BaseOrderDTO {
-  customerName: string;
-}
-
-export interface CreateOrderDeliveryDTO extends BaseOrderDTO {
-  customerName: string;
-  customerPhone: string;
-  customerAddress: string;
-  deliveryReference: string;
-}
-
 export interface OrderItemDTO {
   id: UUID;
   product: {
@@ -50,7 +46,7 @@ export interface OrderItemDTO {
   quantity: number;
   unitPrice: number;
   notes: string;
-  status: OrderItemStatusEnum;
+  status?: OrderItemStatusEnum;
   modifiers: ModifierItemDTO[];
 }
 
@@ -71,4 +67,14 @@ export interface OrderDTO {
 
 export interface UpdateOrderStatusDTO {
   status: OrderStatusEnum;
+}
+
+export interface OrderPageItemDTO {
+  id: UUID;
+  customerName: string | null;
+  channel: OrderEnum;
+  type: OrderTypeEnum;
+  status: OrderStatusEnum;
+  subtotal: number;
+  updatedAt: string | null;
 }

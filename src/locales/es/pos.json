@@ -16,5 +16,12 @@
     "total": "Total",
     "discount": "Descuento",
     "checkout": "Cobrar pedido"
+  },
+  "enum": {
+    "orderType": {
+      "DINE_IN": "Mesa",
+      "TAKEAWAY": "Para llevar",
+      "DELIVERY": "Delivery"
+    }
   }
 }

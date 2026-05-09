@@ -1,12 +1,23 @@
 export const PATHS = {
   LOGIN: "/login",
   DASHBOARD: "/dashboard",
+
+  // Manager
   USERS: "/users",
   LOCATIONS: "/locations",
+
+  // Manager + Admin
   PRODUCTS: "/products",
   INVENTORY: "/inventory",
-  FINANCES: "/finance",
+  INGREDIENTS: "/ingredients",
+  FINANCES: "/finances",
+  REPORTS: "/reports",
+  ORDERS: "/orders",
+  SHIFTS: "/shifts",
+
+  // Cashier
   POS: "/pos",
-  CASHIER: "/cashier",
-  INVOICES: "/invoices",
+  SALES: "/sales",
+  EXPENSES: "/expenses",
+  PAYROLL: "/payroll",
 } as const;

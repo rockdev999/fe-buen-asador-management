@@ -1,0 +1,104 @@
+/* Solo se aplica al imprimir */
+@media print {
+  /* Ocultar todo excepto el ticket */
+  body > * {
+    display: none !important;
+  }
+
+  #ticket-print-root {
+    display: block !important;
+  }
+}
+
+/* Estilos del ticket — aplican siempre (para preview) */
+.ticket-print {
+  width: 80mm;
+  padding: 4mm 4mm;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 11px;
+  color: #000;
+  background: #fff;
+}
+
+.ticket-title {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.ticket-sub {
+  font-size: 10px;
+  color: #444;
+}
+
+.ticket-code {
+  font-size: 9px;
+  color: #888;
+  letter-spacing: 0.05em;
+  margin-top: 2px;
+}
+
+.ticket-group {
+  margin-bottom: 5px;
+}
+
+.ticket-group-header {
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.ticket-unit-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 9px;
+  color: #555;
+  padding-left: 8px;
+  margin: 1px 0;
+}
+
+.ticket-section {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  margin: 2mm 0 1mm;
+}
+
+.ticket-center {
+  text-align: center;
+  margin-bottom: 2mm;
+}
+
+.ticket-divider {
+  border: none;
+  border-top: 1px dashed #000;
+  margin: 2mm 0;
+}
+
+.ticket-row {
+  display: flex;
+  justify-content: space-between;
+  margin: 1mm 0;
+  font-size: 11px;
+}
+
+.ticket-total {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.ticket-item {
+  margin-bottom: 1.5mm;
+}
+
+.ticket-mod {
+  font-size: 9px;
+  color: #444;
+  padding-left: 3mm;
+}
+
+.ticket-note {
+  font-size: 9px;
+  color: #666;
+  font-style: italic;
+  padding-left: 3mm;
+}

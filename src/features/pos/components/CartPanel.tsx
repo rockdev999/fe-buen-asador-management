@@ -10,6 +10,19 @@ import { useState } from "react";
 import { CartItem as CartItemType } from "../models/cart";
 import { Modifier } from "../models/modifier";
 import { CartItemEditModal } from "./CartItemEditModal";
+import {
+  DndContext,
+  closestCenter,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 
 const trans = t.pos.products;
 
@@ -27,13 +40,28 @@ export function CartPanel({ onCheckout, isLoading }: CartPanelProps) {
   const updateItem = useCartStore((state) => state.updateItem);
   const removeItem = useCartStore((state) => state.removeItem);
   const setOrderType = useCartStore((state) => state.setOrderType);
+  const reorderItems = useCartStore((s) => s.reorderItems);
   const getSubtotal = useCartStore((state) => state.getSubtotal);
-  const getTotal = useCartStore((state) => state.getTotal);
 
   const subtotal = getSubtotal();
-  const total = getTotal();
 
   const [editingItem, setEditingItem] = useState<CartItemType | null>(null);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 5 }, // evita activar drag en clicks
+    }),
+  );
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+    const oldIdx = items.findIndex((i) => i.productId === active.id);
+    const newIdx = items.findIndex((i) => i.productId === over.id);
+    if (oldIdx !== -1 && newIdx !== -1) {
+      reorderItems(arrayMove(items, oldIdx, newIdx));
+    }
+  }
 
   function handleSaveItem(
     productId: string,
@@ -56,10 +84,10 @@ export function CartPanel({ onCheckout, isLoading }: CartPanelProps) {
               type="button"
               onClick={() => setOrderType(opt.value, opt.channel)}
               className={cn(
-                "flex-1 py-1.5 text-[10px] font-medium rounded-lg border transition-all",
+                "flex-1 py-2 text-xs font-medium rounded-lg border transition-all",
                 orderType === opt.value
-                  ? "bg-inkblack text-white border-inkblack"
-                  : "text-muted-foreground border-surface hover:border-brand-light",
+                  ? "bg-success text-white border-successDark shadow-sm hover:bg-successDark"
+                  : "text-muted-foreground border-successLight hover:border-successLight hover:bg-successLight hover:text-inkblack",
               )}
             >
               {opt.label}
@@ -77,24 +105,35 @@ export function CartPanel({ onCheckout, isLoading }: CartPanelProps) {
               <span className="text-xs">{trans.addProducts}</span>
             </div>
           ) : (
-            items.map((item) => (
-              <CartItem
-                key={item.productId}
-                item={item}
-                onUpdateQty={updateQty}
-                onRemove={removeItem}
-                onEdit={setEditingItem}
-              />
-            ))
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
+              <SortableContext
+                items={items.map((i) => i.productId)}
+                strategy={verticalListSortingStrategy}
+              >
+                {items.map((item) => (
+                  <CartItem
+                    key={item.productId}
+                    item={item}
+                    onUpdateQty={updateQty}
+                    onRemove={removeItem}
+                    onEdit={setEditingItem}
+                  />
+                ))}
+              </SortableContext>
+            </DndContext>
           )}
         </div>
 
         {/* Footer */}
         <div className="p-3 border-t border-surface flex-shrink-0">
-          <div className="flex justify-between text-xs text-muted-foreground mb-1 me-3">
+          {/* <div className="flex justify-between text-xs text-muted-foreground mb-1 me-3">
             <span>{trans.subtotal}</span>
             <span>{formatMoney(subtotal)}</span>
-          </div>
+          </div> */}
           {/* <div className="flex justify-between text-xs text-muted-foreground mb-1 gap-16">
             <span className="content-center">{trans.discount}</span>
             <MoneyInput
@@ -107,8 +146,8 @@ export function CartPanel({ onCheckout, isLoading }: CartPanelProps) {
             />
           </div> */}
           <div className="flex justify-between text-sm font-medium text-inkblack mb-3 me-3">
-            <span>{trans.total}</span>
-            <span>{formatMoney(total)}</span>
+            <span>{trans.subtotal}</span>
+            <span>{formatMoney(subtotal)}</span>
           </div>
           <Button
             type="button"

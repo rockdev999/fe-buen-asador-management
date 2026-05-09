@@ -1,12 +1,19 @@
 import { OrderEnum, OrderTypeEnum } from "@/constants";
 import {
-  CreateOrderDeliveryDTO,
-  CreateOrderInPersonDTO,
+  CreateOrderDTO,
+  ModifierItemDTO,
   OrderDTO,
   OrderItemDTO,
+  OrderPageItemDTO,
 } from "../dto/order.dto";
 import { CartItem } from "../models/cart";
-import { Order, OrderItem } from "../models/order";
+import {
+  ModifierSaleItem,
+  Order,
+  OrderItem,
+  OrderPageItem,
+  OrderSaleItem,
+} from "../models/order";
 
 export const mapOrderItemDTOToModel = (dto: OrderItemDTO): OrderItem => {
   const modifiersTotal = dto.modifiers.reduce((s, m) => s + m.extraPrice, 0);
@@ -44,48 +51,98 @@ export const mapOrderDTOToModel = (dto: OrderDTO): Order => {
   };
 };
 
-// Cart → CreateOrderInPersonDTO
-export const mapCartToCreateOrderInPersonDTO = (
+// Cart → CreateOrderDTO
+export const mapCartToCreateOrderDTO = (
   items: CartItem[],
   orderType: OrderTypeEnum,
   orderChannel: OrderEnum,
-  customerName: string,
-): CreateOrderInPersonDTO => {
+  customerName: string | null,
+  customerPhone: string | null,
+  customerAddress: string | null,
+  deliveryReference: string | null,
+): CreateOrderDTO => {
+  const flatItems = items.flatMap((item) =>
+    item.units.map((unit) => ({
+      productId: item.productId,
+      quantity: 1,
+      notes: unit.notes || item.notes,
+      modifiers: unit.modifiers.map((m) => ({ modifierId: m.id })),
+    })),
+  );
+  if (orderType === OrderTypeEnum.DELIVERY) {
+    if (!customerName || !customerPhone || !customerAddress) {
+      throw new Error(
+        "Para órdenes de delivery, se requieren nombre, teléfono y dirección del cliente.",
+      );
+    }
+    return {
+      type: orderType,
+      channel: orderChannel,
+      customerName: customerName,
+      customerPhone: customerPhone,
+      customerAddress: customerAddress,
+      deliveryReference: deliveryReference,
+      items: flatItems,
+    };
+  }
+
+  if (orderType === OrderTypeEnum.TAKEAWAY) {
+    if (!customerName) {
+      throw new Error(
+        "Para órdenes para llevar, se requiere el nombre del cliente.",
+      );
+    }
+    return {
+      type: orderType,
+      channel: orderChannel,
+      customerName: customerName || null,
+      items: flatItems,
+    };
+  }
   return {
     type: orderType,
     channel: orderChannel,
-    customerName: customerName || "Cliente",
-    items: items.map((item) => ({
-      productId: item.productId,
-      quantity: item.quantity,
-      notes: item.notes,
-      modifiers: [],
-    })),
+    customerName: customerName || null,
+    items: flatItems,
   };
 };
 
-// Cart → CreateOrderInPersonDTO
-export const mapCartToCreateOrderDeliveryDTO = (
-  items: CartItem[],
-  orderType: OrderTypeEnum,
-  orderChannel: OrderEnum,
-  customerName: string,
-  customerPhone: string,
-  customerAddress: string,
-  deliveryReference: string,
-): CreateOrderDeliveryDTO => {
-  return {
-    type: orderType,
-    channel: orderChannel,
-    customerName: customerName || "Cliente",
-    customerPhone: customerPhone || "00000000",
-    customerAddress: customerAddress || "N/A",
-    deliveryReference: deliveryReference || "N/A",
-    items: items.map((item) => ({
-      productId: item.productId,
-      quantity: item.quantity,
-      notes: item.notes,
-      modifiers: [],
-    })),
-  };
-};
+export const mapModifierSaleItemDTOToModel = (
+  dto: ModifierItemDTO,
+): ModifierSaleItem => ({
+  id: dto.id,
+  modifier: {
+    id: dto.modifier.id,
+    name: dto.modifier.name,
+  },
+  extraPrice: dto.extraPrice,
+});
+
+export const mapOrderSaleItemDTOToModel = (
+  dto: OrderItemDTO,
+  itemSubtotal: number,
+): OrderSaleItem => ({
+  id: dto.id,
+  product: {
+    id: dto.product.id,
+    name: dto.product.name,
+    price: dto.product.price,
+  },
+  quantity: dto.quantity,
+  unitPrice: dto.unitPrice,
+  notes: dto.notes,
+  modifiers: dto.modifiers.map(mapModifierSaleItemDTOToModel),
+  itemSubtotal,
+});
+
+export const mapOrderPageItemDTOToModel = (
+  dto: OrderPageItemDTO,
+): OrderPageItem => ({
+  id: dto.id,
+  customerName: dto.customerName,
+  channel: dto.channel,
+  type: dto.type,
+  status: dto.status,
+  subtotal: dto.subtotal,
+  updatedAt: dto.updatedAt,
+});

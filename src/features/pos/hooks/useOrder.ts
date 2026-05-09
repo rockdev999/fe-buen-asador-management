@@ -1,48 +1,72 @@
-import { usePostHandler, usePutHandler } from "@/hooks/api.handlers";
-import { useCartStore } from "../stores/cart.store";
 import {
-  CreateOrderDeliveryDTO,
-  CreateOrderInPersonDTO,
-  OrderDTO,
-} from "../dto/order.dto";
+  usePaginatedGetHandler,
+  usePostHandler,
+  usePutHandler,
+} from "@/hooks/api.handlers";
+import { CreateOrderDTO, OrderDTO, OrderPageItemDTO } from "../dto/order.dto";
 import { httpClient } from "@/services/http.client";
 import { ApiResponse } from "@/types/api.types";
-import { OrderStatusEnum, QUERY_KEYS } from "@/constants";
+import { DATA_TABLE, OrderStatusEnum, QUERY_KEYS } from "@/constants";
 import { useMemo } from "react";
-import { mapOrderDTOToModel } from "../mappers/order.mapper";
+import {
+  mapOrderDTOToModel,
+  mapOrderPageItemDTOToModel,
+} from "../mappers/order.mapper";
+import { SortDirectionEnum } from "@/constants/enums/sort.enum";
+import { useAuthStore } from "@/stores/auth.store";
 
-export const useCreateOrderInPerson = () => {
-  const { clearCart } = useCartStore();
+interface UseOrdersPageParams {
+  page: number;
+  search?: string;
+  status?: string;
+  sortKey?: string;
+  sortDir?: SortDirectionEnum;
+}
 
-  const handler = usePostHandler({
-    mutationFn: (dto: CreateOrderInPersonDTO) =>
+export function useOrdersPage({
+  page,
+  search,
+  status,
+  sortKey,
+  sortDir,
+}: UseOrdersPageParams) {
+  const locationId = useAuthStore((s) => s.user?.locationId);
+
+  const params = {
+    page,
+    limit: DATA_TABLE.ORDERS.limit,
+    ...(search && { customerName: search }),
+    ...(status && { status }),
+    ...(sortKey && { sortBy: sortKey }),
+    ...(sortDir && { sortOrder: sortDir.toUpperCase() }),
+  };
+
+  return usePaginatedGetHandler<
+    OrderPageItemDTO,
+    ReturnType<typeof mapOrderPageItemDTOToModel>
+  >({
+    queryKey: QUERY_KEYS.ORDERS,
+    queryFn: () =>
       httpClient
-        .post<ApiResponse<OrderDTO>>("/orders", dto)
-        .then((r) => r.data.data!),
-
-    invalidateKeys: [QUERY_KEYS.ORDERS],
-    onSuccessCallback: () => clearCart(),
+        .get<
+          ApiResponse<OrderPageItemDTO[]>
+        >(`/orders/${locationId}/page-by-location`, { params })
+        .then((r) => r.data),
+    select: mapOrderPageItemDTOToModel,
+    params,
+    enabled: !!locationId,
+    staleTime: 30 * 1000,
   });
+}
 
-  const data = useMemo(
-    () => (handler.data ? mapOrderDTOToModel(handler.data) : null),
-    [handler.data],
-  );
-
-  return { ...handler, data };
-};
-
-export const useCreateOrderDelivery = () => {
-  const { clearCart } = useCartStore();
-
+export const useCreateOrder = () => {
   const handler = usePostHandler({
-    mutationFn: (dto: CreateOrderDeliveryDTO) =>
+    mutationFn: (dto: CreateOrderDTO) =>
       httpClient
         .post<ApiResponse<OrderDTO>>("/orders", dto)
         .then((r) => r.data.data!),
 
     invalidateKeys: [QUERY_KEYS.ORDERS],
-    onSuccessCallback: () => clearCart(),
   });
 
   const data = useMemo(

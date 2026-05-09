@@ -166,7 +166,8 @@ export function usePaginatedGetHandler<TDto, TModel>({
       query.isSuccess,
       query.isError,
     ),
-    data: mapped,
+    data: mapped?.data ?? null,
+    meta: mapped?.meta ?? null,
     isLoading: query.isPending && enabled,
   };
 }

@@ -10,6 +10,7 @@ export interface Product {
   price: number;
   available: boolean;
   isQuantifiable: boolean;
+  haveModifiers: boolean;
   category: CategoryShort;
   locationId: UUID;
   createdAt: Date | null;

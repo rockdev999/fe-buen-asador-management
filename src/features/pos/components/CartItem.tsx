@@ -1,4 +1,6 @@
-import { Minus, Pencil, Plus, Trash2 } from "lucide-react";
+import { Minus, Pencil, Plus, Trash2, GripVertical } from "lucide-react";
+import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { CartItem as CartItemType } from "../models/cart";
 import { formatMoney } from "@/lib/utils";
 
@@ -15,20 +17,58 @@ export function CartItem({
   onRemove,
   onEdit,
 }: CartItemProps) {
-  const modifiersExtra = item.modifiers.reduce((s, m) => s + m.extraPrice, 0);
-  const lineTotal = (item.price + modifiersExtra) * item.quantity;
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: item.productId });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 10 : undefined,
+  };
+
+  const lineTotal = item.units.reduce((sum, unit) => {
+    const unitExtra = unit.modifiers.reduce((s, m) => s + m.extraPrice, 0);
+    return sum + item.price + unitExtra;
+  }, 0);
+
+  const allMods = item.units.flatMap((u) => u.modifiers);
+  const uniqueMods = [...new Map(allMods.map((m) => [m.id, m])).values()];
 
   return (
-    <div className="flex items-start gap-2 py-2.5 border-b border-surface/60">
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="flex items-start gap-2 py-2.5 border-b border-surface/60"
+    >
+      <button
+        type="button"
+        {...attributes}
+        {...listeners}
+        className="mt-0.5 text-muted-foreground/40 hover:text-muted-foreground cursor-grab active:cursor-grabbing flex-shrink-0 touch-none"
+      >
+        <GripVertical size={14} />
+      </button>
       <div className="flex-1 min-w-0">
         <p className="text-xs font-medium text-inkblack truncate">
           {item.name}
         </p>
-        {item.modifiers.length > 0 && (
+        {uniqueMods.length > 0 && (
+          <p className="text-[9px] text-brand-light mt-0.5">
+            con modificadores
+          </p>
+        )}
+        {/* {item.modifiers.length > 0 && (
           <p className="text-[9px] text-brand-light mt-0.5">
             + {item.modifiers.map((m) => m.name).join(", ")}
           </p>
-        )}
+        )} */}
         {item.notes && (
           <p className="text-[10px] text-muted-foreground italic mt-0.5">
             "{item.notes}"
@@ -59,16 +99,18 @@ export function CartItem({
           {formatMoney(lineTotal)}
         </span>
         <div className="flex gap-1">
-          <button
-            type="button"
-            onClick={() => onEdit(item)}
-            className="w-7 h-7 rounded border border-surface flex items-center justify-center 
+          {item.haveModifiers && (
+            <button
+              type="button"
+              onClick={() => onEdit(item)}
+              className="w-7 h-7 rounded border border-surface flex items-center justify-center 
              text-neutral-500 hover:text-inkblack 
              hover:border-neutral-300 hover:bg-neutral-100 
              transition-colors"
-          >
-            <Pencil size={12} />
-          </button>
+            >
+              <Pencil size={12} />
+            </button>
+          )}
           <button
             type="button"
             onClick={() => onRemove(item.productId)}

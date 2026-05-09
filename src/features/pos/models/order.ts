@@ -32,3 +32,36 @@ export interface Order {
   total: number;
   createdAt: string;
 }
+
+export interface ModifierSaleItem {
+  id: UUID;
+  modifier: {
+    id: UUID;
+    name: string;
+  };
+  extraPrice: number;
+}
+
+export interface OrderSaleItem {
+  id: UUID;
+  product: {
+    id: UUID;
+    name: string;
+    price: number;
+  };
+  quantity: number;
+  unitPrice: number;
+  notes: string;
+  modifiers: ModifierSaleItem[];
+  itemSubtotal: number;
+}
+
+export interface OrderPageItem {
+  id: UUID;
+  customerName: string | null;
+  channel: OrderEnum;
+  type: OrderTypeEnum;
+  status: OrderStatusEnum;
+  subtotal: number;
+  updatedAt: string | null;
+}
