@@ -10,8 +10,9 @@ import { RoleEnum } from "@/constants";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Login } from "@/features/auth/pages/Login";
 import { Pos } from "@/features/pos/page/Pos";
-import { NotFound } from "@/features/errors/NotFound";
+import { NotFound } from "@/features/public/NotFound";
 import { RoleBasedRedirect } from "./RoleBasedRedirect";
+import { Orders } from "@/features/pos/page/order/Orders";
 
 export const router = createBrowserRouter([
   { path: PATHS.LOGIN, element: <Login /> },
@@ -63,9 +64,9 @@ export const router = createBrowserRouter([
               />
             ),
             children: [
-              { path: PATHS.ORDERS, element: <div>Pedidos</div> },
+              { path: PATHS.ORDERS, element: <Orders /> },
               { path: PATHS.SALES, element: <div>Ventas</div> },
-              { path: PATHS.SHIFTS, element: <div>Turnos</div> },
+              { path: PATHS.SHIFTS, element: <div>Caja</div> },
               { path: PATHS.EXPENSES, element: <div>Egresos</div> },
               { path: PATHS.PAYROLL, element: <div>Nómina</div> },
             ],

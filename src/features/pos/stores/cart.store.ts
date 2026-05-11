@@ -1,7 +1,7 @@
 import { OrderEnum, OrderTypeEnum } from "@/constants";
 import { CartItem, CartItemUnit } from "../models/cart";
-import { Product } from "@/features/products/models/product.model";
 import { create } from "zustand";
+import { CategoryProduct } from "../models/category.model";
 
 interface CartState {
   items: CartItem[];
@@ -12,7 +12,7 @@ interface CartState {
   customerAddress: string | null;
   deliveryReference: string | null;
 
-  addItem: (product: Product) => void;
+  addItem: (product: CategoryProduct) => void;
   removeItem: (productId: string) => void;
   updateQty: (productId: string, qty: number) => void;
   updateItem: (productId: string, units: CartItemUnit[]) => void;
@@ -144,9 +144,7 @@ export const useCartStore = create<CartState>((set, get) => ({
     }),
 
   updateDiscount: (amount) => {
-    const subtotal = get().getSubtotal();
-    const safeAmount = Math.max(0, Math.min(Number(amount) || 0, subtotal));
-    set({ discount: safeAmount });
+    set({ discount: amount });
   },
 
   reorderItems: (newItems) => set({ items: newItems }),

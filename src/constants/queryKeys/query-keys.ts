@@ -46,4 +46,7 @@ export const QUERY_KEYS = {
   // Dashboard
   DASHBOARD: ["dashboard"],
   DASHBOARD_SALES: ["dashboard", "sales"],
+
+  // Menú
+  MENU: ["menu"],
 } as const;

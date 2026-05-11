@@ -1,6 +1,7 @@
 import { forwardRef } from "react";
-import { formatDateTime, formatMoney } from "@/lib/utils";
+import { formatMoney } from "@/lib/utils";
 import { Sale } from "../models/sale";
+import { formatDateTime } from "@/lib/formatters";
 
 interface TicketPrintProps {
   sale: Sale;
@@ -26,11 +27,11 @@ export const TicketPrint = forwardRef<HTMLDivElement, TicketPrintProps>(
         </div>
         <div className="ticket-row">
           <span>Fecha</span>
-          <span>{formatDateTime(sale.createdAt)}</span>
+          <span>{sale.createdAt ? formatDateTime(sale.createdAt) : "--"}</span>
         </div>
         <div className="ticket-row">
           <span>Cliente</span>
-          <span>{sale.customerName}</span>
+          <span>{sale.customerName || "--"}</span>
         </div>
         <div className="ticket-row">
           <span>Tipo</span>

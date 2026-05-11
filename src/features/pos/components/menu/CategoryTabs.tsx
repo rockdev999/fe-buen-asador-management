@@ -1,11 +1,10 @@
-import { Category } from "@/features/categories/models/category.model";
+import { MenuCategory } from "@/features/pos/models/category.model";
 import { cn } from "@/lib/utils";
-import { UUID } from "@/types/common";
 
 interface CategoryTabsProps {
-  categories: Category[];
-  selected: UUID | null;
-  onSelect: (id: UUID) => void;
+  categories: MenuCategory[];
+  selected: MenuCategory | null;
+  onSelect: (category: MenuCategory) => void;
 }
 
 export function CategoryTabs({
@@ -21,10 +20,10 @@ export function CategoryTabs({
         <button
           key={cat.id}
           type="button"
-          onClick={() => onSelect(cat.id)}
+          onClick={() => onSelect(cat)}
           className={cn(
-            "px-3 py-2.5 text-xs font-medium whitespace-nowrap border-b-2 transition-colors flex-shrink-0",
-            selected === cat.id
+            "px-3 py-2.5 text-lg font-medium whitespace-nowrap border-b-2 transition-colors flex-shrink-0",
+            selected?.id === cat.id
               ? "text-brand border-brand"
               : "text-muted-foreground border-transparent hover:text-brand",
           )}

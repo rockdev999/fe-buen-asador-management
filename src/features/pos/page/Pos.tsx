@@ -1,12 +1,10 @@
-import { useCategoriesHandler } from "@/features/categories/hooks/useCategories";
 import { ShiftModal } from "../components/ShiftModal";
 import { useActiveShift } from "../hooks/useShift";
 import { useEffect, useState } from "react";
-import { useProductsHandler } from "@/features/products/hooks/useProducts";
-import { ProductGrid } from "../components/products/ProductGrid";
+import { ProductGrid } from "../components/menu/ProductGrid";
 import { Product } from "@/features/products/models/product.model";
 import { useCartStore } from "../stores/cart.store";
-import { CartPanel } from "../components/CartPanel";
+import { CartPanel } from "../components/cardPanel/CartPanel";
 import { useCreateOrder, useUpdateOrderStatus } from "../hooks/useOrder";
 import { PaymentModal } from "../components/PaymentModal";
 import { OrderSuccessModal } from "../components/OrderSuccessModal";
@@ -19,13 +17,14 @@ import { usePrintTicket } from "../hooks/usePrintTicket";
 import { TicketPrint } from "../components/TicketPrint";
 import { useCreateSale } from "../hooks/useSale";
 import { Sale } from "../models/sale";
+import { CategoryProduct } from "../models/category.model";
+import { CartPanelSkeleton } from "../components/cardPanel/CartPanelSkeleton";
 
 type PosView = "idle" | "review" | "payment" | "success" | "invoice";
 
 export const Pos = () => {
   const { isOpen, status: shiftStatus } = useActiveShift();
-  const { data: categories, status: catStatus } = useCategoriesHandler(isOpen);
-  const { data: products, status: prodStatus } = useProductsHandler(isOpen);
+
   const {
     items,
     orderType,
@@ -164,7 +163,7 @@ export const Pos = () => {
     setView("idle");
   }
 
-  function handleAddItem(product: Product) {
+  function handleAddItem(product: CategoryProduct) {
     addItem(product);
   }
 
@@ -212,16 +211,19 @@ export const Pos = () => {
     }
   }, [createdOrder, createStatus]);
 
-  if (shiftStatus === "pending") {
-    return (
-      <div className="flex h-full items-center justify-center">
-        <p className="text-sm text-muted-foreground">Cargando...</p>
-      </div>
-    );
-  }
+  // if (shiftStatus === "pending") {
+  //   return (
+  //     <div className="flex h-full items-center justify-center">
+  //       <p className="text-sm text-muted-foreground">Cargando...</p>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="relative flex h-full overflow-hidden">
+      {/* Modal turno — bloqueante */}
+      {!isOpen && <ShiftModal />}
+
       {sale && (
         <div style={{ position: "absolute", left: "-9999px", top: 0 }}>
           <TicketPrint ref={ticketRef} sale={sale} />
@@ -229,33 +231,22 @@ export const Pos = () => {
       )}
       {/* Left — catálogo */}
       <div className="flex-1 flex flex-col overflow-hidden bg-surface">
-        {catStatus === "pending" || prodStatus === "pending" ? (
-          <div className="flex items-center justify-center flex-1 text-sm text-muted-foreground">
-            Cargando productos...
-          </div>
-        ) : (
-          <ProductGrid
-            categories={categories ?? []}
-            products={products ?? []}
-            onAddItem={handleAddItem}
-          />
-        )}
+        <ProductGrid isOpen={isOpen} onAddItem={handleAddItem} />
       </div>
 
       {/* Right — carrito */}
       <div className="w-80 bg-white border-l border-surface flex flex-col flex-shrink-0">
-        <CartPanel onCheckout={handleCheckout} />
+        {shiftStatus === "pending" ? (
+          <CartPanelSkeleton itemCount={3} />
+        ) : (
+          <CartPanel onCheckout={handleCheckout} />
+        )}
       </div>
-
-      {/* Modal turno — bloqueante */}
-      {!isOpen && <ShiftModal />}
 
       {/* Modal: revision */}
       {view === "review" && orderSnapshot && (
         <ReviewOrderModal
           order={orderSnapshot}
-          discount={discount}
-          onUpdateDiscount={updateDiscount}
           onUpdateCustomerDetails={updateCustomerDetails}
           onClose={() => setView("idle")}
           onConfirm={handleCreateOrder}
@@ -278,7 +269,10 @@ export const Pos = () => {
       {/* Modal: pago */}
       {view === "payment" && orderSnapshot && (
         <PaymentModal
+          getSubtotal={getSubtotal}
           getTotal={getTotal}
+          discount={discount}
+          onUpdateDiscount={updateDiscount}
           onConfirm={handleConfirmPayment}
           onClose={() => setView("idle")}
           isLoading={createSaleStatus === "pending"}

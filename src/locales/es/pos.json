@@ -11,6 +11,7 @@
   },
   "products": {
     "noProducts": "Sin productos",
+    "noCategories": "Sin categorías",
     "addProducts": "Agrega productos al pedido",
     "subtotal": "Subtotal",
     "total": "Total",

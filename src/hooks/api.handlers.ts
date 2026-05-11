@@ -129,6 +129,7 @@ interface UsePaginatedGetHandlerOptions<TDto, TModel> {
   params?: Record<string, unknown>;
   enabled?: boolean;
   staleTime?: number;
+  retry?: boolean | number;
 }
 
 export function usePaginatedGetHandler<TDto, TModel>({
@@ -138,12 +139,14 @@ export function usePaginatedGetHandler<TDto, TModel>({
   params = {},
   enabled = true,
   staleTime = 1000 * 60 * 2,
+  retry = false,
 }: UsePaginatedGetHandlerOptions<TDto, TModel>) {
   const query = useQuery<ApiResponse<TDto[]>, ApiErrorResponse>({
     queryKey: [...queryKey, params],
     queryFn: () => queryFn(params),
     enabled,
     staleTime,
+    retry,
   });
 
   const mapped: PaginatedData<TModel> | null = query.data?.data

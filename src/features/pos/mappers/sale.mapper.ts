@@ -62,7 +62,6 @@ export const mapSaleDTOtoModel = (dto: SaleDTO): Sale => {
     ),
     groups: groupDetails(details),
     annulmentReason: dto.annulmentReason,
-    createdAt: new Date(dto.createdAt),
-    updatedAt: dto.updatedAt ? new Date(dto.updatedAt) : null,
+    audit: dto.audit,
   };
 };

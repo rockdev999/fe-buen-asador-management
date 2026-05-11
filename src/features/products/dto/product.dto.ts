@@ -1,4 +1,4 @@
-import { CategoryShortDTO } from "@/features/categories/dto/cateogory.dto";
+import { CategoryShortDTO } from "@/features/pos/dto/cateogory.dto";
 import { ISODateTimeString, UUID } from "@/types/common";
 
 export interface ProductDTO {

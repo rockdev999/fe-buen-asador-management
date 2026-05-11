@@ -5,7 +5,7 @@ import {
   OrderStatusEnum,
   OrderTypeEnum,
 } from "@/constants";
-import { formatDateTime, formatMoney } from "@/lib/utils";
+import { formatMoney } from "@/lib/utils";
 
 import { OrderPageItem } from "../../models/order";
 import {
@@ -13,6 +13,7 @@ import {
   StatusBadge,
   TypeBadge,
 } from "@/components/shared/OrderBadges";
+import { formatLocalDateTime } from "@/lib/formatters";
 
 export const ORDERS_TABLE_CONFIG = DATA_TABLE.ORDERS;
 
@@ -20,7 +21,7 @@ export const ORDERS_COLUMNS: ColumnDef<OrderPageItem>[] = [
   {
     key: "id",
     label: "Pedido",
-    width: "120px",
+    // width: "120px",
     render: (row) => (
       <span className="text-xs font-medium text-inkblack font-mono">
         #{row.id.slice(-8).toUpperCase()}
@@ -42,27 +43,29 @@ export const ORDERS_COLUMNS: ColumnDef<OrderPageItem>[] = [
   {
     key: "type",
     label: "Tipo",
-    width: "120px",
+    // width: "120px",
+    sortable: true,
     render: (row) => <TypeBadge type={row.type as OrderTypeEnum} />,
   },
   {
     key: "channel",
     label: "Canal",
-    width: "100px",
+    // width: "100px",
+    sortable: true,
     render: (row) => <ChannelBadge channel={row.channel as OrderEnum} />,
   },
   {
     key: "status",
     label: "Estado",
     sortable: true,
-    width: "120px",
+    // width: "120px",
     render: (row) => <StatusBadge status={row.status as OrderStatusEnum} />,
   },
   {
     key: "subtotal",
     label: "Subtotal",
     sortable: false,
-    width: "100px",
+    // width: "100px",
     render: (row) => (
       <span className="text-xs font-medium text-brand">
         {formatMoney(row.subtotal)}
@@ -73,10 +76,10 @@ export const ORDERS_COLUMNS: ColumnDef<OrderPageItem>[] = [
     key: "updatedAt",
     label: "Fecha",
     sortable: true,
-    width: "140px",
+    // width: "140px",
     render: (row) => (
       <span className="text-xs text-muted-foreground">
-        {row.updatedAt ? formatDateTime(row.updatedAt) : "--"}
+        {row.updatedAt ? formatLocalDateTime(row.updatedAt) : "--"}
       </span>
     ),
   },

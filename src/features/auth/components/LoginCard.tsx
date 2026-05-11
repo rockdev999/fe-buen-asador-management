@@ -7,8 +7,8 @@ import { PasswordField } from "@/components/shared/Interactives/PasswordField";
 import { useFormik } from "formik";
 import { loginFormConfig } from "../forms/login.form-config";
 import { Input } from "@/components/ui/input";
-import { Error } from "@/components/shared/Basics/Error";
-import { AppLabel } from "@/components/shared/Basics/AppLabel";
+import { ErrorMessage } from "@/components/shared/Basics/ErrorMessage";
+import { Label } from "@/components/shared/Basics/Label";
 
 const trans = t.auth.login;
 
@@ -41,7 +41,7 @@ export function LoginCard() {
         <p className="text-sm text-muted-foreground">{trans.subtitle}</p>
       </div>
       <FormField>
-        <AppLabel required>{trans.email}</AppLabel>
+        <Label required>{trans.email}</Label>
         <Input
           id="email"
           name="email"
@@ -52,10 +52,10 @@ export function LoginCard() {
           onBlur={formHandlerBlur}
           onChange={formHandleChange}
         />
-        <Error touched={formTouched.email} error={formErrors.email} />
+        <ErrorMessage touched={formTouched.email} error={formErrors.email} />
       </FormField>
       <FormField>
-        <AppLabel required>{trans.password}</AppLabel>
+        <Label required>{trans.password}</Label>
         <PasswordField
           id="password"
           name="password"
@@ -65,7 +65,10 @@ export function LoginCard() {
           onChange={formHandleChange}
           onBlur={formHandlerBlur}
         />
-        <Error touched={formTouched.password} error={formErrors.password} />
+        <ErrorMessage
+          touched={formTouched.password}
+          error={formErrors.password}
+        />
       </FormField>
 
       <div className="text-right -mt-1 mb-4">

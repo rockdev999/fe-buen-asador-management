@@ -19,14 +19,18 @@ interface UseOrdersPageParams {
   page: number;
   search?: string;
   status?: string;
+  type?: string;
+  channel?: string;
   sortKey?: string;
-  sortDir?: SortDirectionEnum;
+  sortDir?: SortDirectionEnum | null;
 }
 
 export function useOrdersPage({
   page,
   search,
   status,
+  type,
+  channel,
   sortKey,
   sortDir,
 }: UseOrdersPageParams) {
@@ -35,10 +39,12 @@ export function useOrdersPage({
   const params = {
     page,
     limit: DATA_TABLE.ORDERS.limit,
-    ...(search && { customerName: search }),
+    ...(search && { search }),
     ...(status && { status }),
+    ...(type && { type }),
+    ...(channel && { channel }),
     ...(sortKey && { sortBy: sortKey }),
-    ...(sortDir && { sortOrder: sortDir.toUpperCase() }),
+    ...(sortDir && { sortOrder: sortDir }),
   };
 
   return usePaginatedGetHandler<

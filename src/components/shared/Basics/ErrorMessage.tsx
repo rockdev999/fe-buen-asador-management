@@ -7,7 +7,7 @@ interface ErrorProps {
   className?: string;
 }
 
-export function Error({ touched, error, hint, className }: ErrorProps) {
+export function ErrorMessage({ touched, error, hint, className }: ErrorProps) {
   const show = touched && !!error;
   const message = show ? error : hint;
 

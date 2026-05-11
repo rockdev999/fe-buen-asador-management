@@ -1,4 +1,4 @@
-import { CategoryShort } from "@/features/categories/models/category.model";
+import { CategoryShort } from "@/features/pos/models/category.model";
 import { UUID } from "@/types/common";
 
 export interface Product {

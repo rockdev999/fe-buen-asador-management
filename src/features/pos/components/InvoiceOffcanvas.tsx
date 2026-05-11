@@ -1,14 +1,14 @@
 import z from "zod";
-import { Order } from "../models/order";
 import { useFormik } from "formik";
 import { zodToFormik } from "@/lib/zodToFormik";
 import { cn, formatMoney } from "@/lib/utils";
 import { X } from "lucide-react";
 import { FormField } from "@/components/shared/Basics/FormField";
-import { AppLabel } from "@/components/shared/Basics/AppLabel";
+import { Label } from "@/components/shared/Basics/Label";
 import { Input } from "@/components/ui/input";
-import { Error } from "@/components/shared/Basics/Error";
+import { ErrorMessage } from "@/components/shared/Basics/ErrorMessage";
 import { Button } from "@/components/ui/button";
+import { Sale } from "../models/sale";
 
 const invoiceSchema = z.object({
   nit: z.string().min(1, "El NIT es requerido."),
@@ -18,7 +18,7 @@ const invoiceSchema = z.object({
 type InvoiceForm = z.infer<typeof invoiceSchema>;
 
 interface InvoiceOffcanvasProps {
-  order: Order;
+  order: Sale;
   isOpen: boolean;
   onClose: () => void;
   onSubmit: (nit: string, customerName: string) => void;
@@ -96,9 +96,9 @@ export function InvoiceOffcanvas({
           className="flex-1 px-5 py-4 flex flex-col gap-4 overflow-y-auto"
         >
           <FormField>
-            <AppLabel htmlFor="nit" required>
+            <Label htmlFor="nit" required>
               NIT / CI
-            </AppLabel>
+            </Label>
             <Input
               id="nit"
               name="nit"
@@ -111,13 +111,13 @@ export function InvoiceOffcanvas({
                 touched.nit && errors.nit && "border-destructive",
               )}
             />
-            <Error touched={touched.nit} error={errors.nit} />
+            <ErrorMessage touched={touched.nit} error={errors.nit} />
           </FormField>
 
           <FormField>
-            <AppLabel htmlFor="customerName" required>
+            <Label htmlFor="customerName" required>
               Nombre / Razón social
-            </AppLabel>
+            </Label>
             <Input
               id="customerName"
               name="customerName"
@@ -132,7 +132,10 @@ export function InvoiceOffcanvas({
                   "border-destructive",
               )}
             />
-            <Error touched={touched.customerName} error={errors.customerName} />
+            <ErrorMessage
+              touched={touched.customerName}
+              error={errors.customerName}
+            />
           </FormField>
         </form>
 

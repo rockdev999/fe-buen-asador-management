@@ -1,7 +1,7 @@
 import { Minus, Pencil, Plus, Trash2, GripVertical } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { CartItem as CartItemType } from "../models/cart";
+import { CartItem as CartItemType } from "../../models/cart";
 import { formatMoney } from "@/lib/utils";
 
 interface CartItemProps {
@@ -56,11 +56,11 @@ export function CartItem({
         <GripVertical size={14} />
       </button>
       <div className="flex-1 min-w-0">
-        <p className="text-xs font-medium text-inkblack truncate">
+        <p className="text-sm font-medium text-inkblack truncate">
           {item.name}
         </p>
         {uniqueMods.length > 0 && (
-          <p className="text-[9px] text-brand-light mt-0.5">
+          <p className="text-[10px] text-brand-light mt-0.5">
             con modificadores
           </p>
         )}
@@ -95,31 +95,31 @@ export function CartItem({
         </div>
       </div>
       <div className="flex flex-col items-end gap-1.5 flex-shrink-0">
-        <span className="text-xs font-medium text-brand">
+        <span className="text-sm font-medium text-brand">
           {formatMoney(lineTotal)}
         </span>
         <div className="flex gap-1">
-          {item.haveModifiers && (
-            <button
-              type="button"
-              onClick={() => onEdit(item)}
-              className="w-7 h-7 rounded border border-surface flex items-center justify-center 
+          {/* {item.haveModifiers && ( */}
+          <button
+            type="button"
+            onClick={() => onEdit(item)}
+            className="w-8 h-8 rounded border border-surface flex items-center justify-center 
              text-neutral-500 hover:text-inkblack 
              hover:border-neutral-300 hover:bg-neutral-100 
              transition-colors"
-            >
-              <Pencil size={12} />
-            </button>
-          )}
+          >
+            <Pencil size={14} />
+          </button>
+          {/* )} */}
           <button
             type="button"
             onClick={() => onRemove(item.productId)}
-            className="w-7 h-7 rounded border border-surface flex items-center justify-center 
+            className="w-8 h-8 rounded border border-surface flex items-center justify-center 
              text-danger hover:text-white 
              hover:bg-danger hover:border-danger 
              transition-colors"
           >
-            <Trash2 size={12} />
+            <Trash2 size={14} />
           </button>
         </div>
       </div>

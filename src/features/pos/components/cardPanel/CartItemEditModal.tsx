@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useModifiers } from "../hooks/useModifiers";
+import { useModifiers } from "../../hooks/useModifiers";
 import { cn } from "@/lib/utils";
 import { formatMoney } from "@/lib/utils";
-import type { CartItem, CartItemUnit } from "../models/cart";
-import type { Modifier } from "../models/modifier";
+import type { CartItem, CartItemUnit } from "../../models/cart";
+import type { Modifier } from "../../models/modifier";
 
 interface CartItemEditModalProps {
   item: CartItem;
@@ -77,17 +77,17 @@ export function CartItemEditModal({
 
   return (
     <div className="absolute inset-0 bg-inkblack/55 flex items-center justify-center z-50">
-      <div className="bg-white rounded-2xl w-[340px] overflow-hidden flex flex-col max-h-[90%]">
+      <div className="bg-white rounded-2xl w-[380px] overflow-hidden flex flex-col max-h-[90%]">
         {/* Header */}
         <div className="flex items-start justify-between px-4 py-3.5 border-b border-surface flex-shrink-0">
           <div>
-            <p className="text-sm font-medium text-inkblack">{item.name}</p>
+            <p className="text-md font-medium text-inkblack">{item.name}</p>
             <p className="text-xs text-muted-foreground mt-0.5">
               Cada unidad puede tener modificadores distintos
             </p>
           </div>
           <div className="flex items-center gap-2 flex-shrink-0">
-            <span className="text-xs font-medium text-brand">
+            <span className="text-md font-medium text-brand">
               {formatMoney(item.price)}/u
             </span>
             <button
@@ -101,7 +101,7 @@ export function CartItemEditModal({
         </div>
 
         {/* Units list */}
-        <div className="flex-1 overflow-y-auto px-4 py-3 flex flex-col gap-3">
+        <div className="flex-1 overflow-y-auto px-4 py-1 flex flex-col gap-3">
           {status === "pending" && (
             <p className="text-xs text-muted-foreground text-center py-4">
               Cargando modificadores...
@@ -118,7 +118,7 @@ export function CartItemEditModal({
                   Unidad {idx + 1}
                 </span>
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-medium text-brand">
+                  <span className="text-xs font-medium text-brand">
                     {formatMoney(getUnitPrice(unit))}
                   </span>
                   {units.length > 1 && (
@@ -136,7 +136,7 @@ export function CartItemEditModal({
               {/* Unit body */}
               <div className="px-3 py-2.5 flex flex-col gap-2.5">
                 {/* Modificadores como chips */}
-                {modifiers && modifiers.length > 0 && (
+                {modifiers && item.haveModifiers && modifiers.length > 0 && (
                   <div className="flex flex-col gap-1.5">
                     {modifiers.map((mod) => {
                       const selected = unit.modifiers.some(
@@ -177,7 +177,7 @@ export function CartItemEditModal({
                               </svg>
                             )}
                           </div>
-                          {mod.name}
+                          <span className="text-[10px]">{mod.name}</span>
                           <span className="text-muted-foreground">
                             +{formatMoney(mod.extraPrice)}
                           </span>
@@ -193,7 +193,7 @@ export function CartItemEditModal({
                   onChange={(e) => updateNote(unit.unitId, e.target.value)}
                   placeholder="Nota para cocina..."
                   rows={1}
-                  className="w-full border border-input rounded-lg px-2.5 py-1.5 text-[10px] bg-surface focus:border-brand focus:bg-white outline-none resize-none transition-colors"
+                  className="w-full border border-input rounded-lg px-2.5 py-1.5 text-[12px] bg-surface focus:border-brand focus:bg-white outline-none resize-none transition-colors"
                 />
               </div>
             </div>

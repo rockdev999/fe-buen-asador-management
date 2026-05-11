@@ -3,18 +3,30 @@ import { Button } from "@/components/ui/button";
 import { PaymentMethodEnum } from "@/constants";
 import { PAYMENT_METHOD_OPTIONS } from "@/constants/enums/pos.enum";
 import { cn, formatMoney } from "@/lib/utils";
-import { X } from "lucide-react";
+import { Banknote, CreditCard, QrCode, X } from "lucide-react";
 import { useState } from "react";
 
+const METHOD_ICONS: Record<PaymentMethodEnum, React.ElementType> = {
+  [PaymentMethodEnum.CASH]: Banknote,
+  [PaymentMethodEnum.BANK_TRANSFER]: CreditCard,
+  [PaymentMethodEnum.QR]: QrCode,
+};
+
 interface PaymentModalProps {
+  getSubtotal: () => number;
   getTotal: () => number;
+  discount: number;
+  onUpdateDiscount: (value: number) => void;
   onConfirm: (method: PaymentMethodEnum) => void;
   onClose: () => void;
   isLoading: boolean;
 }
 
 export function PaymentModal({
+  getSubtotal,
   getTotal,
+  discount,
+  onUpdateDiscount,
   onConfirm,
   onClose,
   isLoading,
@@ -24,6 +36,7 @@ export function PaymentModal({
   );
   const [received, setReceived] = useState<number>(0);
 
+  const subtotal = getSubtotal();
   const total = getTotal();
   const change = Math.max(0, received - total);
   const isCash = method === PaymentMethodEnum.CASH;
@@ -38,7 +51,7 @@ export function PaymentModal({
     <div className="absolute inset-0 bg-inkblack/60 flex items-center justify-center z-50">
       <div className="bg-white rounded-2xl p-6 w-80">
         {/* Header */}
-        <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center justify-between mb-3">
           <h2 className="text-base font-medium text-inkblack">
             Registrar pago
           </h2>
@@ -52,7 +65,7 @@ export function PaymentModal({
         </div>
 
         {/* Métodos */}
-        <div className="flex gap-2 mb-5">
+        <div className="flex gap-2 mb-3">
           {PAYMENT_METHOD_OPTIONS.map((opt) => (
             <button
               key={opt.value}
@@ -71,6 +84,25 @@ export function PaymentModal({
         </div>
 
         {/* Total */}
+        <div className="flex justify-between items-center py-3 border-t border-surface">
+          <span className="text-sm text-muted-foreground">Subtotal</span>
+          <span className="text-lg font-medium text-inkblack">
+            {formatMoney(subtotal)}
+          </span>
+        </div>
+        <div className="flex items-center justify-between gap-4">
+          <span className="text-sm text-muted-foreground flex-shrink-0">
+            Descuento
+          </span>
+          <div className="w-36">
+            <MoneyInput
+              className="h-8 text-xs"
+              defaultValue={discount}
+              onChange={onUpdateDiscount}
+              max={subtotal}
+            />
+          </div>
+        </div>
         <div className="flex justify-between items-center py-3 border-t border-surface">
           <span className="text-sm text-muted-foreground">Total a cobrar</span>
           <span className="text-lg font-medium text-inkblack">

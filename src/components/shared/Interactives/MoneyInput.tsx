@@ -2,7 +2,7 @@ import { forwardRef, InputHTMLAttributes, useState } from "react";
 import { Input } from "../../ui/input";
 import { cn } from "@/lib/utils";
 import { formatMoneyDisplay, formatMoneyInput, parseMoney } from "@/lib/money";
-import { AppLabel } from "../Basics/AppLabel";
+import { Label } from "../Basics/Label";
 
 interface MoneyInputProps extends Omit<
   InputHTMLAttributes<HTMLInputElement>,
@@ -76,9 +76,9 @@ export const MoneyInput = forwardRef<HTMLInputElement, MoneyInputProps>(
     return (
       <div className="flex flex-col gap-1.5 w-full">
         {label && (
-          <AppLabel htmlFor={id} required={required}>
+          <Label htmlFor={id} required={required}>
             {label}
-          </AppLabel>
+          </Label>
         )}
 
         <div className="relative w-full">

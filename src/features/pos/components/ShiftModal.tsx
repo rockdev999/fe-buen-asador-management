@@ -7,7 +7,7 @@ import { OpenShiftFormConfig } from "../forms/shift.form-config";
 import { Image } from "@/components/shared/Basics/Image";
 import { ICONS } from "@/components/icons";
 import { FormField } from "@/components/shared/Basics/FormField";
-import { Error } from "@/components/shared/Basics/Error";
+import { ErrorMessage } from "@/components/shared/Basics/ErrorMessage";
 import { useOpenShiftHandler } from "../hooks/useShift";
 
 const trans = t.pos;
@@ -51,7 +51,7 @@ export const ShiftModal = () => {
               onChange={(value) => formSetFieldValue("initialAmount", value)}
               onBlur={() => formSetFieldTouched("initialAmount", true)}
             />
-            <Error
+            <ErrorMessage
               touched={formTouched.initialAmount}
               error={formErrors.initialAmount}
             />

@@ -5,6 +5,8 @@ import { useOrdersPage } from "../../hooks/useOrder";
 import { TableFilters } from "@/components/shared/DataTable/TableFilters";
 import { DataTable } from "@/components/shared/DataTable/DataTable";
 import { SortDirection } from "@/components/shared/DataTable/types";
+import { PageHeader } from "@/components/shared/DataTable/PageHeader";
+import { ORDER_DROPDOWNS } from "../../config/orders.table";
 
 export function Orders() {
   const [page, setPage] = useState(1);
@@ -14,8 +16,7 @@ export function Orders() {
   const [sortDir, setSortDir] = useState<SortDirection>(
     ORDERS_TABLE_CONFIG.defaultSorting.direction,
   );
-  const [status, setStatus] = useState("");
-  const [search, setSearch] = useState("");
+  const [filters, setFilters] = useState<Record<string, string>>({});
   const [selected, setSelected] = useState<OrderPageItem | null>(null);
 
   const {
@@ -24,8 +25,10 @@ export function Orders() {
     status: queryStatus,
   } = useOrdersPage({
     page,
-    search,
-    status,
+    search: filters.search ?? "",
+    status: filters.status ?? "",
+    type: filters.type ?? "",
+    channel: filters.channel ?? "",
     sortKey,
     sortDir,
   });
@@ -36,55 +39,36 @@ export function Orders() {
     setPage(1);
   }
 
-  function handleSearch(value: string) {
-    setSearch(value);
-    setPage(1);
-  }
-
-  function handleChip(value: string) {
-    setStatus(value);
+  function handleApply(newFilters: Record<string, string>) {
+    setFilters(newFilters);
     setPage(1);
   }
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
-      {/* Page header */}
-      <div className="px-5 py-3.5 border-b border-surface bg-white flex-shrink-0">
-        <h1 className="text-sm font-medium text-inkblack">Pedidos</h1>
-        <p className="text-[10px] text-muted-foreground mt-0.5">
-          {meta?.total} pedidos en total
-        </p>
-      </div>
+    <div className="flex flex-col h-full overflow-hidden rounded-2xl">
+      <PageHeader title="Pedidos" />
 
-      {/* Filtros */}
       <TableFilters
         searchPlaceholder="Buscar por cliente..."
-        onSearch={handleSearch}
-        chips={ORDERS_STATUS_CHIPS}
-        activeChip={status}
-        onChipChange={handleChip}
+        onApply={handleApply}
+        dropdowns={ORDER_DROPDOWNS}
+        initialValues={filters}
       />
 
-      {/* Tabla */}
       <DataTable
         columns={ORDERS_COLUMNS}
         data={data}
         meta={meta}
         isLoading={queryStatus === "pending"}
-        onPageChange={setPage}
+        onPageChange={(p) => setPage(p)}
         onSort={handleSort}
         sortKey={sortKey}
         sortDir={sortDir}
         onRowClick={setSelected}
         rowKey={(row) => row.id}
+        emptyMessage="No hay pedidos"
+        emptySubMessage="Intenta cambiar los filtros"
       />
-
-      {/* {selected && (
-        <OrderDetailModal
-          order={selected}
-          onClose={() => setSelected(null)}
-        />
-      )} */}
     </div>
   );
 }

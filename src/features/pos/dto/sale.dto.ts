@@ -1,8 +1,9 @@
 import { OrderTypeEnum, PaymentMethodEnum, SaleStatusEnum } from "@/constants";
 import { LocationDTO } from "@/features/locations/dto/location.dto";
 import { UserShortDTO } from "@/features/users/dto/user.dto";
-import { ISODateTimeString, UUID } from "@/types/common";
+import { UUID } from "@/types/common";
 import { OrderItemDTO } from "./order.dto";
+import { Audit } from "@/types/audit.types";
 
 export interface CreateSaleDTO {
   orderId: UUID;
@@ -37,6 +38,5 @@ export interface SaleDTO {
       })[]
     | [];
   annulmentReason: string | null;
-  createdAt: ISODateTimeString;
-  updatedAt: ISODateTimeString;
+  audit: Audit;
 }

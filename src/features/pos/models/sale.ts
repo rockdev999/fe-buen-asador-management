@@ -3,6 +3,7 @@ import { Location } from "@/features/locations/models/location.model";
 import { UserShort } from "@/features/users/models/user.model";
 import { UUID } from "@/types/common";
 import { OrderSaleItem } from "./order";
+import { Audit } from "@/types/audit.types";
 
 export interface SaleProductUnit {
   modifierLabel: string;
@@ -35,6 +36,5 @@ export interface Sale {
   details: OrderSaleItem[] | [];
   groups: SaleProductGroup[] | [];
   annulmentReason: string | null;
-  createdAt: Date;
-  updatedAt: Date | null;
+  audit: Audit;
 }

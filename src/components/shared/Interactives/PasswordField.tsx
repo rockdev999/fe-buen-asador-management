@@ -1,7 +1,7 @@
 import { forwardRef, InputHTMLAttributes, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Eye, EyeOff } from "lucide-react";
-import { AppLabel } from "../Basics/AppLabel";
+import { Label } from "../Basics/Label";
 import { Input } from "@/components/ui/input";
 
 interface PasswordFieldProps extends InputHTMLAttributes<HTMLInputElement> {
@@ -17,13 +17,13 @@ export const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(
     return (
       <div className="flex flex-col gap-1.5">
         {label && (
-          <AppLabel
+          <Label
             htmlFor={id}
             required={required}
             className="text-xs font-medium text-dark"
           >
             {label}
-          </AppLabel>
+          </Label>
         )}
 
         <div className="relative">
