@@ -18,7 +18,7 @@ import { useCreateSale } from "../hooks/useSale";
 import { CategoryProduct } from "../models/category.model";
 import { CartPanelSkeleton } from "../components/cardPanel/CartPanelSkeleton";
 
-type PosView = "idle" | "review" | "payment" | "success" | "invoice";
+export type PosView = "idle" | "review" | "payment" | "success" | "invoice";
 
 export const Pos = () => {
   const { isOpen, status: shiftStatus } = useActiveShift();
@@ -34,15 +34,11 @@ export const Pos = () => {
 
     discount,
     addItem,
-    setCustomer,
     getSubtotal,
     getTotal,
     removeItem,
     updateDiscount,
     clearCart,
-    setCustomerPhone,
-    setCustomerAddress,
-    setDeliveryReference,
   } = useCartStore();
 
   const {
@@ -60,15 +56,12 @@ export const Pos = () => {
   const { ticketRef, print } = usePrintTicket();
 
   const [view, setView] = useState<PosView>("idle");
-  // const [paidOrder, setPaidOrder] = useState<Sale | null>(null);
   const [orderSnapshot, setOrderSnapshot] = useState<OrderSnapshot | null>(
     null,
   );
 
   function handleCheckout() {
     if (!items.length) return;
-
-    // Captura todo el estado del carrito ANTES de crear la orden
     setOrderSnapshot({
       items: [...items],
       orderType,
@@ -139,29 +132,6 @@ export const Pos = () => {
     addItem(product);
   }
 
-  const updateCustomerDetails = (
-    name: string,
-    phone: string,
-    address: string,
-    reference: string,
-  ) => {
-    setCustomer(name);
-    setCustomerPhone(phone);
-    setCustomerAddress(address);
-    setDeliveryReference(reference);
-    setOrderSnapshot((prev) =>
-      prev
-        ? {
-            ...prev,
-            customerName: name,
-            customerPhone: phone,
-            customerAddress: address,
-            deliveryReference: reference,
-          }
-        : prev,
-    );
-  };
-
   useEffect(() => {
     if (sale && createSaleStatus === "success") {
       print();
@@ -196,7 +166,6 @@ export const Pos = () => {
       {view === "review" && orderSnapshot && (
         <ReviewOrderModal
           order={orderSnapshot}
-          onUpdateCustomerDetails={updateCustomerDetails}
           onClose={() => setView("idle")}
           onConfirm={handleCreateOrder}
           onRemoveItem={(productId) => {

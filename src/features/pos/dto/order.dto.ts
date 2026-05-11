@@ -5,7 +5,8 @@ import {
   OrderTypeEnum,
 } from "@/constants";
 import { LocationDTO } from "@/features/locations/dto/location.dto";
-import { ISODateTimeString, UUID } from "@/types/common";
+import { Audit } from "@/types/audit.types";
+import { UUID } from "@/types/common";
 
 export interface ModifierItemDTO {
   id: UUID;
@@ -59,11 +60,12 @@ export interface OrderDTO {
   location: LocationDTO;
   customerName?: string | null;
   customerPhone?: string | null;
-  customerAddress?: string | null;
+  deliveryAddress?: string | null;
   deliveryReference?: string | null;
   items: OrderItemDTO[];
-  createdAt: ISODateTimeString;
-  updatedAt: ISODateTimeString;
+  subtotal: number;
+  total: number;
+  audit: Audit;
 }
 
 export interface UpdateOrderStatusDTO {

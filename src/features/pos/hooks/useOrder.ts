@@ -1,4 +1,5 @@
 import {
+  useGetHandler,
   usePaginatedGetHandler,
   usePostHandler,
   usePutHandler,
@@ -10,6 +11,7 @@ import { DATA_TABLE, OrderStatusEnum, QUERY_KEYS } from "@/constants";
 import { useMemo } from "react";
 import {
   mapOrderDTOToModel,
+  mapOrderDTOToSnapshot,
   mapOrderPageItemDTOToModel,
 } from "../mappers/order.mapper";
 import { SortDirectionEnum } from "@/constants/enums/sort.enum";
@@ -63,6 +65,25 @@ export function useOrdersPage({
     enabled: !!locationId,
     staleTime: 30 * 1000,
   });
+}
+
+export function useGetOrderById(id: string | null) {
+  const handler = useGetHandler({
+    queryKey: QUERY_KEYS.ORDER(id ?? ""),
+    queryFn: () =>
+      httpClient
+        .get<ApiResponse<OrderDTO>>(`/orders/${id}`)
+        .then((r) => r.data.data!),
+    enabled: !!id,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  const data = useMemo(
+    () => (handler.data ? mapOrderDTOToSnapshot(handler.data) : null),
+    [handler.data],
+  );
+
+  return { ...handler, data };
 }
 
 export const useCreateOrder = () => {

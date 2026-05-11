@@ -1,37 +1,37 @@
-import { X, Trash2 } from "lucide-react";
+import { X, Trash2, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn, formatMoney } from "@/lib/utils";
 import type { OrderSnapshot } from "../../models/order-snapshot";
 import { Input } from "@/components/ui/input";
 import { useCartStore } from "../../stores/cart.store";
 import { t } from "@/locales/es";
-import { OrderTypeEnum } from "@/constants";
+import { OrderStatusEnum, OrderTypeEnum } from "@/constants";
 import { FormField } from "@/components/shared/Basics/FormField";
 import { Label } from "@/components/shared/Basics/Label";
 import { Textarea } from "@/components/ui/textarea";
 import { Modifier } from "@dnd-kit/core";
+import { useUpdateOrderStatus } from "../../hooks/useOrder";
+import { useState } from "react";
 
 const trans = t.pos;
 
 interface ReviewOrderModalProps {
   order: OrderSnapshot;
-  onUpdateCustomerDetails: (
-    name: string,
-    phone: string,
-    address: string,
-    reference: string,
-  ) => void;
+  orderId?: string;
   onRemoveItem: (productId: string) => void;
   onClose: () => void;
   onConfirm: () => void;
+  onOrderCancelled?: () => void;
   isLoading: boolean;
 }
 
 export function ReviewOrderModal({
   order,
+  orderId,
   onRemoveItem,
   onClose,
   onConfirm,
+  onOrderCancelled,
   isLoading,
 }: ReviewOrderModalProps) {
   const {
@@ -45,8 +45,13 @@ export function ReviewOrderModal({
     setDeliveryReference,
   } = useCartStore();
 
+  const [confirmCancel, setConfirmCancel] = useState(false);
+  const { mutate: updateStatus, isPending: isCancelling } =
+    useUpdateOrderStatus();
+
   const isDelivery = order.orderType === OrderTypeEnum.DELIVERY;
   const isTakeaway = order.orderType === OrderTypeEnum.TAKEAWAY;
+  const isExistingOrder = !!orderId;
 
   const isValid = isDelivery
     ? !!(
@@ -79,6 +84,26 @@ export function ReviewOrderModal({
   }
 
   const subtotal = order.items.reduce((s, item) => s + getItemTotal(item), 0);
+
+  function handleCancel() {
+    if (!orderId) return;
+    if (confirmCancel) {
+      updateStatus(
+        { id: orderId, status: OrderStatusEnum.CANCELLED },
+        {
+          onSuccess: () => {
+            onOrderCancelled?.();
+            onClose();
+          },
+        },
+      );
+    } else {
+      setConfirmCancel(true);
+      setTimeout(() => setConfirmCancel(false), 2500);
+    }
+  }
+
+  const isDisabled = order.status === OrderStatusEnum.CANCELLED;
 
   return (
     <div className="h-full absolute inset-0 bg-inkblack/60 flex items-center justify-center z-50 p-6">
@@ -140,13 +165,15 @@ export function ReviewOrderModal({
                       <span className="text-xs font-medium text-brand">
                         {formatMoney(getItemTotal(item))}
                       </span>
-                      <button
-                        type="button"
-                        onClick={() => onRemoveItem(item.productId)}
-                        className="w-5 h-5 rounded border border-surface flex items-center justify-center text-destructive hover:text-white hover:bg-destructive hover:border-destructive transition-colors"
-                      >
-                        <Trash2 size={11} />
-                      </button>
+                      {!isDisabled && (
+                        <button
+                          type="button"
+                          onClick={() => onRemoveItem(item.productId)}
+                          className="w-5 h-5 rounded border border-surface flex items-center justify-center text-destructive hover:text-white hover:bg-destructive hover:border-destructive transition-colors"
+                        >
+                          <Trash2 size={11} />
+                        </button>
+                      )}
                     </div>
                   </div>
 
@@ -217,6 +244,7 @@ export function ReviewOrderModal({
                     Nombre
                   </Label>
                   <Input
+                    disabled={isDisabled}
                     value={customerName ?? ""}
                     onChange={(e) => setCustomer(e.target.value)}
                     placeholder="Ej: Juan Pérez"
@@ -235,6 +263,7 @@ export function ReviewOrderModal({
                         Teléfono
                       </Label>
                       <Input
+                        disabled={isDisabled}
                         value={customerPhone ?? ""}
                         onChange={(e) => {
                           if (/^[0-9\-+() ]*$/.test(e.target.value))
@@ -256,6 +285,7 @@ export function ReviewOrderModal({
                         Dirección
                       </Label>
                       <Textarea
+                        disabled={isDisabled}
                         value={customerAddress ?? ""}
                         onChange={(e) => setCustomerAddress(e.target.value)}
                         placeholder="Ej: Av. Siempre Viva #123"
@@ -273,6 +303,7 @@ export function ReviewOrderModal({
                         Referencia
                       </Label>
                       <Input
+                        disabled={isDisabled}
                         value={deliveryReference ?? ""}
                         onChange={(e) => setDeliveryReference(e.target.value)}
                         placeholder="Ej: Casa roja junto al parque"
@@ -297,31 +328,55 @@ export function ReviewOrderModal({
                 </div>
               </div>
 
-              {/* Hint delivery incompleto */}
               {(isDelivery || isTakeaway) && !isValid && (
                 <p className="w-full text-[12px] text-destructive mt-2 text-center leading-tight">
                   Completa todos los campos
                 </p>
               )}
-              <div className="flex flex-col gap-2 mt-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={onClose}
-                  className="w-full h-8 text-md"
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  type="button"
-                  disabled={!isValid}
-                  loading={isLoading}
-                  onClick={onConfirm}
-                  className="w-full h-9 bg-brand hover:bg-brand-dark text-white font-medium text-md disabled:opacity-50"
-                >
-                  Confirmar →
-                </Button>
-              </div>
+              {order.status !== OrderStatusEnum.CANCELLED && (
+                <>
+                  {isExistingOrder && (
+                    <Button
+                      type="button"
+                      onClick={handleCancel}
+                      disabled={isCancelling}
+                      className={cn(
+                        "w-full h-8 text-md font-medium border flex items-center justify-center gap-1.5 transition-all bg-white",
+                        confirmCancel
+                          ? "border-red-300 bg-red-50 text-red-600 hover:bg-red-100"
+                          : "border-surface text-muted-foreground hover:border-red-200 hover:text-red-500 hover:bg-red-50",
+                      )}
+                    >
+                      <AlertCircle size={12} />
+                      {isCancelling
+                        ? "Cancelando..."
+                        : confirmCancel
+                          ? "¿Confirmar cancelación?"
+                          : "Cancelar pedido"}
+                    </Button>
+                  )}
+
+                  <div className="flex flex-col gap-2 mt-1">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={onClose}
+                      className="w-full h-8 text-md"
+                    >
+                      Cancelar
+                    </Button>
+                    <Button
+                      type="button"
+                      disabled={!isValid}
+                      loading={isLoading}
+                      onClick={onConfirm}
+                      className="w-full h-9 bg-brand hover:bg-brand-dark text-white font-medium text-md disabled:opacity-50"
+                    >
+                      Confirmar →
+                    </Button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

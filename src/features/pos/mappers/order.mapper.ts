@@ -14,6 +14,45 @@ import {
   OrderPageItem,
   OrderSaleItem,
 } from "../models/order";
+import { OrderSnapshot } from "../models/order-snapshot";
+
+export function mapOrderDTOToSnapshot(dto: OrderDTO): OrderSnapshot {
+  return {
+    id: dto.id,
+    status: dto.status as OrderStatusEnum,
+    orderType: dto.type as OrderTypeEnum,
+    orderChannel: dto.channel as OrderEnum,
+    customerName: dto.customerName ?? null,
+    customerPhone: dto.customerPhone ?? null,
+    customerAddress: dto.deliveryAddress ?? null,
+    deliveryReference: dto.deliveryReference ?? null,
+    subtotal: dto.subtotal,
+    total: dto.total,
+    items: dto.items.map((item) => ({
+      productId: item.product.id,
+      name: item.product.name,
+      price: Number(item.unitPrice),
+      quantity: item.quantity,
+      notes: item.notes ?? "",
+      haveModifiers: item.modifiers.length > 0,
+      modifiers: [],
+      units:
+        item.modifiers.length > 0
+          ? [
+              {
+                unitId: item.id,
+                modifiers: item.modifiers.map((m) => ({
+                  id: m.modifier.id,
+                  name: m.modifier.name,
+                  extraPrice: Number(m.extraPrice),
+                })),
+                notes: item.notes ?? "",
+              },
+            ]
+          : [{ unitId: item.id, modifiers: [], notes: item.notes ?? "" }],
+    })),
+  };
+}
 
 export const mapOrderItemDTOToModel = (dto: OrderItemDTO): OrderItem => {
   const modifiersTotal = dto.modifiers.reduce((s, m) => s + m.extraPrice, 0);
@@ -43,11 +82,11 @@ export const mapOrderDTOToModel = (dto: OrderDTO): Order => {
     locationName: dto.location.name,
     customerName: dto.customerName ?? null,
     customerPhone: dto.customerPhone ?? null,
-    customerAddress: dto.customerAddress ?? null,
+    customerAddress: dto.deliveryAddress ?? null,
     deliveryReference: dto.deliveryReference ?? null,
     items,
     total: Math.round(items.reduce((s, i) => s + i.subtotal, 0) * 100) / 100,
-    createdAt: dto.createdAt,
+    audit: dto.audit,
   };
 };
 

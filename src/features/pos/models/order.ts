@@ -1,4 +1,5 @@
 import { OrderEnum, OrderStatusEnum, OrderTypeEnum } from "@/constants";
+import { Audit } from "@/types/audit.types";
 import { UUID } from "@/types/common";
 
 export interface OrderModifier {
@@ -30,7 +31,7 @@ export interface Order {
   deliveryReference: string | null;
   items: OrderItem[];
   total: number;
-  createdAt: string;
+  audit: Audit;
 }
 
 export interface ModifierSaleItem {
