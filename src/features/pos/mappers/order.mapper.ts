@@ -1,4 +1,4 @@
-import { OrderEnum, OrderTypeEnum } from "@/constants";
+import { OrderEnum, OrderStatusEnum, OrderTypeEnum } from "@/constants";
 import {
   CreateOrderDTO,
   ModifierItemDTO,
@@ -60,6 +60,7 @@ export const mapCartToCreateOrderDTO = (
   customerPhone: string | null,
   customerAddress: string | null,
   deliveryReference: string | null,
+  initialStatus?: OrderStatusEnum,
 ): CreateOrderDTO => {
   const flatItems = items.flatMap((item) =>
     item.units.map((unit) => ({
@@ -78,6 +79,7 @@ export const mapCartToCreateOrderDTO = (
     return {
       type: orderType,
       channel: orderChannel,
+      initialStatus: initialStatus,
       customerName: customerName,
       customerPhone: customerPhone,
       customerAddress: customerAddress,
@@ -95,6 +97,7 @@ export const mapCartToCreateOrderDTO = (
     return {
       type: orderType,
       channel: orderChannel,
+      initialStatus: initialStatus,
       customerName: customerName || null,
       items: flatItems,
     };
@@ -102,6 +105,7 @@ export const mapCartToCreateOrderDTO = (
   return {
     type: orderType,
     channel: orderChannel,
+    initialStatus: initialStatus,
     customerName: customerName || null,
     items: flatItems,
   };

@@ -2,21 +2,19 @@ import { ShiftModal } from "../components/ShiftModal";
 import { useActiveShift } from "../hooks/useShift";
 import { useEffect, useState } from "react";
 import { ProductGrid } from "../components/menu/ProductGrid";
-import { Product } from "@/features/products/models/product.model";
 import { useCartStore } from "../stores/cart.store";
 import { CartPanel } from "../components/cardPanel/CartPanel";
-import { useCreateOrder, useUpdateOrderStatus } from "../hooks/useOrder";
-import { PaymentModal } from "../components/PaymentModal";
-import { OrderSuccessModal } from "../components/OrderSuccessModal";
-import { InvoiceOffcanvas } from "../components/InvoiceOffcanvas";
+import { useCreateOrder } from "../hooks/useOrder";
+import { PaymentModal } from "../components/reviewAndPayment/PaymentModal";
+import { OrderSuccessModal } from "../components/reviewAndPayment/OrderSuccessModal";
 import { OrderStatusEnum, PaymentMethodEnum } from "@/constants";
 import { mapCartToCreateOrderDTO } from "../mappers/order.mapper";
 import { OrderSnapshot } from "../models/order-snapshot";
-import { ReviewOrderModal } from "../components/ReviewOrderModal";
+import { ReviewOrderModal } from "../components/reviewAndPayment/ReviewOrderModal";
 import { usePrintTicket } from "../hooks/usePrintTicket";
-import { TicketPrint } from "../components/TicketPrint";
+import { TicketPrint } from "../components/reviewAndPayment/TicketPrint";
 import { useCreateSale } from "../hooks/useSale";
-import { Sale } from "../models/sale";
+// import { Sale } from "../models/sale";
 import { CategoryProduct } from "../models/category.model";
 import { CartPanelSkeleton } from "../components/cardPanel/CartPanelSkeleton";
 
@@ -53,20 +51,16 @@ export const Pos = () => {
     data: createdOrder,
   } = useCreateOrder();
 
-  const { mutate: updateStatus, status: updateOrderStatus } =
-    useUpdateOrderStatus();
-
   const {
     mutate: createSale,
     status: createSaleStatus,
     data: sale,
   } = useCreateSale();
 
-  const [showPayment, setShowPayment] = useState(false);
   const { ticketRef, print } = usePrintTicket();
 
   const [view, setView] = useState<PosView>("idle");
-  const [paidOrder, setPaidOrder] = useState<Sale | null>(null);
+  // const [paidOrder, setPaidOrder] = useState<Sale | null>(null);
   const [orderSnapshot, setOrderSnapshot] = useState<OrderSnapshot | null>(
     null,
   );
@@ -101,8 +95,13 @@ export const Pos = () => {
       customerPhone,
       customerAddress,
       deliveryReference,
+      OrderStatusEnum.READY,
     );
-    createOrder(dto, {});
+    createOrder(dto, {
+      onSuccess: () => {
+        setView("payment");
+      },
+    });
   }
 
   // 2. Cajero confirma método de pago → cambia estado a PAID
@@ -122,57 +121,22 @@ export const Pos = () => {
         },
       },
     );
-
-    // updateStatus(
-    //   { id: createdOrder.id, status: OrderStatusEnum.PAID },
-    //   {
-    //     onSuccess: (data) => {
-    //       setPaidOrder(data);
-    //       setView("success");
-    //     },
-    //   },
-    // );
   }
-
-  // 3. Imprimir ticket
-  // function handlePrintTicket() {
-  //   // TODO: react-thermal-printer
-  //   console.log("Imprimir ticket", paidOrder);
-  // }
 
   // 4. Emitir factura
   function handleEmitInvoice() {
     setView("invoice");
   }
 
-  // 5. Submit factura
-  function handleInvoiceSubmit(nit: string, customerName: string) {
-    // TODO: POST /invoices cuando esté listo el endpoint
-    console.log("Emitir factura", {
-      nit,
-      customerName,
-      orderId: paidOrder?.id,
-    });
-    setView("idle");
-  }
-
   // 6. Nuevo pedido
   function handleNewOrder() {
-    setPaidOrder(null);
+    // setPaidOrder(null);
     clearCart();
     setView("idle");
   }
 
   function handleAddItem(product: CategoryProduct) {
     addItem(product);
-  }
-
-  function handleUpdateDiscount(discount: number) {
-    updateDiscount(discount);
-  }
-
-  function handlePrintTicket() {
-    print();
   }
 
   const updateCustomerDetails = (
@@ -199,25 +163,10 @@ export const Pos = () => {
   };
 
   useEffect(() => {
-    if (createdOrder && createStatus === "success") {
-      updateStatus(
-        { id: createdOrder.id, status: OrderStatusEnum.READY },
-        {
-          onSuccess: () => {
-            setView("payment");
-          },
-        },
-      );
+    if (sale && createSaleStatus === "success") {
+      print();
     }
-  }, [createdOrder, createStatus]);
-
-  // if (shiftStatus === "pending") {
-  //   return (
-  //     <div className="flex h-full items-center justify-center">
-  //       <p className="text-sm text-muted-foreground">Cargando...</p>
-  //     </div>
-  //   );
-  // }
+  }, [createSaleStatus, sale]);
 
   return (
     <div className="relative flex h-full overflow-hidden">
@@ -269,6 +218,7 @@ export const Pos = () => {
       {/* Modal: pago */}
       {view === "payment" && orderSnapshot && (
         <PaymentModal
+          clientName={customerName}
           getSubtotal={getSubtotal}
           getTotal={getTotal}
           discount={discount}
@@ -279,28 +229,18 @@ export const Pos = () => {
         />
       )}
 
-      {/* {view === "payment" && orderSnapshot && (
-        <PaymentModal
-          total={total}
-          onConfirm={handleConfirmPayment}
-          onClose={() => setView("idle")}
-          isLoading={updateOrderStatus === "pending"}
-        />
-      )} */}
-
       {/* Modal: éxito */}
       {view === "success" && sale && (
         <OrderSuccessModal
           sale={sale}
           customerName={orderSnapshot?.customerName ?? null}
-          onPrintTicket={handlePrintTicket}
           onEmitInvoice={handleEmitInvoice}
           onClose={handleNewOrder}
         />
       )}
 
       {/* Offcanvas: factura */}
-      {paidOrder && (
+      {/* {paidOrder && (
         <InvoiceOffcanvas
           order={paidOrder}
           isOpen={view === "invoice"}
@@ -308,7 +248,7 @@ export const Pos = () => {
           onSubmit={handleInvoiceSubmit}
           isLoading={false}
         />
-      )}
+      )} */}
     </div>
   );
 };

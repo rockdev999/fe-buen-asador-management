@@ -74,13 +74,13 @@ export function InvoiceOffcanvas({
           <p className="text-xs text-muted-foreground mb-2">
             Pedido #{order.id.slice(-6).toUpperCase()}
           </p>
-          {order.items.map((item) => (
+          {order.details.map((item) => (
             <div key={item.id} className="flex justify-between text-xs py-0.5">
               <span className="text-inkblack">
-                {item.name} × {item.quantity}
+                {item.product.name} × {item.quantity}
               </span>
               <span className="text-muted-foreground">
-                {formatMoney(item.subtotal)}
+                {formatMoney(item.itemSubtotal)}
               </span>
             </div>
           ))}

@@ -30,6 +30,7 @@ export interface CreateOrderItemDTO {
 export interface CreateOrderDTO {
   type: OrderTypeEnum;
   channel: OrderEnum;
+  initialStatus?: OrderStatusEnum;
   items: CreateOrderItemDTO[];
   customerName?: string | null;
   customerPhone?: string | null;

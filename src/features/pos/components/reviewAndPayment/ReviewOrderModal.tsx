@@ -1,9 +1,9 @@
 import { X, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn, formatMoney } from "@/lib/utils";
-import type { OrderSnapshot } from "../models/order-snapshot";
+import type { OrderSnapshot } from "../../models/order-snapshot";
 import { Input } from "@/components/ui/input";
-import { useCartStore } from "../stores/cart.store";
+import { useCartStore } from "../../stores/cart.store";
 import { t } from "@/locales/es";
 import { OrderTypeEnum } from "@/constants";
 import { FormField } from "@/components/shared/Basics/FormField";
