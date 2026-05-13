@@ -8,7 +8,7 @@ import { Label } from "@/components/shared/Basics/Label";
 import { Input } from "@/components/ui/input";
 import { ErrorMessage } from "@/components/shared/Basics/ErrorMessage";
 import { Button } from "@/components/ui/button";
-import { Sale } from "../models/sale";
+import { Sale } from "../../sales/models/sale";
 
 const invoiceSchema = z.object({
   nit: z.string().min(1, "El NIT es requerido."),

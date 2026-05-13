@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export const QUERY_KEYS = {
   // Auth
   ME: ["me"],
@@ -21,6 +22,11 @@ export const QUERY_KEYS = {
   // Sales
   SALES: ["sales"],
   SALE: (id: string) => ["sales", id],
+  PAGINATION_SALES: (params: Record<string, any>) => [
+    "sales",
+    "pagination",
+    params,
+  ],
 
   // Inventario
   INVENTORY: ["inventory"],

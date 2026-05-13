@@ -40,7 +40,7 @@ export function useOrdersPage({
 
   const params = {
     page,
-    limit: DATA_TABLE.ORDERS.limit,
+    limit: DATA_TABLE.ORDERS.limit ?? 10,
     ...(search && { search }),
     ...(status && { status }),
     ...(type && { type }),

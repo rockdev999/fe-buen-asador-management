@@ -19,14 +19,14 @@ export interface PaginatedData<T> {
 
 function resolveStatus(
   enabled: boolean,
-  isPending: boolean,
+  isActive: boolean,
   isSuccess: boolean,
   isError: boolean,
 ): Status {
   if (!enabled) return "idle";
-  if (isPending) return "pending";
-  if (isSuccess) return "success";
+  if (isActive) return "pending";
   if (isError) return "error";
+  if (isSuccess) return "success";
   return "idle";
 }
 
@@ -107,16 +107,13 @@ export function useGetHandler<TDto, TModel = TDto>({
     ...options,
   });
 
+  const isActive = query.isPending || query.isFetching;
+
   return {
     ...query,
-    status: resolveStatus(
-      enabled,
-      query.isPending,
-      query.isSuccess,
-      query.isError,
-    ),
+    status: resolveStatus(enabled, isActive, query.isSuccess, query.isError),
     data: query.data ?? null,
-    isLoading: query.isPending && enabled,
+    isLoading: isActive && enabled,
   };
 }
 
@@ -142,7 +139,7 @@ export function usePaginatedGetHandler<TDto, TModel>({
   retry = false,
 }: UsePaginatedGetHandlerOptions<TDto, TModel>) {
   const query = useQuery<ApiResponse<TDto[]>, ApiErrorResponse>({
-    queryKey: [...queryKey, params],
+    queryKey,
     queryFn: () => queryFn(params),
     enabled,
     staleTime,
@@ -161,17 +158,14 @@ export function usePaginatedGetHandler<TDto, TModel>({
       }
     : null;
 
+  const isActive = query.isPending || query.isFetching;
+
   return {
     ...query,
-    status: resolveStatus(
-      enabled,
-      query.isPending,
-      query.isSuccess,
-      query.isError,
-    ),
+    status: resolveStatus(enabled, isActive, query.isSuccess, query.isError),
     data: mapped?.data ?? null,
     meta: mapped?.meta ?? null,
-    isLoading: query.isPending && enabled,
+    isLoading: isActive && enabled,
   };
 }
 

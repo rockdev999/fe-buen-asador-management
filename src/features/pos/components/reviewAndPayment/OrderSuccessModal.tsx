@@ -1,6 +1,6 @@
 import { formatMoney } from "@/lib/utils";
-import { CheckCircle, Plus, Receipt, TicketCheck } from "lucide-react";
-import { Sale } from "../../models/sale";
+import { CheckCircle, Plus, Receipt, TicketCheck, X } from "lucide-react";
+import { Sale } from "../../../sales/models/sale";
 import { t } from "@/locales/es";
 
 const trans = t.finances;
@@ -8,6 +8,7 @@ const trans = t.finances;
 interface OrderSuccessModalProps {
   sale: Sale;
   customerName?: string | null;
+  showDetails?: boolean;
   onEmitInvoice: () => void;
   onClose: () => void;
 }
@@ -15,6 +16,7 @@ interface OrderSuccessModalProps {
 export function OrderSuccessModal({
   sale,
   customerName,
+  showDetails = false,
   onEmitInvoice,
   onClose,
 }: OrderSuccessModalProps) {
@@ -22,7 +24,14 @@ export function OrderSuccessModal({
 
   return (
     <div className="absolute inset-0 bg-inkblack/50 backdrop-blur-[2px] flex items-center justify-center z-50">
-      <div className="bg-white rounded-2xl w-auto overflow-hidden shadow-2xl px-3 py-2">
+      <div className="bg-white rounded-2xl w-[500px] overflow-hidden shadow-2xl px-3 py-2 relative">
+        <button
+          type="button"
+          onClick={onClose}
+          className="absolute top-3 right-3 w-7 h-7 rounded-lg border border-black/30 flex items-center justify-center text-black/70 hover:text-black hover:border-black/60 transition-colors"
+        >
+          <X size={13} />
+        </button>
         {/* Success header */}
         <div className="bg-green-50 px-6 pt-4 pb-2 flex flex-col items-center text-center">
           <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center mb-3 shadow-sm">
@@ -49,6 +58,50 @@ export function OrderSuccessModal({
               {sale.ticketCode}
             </span>
           </div>
+
+          {showDetails && (
+            <div className="bg-surface rounded-xl p-3 mb-5 text-left overflow-auto max-h-40">
+              {sale.groups.map((group) => (
+                <div key={group.productId} className="mb-2 last:mb-0">
+                  {/* Producto header */}
+                  <div className="flex justify-between items-center py-0.5">
+                    <span className="text-xs font-medium text-inkblack">
+                      {group.unitCount} {group.name}
+                    </span>
+                    <span className="text-xs font-medium text-brand">
+                      {formatMoney(group.total)}
+                    </span>
+                  </div>
+
+                  {/* Unidades */}
+                  {group.units.map((unit, idx) =>
+                    unit.modifierLabel || unit.notes ? (
+                      <div
+                        key={idx}
+                        className="flex justify-between items-start gap-2 pl-2 border-l-2 border-brand/20 mt-1"
+                      >
+                        <div className="flex flex-col min-w-0">
+                          {unit.modifierLabel && (
+                            <span className="text-[10px] text-brand/70 font-medium truncate">
+                              {unit.modifierLabel}
+                            </span>
+                          )}
+                          {unit.notes && (
+                            <span className="text-[10px] text-muted-foreground italic">
+                              "{unit.notes}"
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[10px] text-muted-foreground tabular-nums flex-shrink-0">
+                          {formatMoney(unit.subtotal)}
+                        </span>
+                      </div>
+                    ) : null,
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
 
           {/* Total destacado */}
           <div className="bg-surface/50 rounded-xl px-4 py-3 flex items-center justify-between gap-3">
@@ -92,15 +145,17 @@ export function OrderSuccessModal({
             <Receipt size={13} />
             Emitir factura
           </button>
-          <button
-            type="button"
-            onClick={onClose}
-            className="w-full h-10 rounded-xl bg-brand hover:bg-brand-dark text-white text-[14px]
+          {!showDetails && (
+            <button
+              type="button"
+              onClick={onClose}
+              className="w-full h-10 rounded-xl bg-brand hover:bg-brand-dark text-white text-[14px]
                        font-semibold transition-colors flex items-center justify-center gap-1.5"
-          >
-            <Plus size={14} />
-            Nuevo pedido
-          </button>
+            >
+              <Plus size={14} />
+              Nuevo pedido
+            </button>
+          )}
         </div>
       </div>
     </div>

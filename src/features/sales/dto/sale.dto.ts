@@ -1,8 +1,8 @@
 import { OrderTypeEnum, PaymentMethodEnum, SaleStatusEnum } from "@/constants";
 import { LocationDTO } from "@/features/locations/dto/location.dto";
 import { UserShortDTO } from "@/features/users/dto/user.dto";
-import { UUID } from "@/types/common";
-import { OrderItemDTO } from "./order.dto";
+import { ISODateTimeString, UUID } from "@/types/common";
+import { OrderItemDTO } from "../../pos/dto/order.dto";
 import { Audit } from "@/types/audit.types";
 
 export interface CreateSaleDTO {
@@ -39,4 +39,15 @@ export interface SaleDTO {
     | [];
   annulmentReason: string | null;
   audit: Audit;
+}
+
+export interface SalePageItemDTO {
+  id: UUID;
+  ticketCode: UUID;
+  customerName: string | null;
+  status: SaleStatusEnum;
+  total: number;
+  paymentMethod: PaymentMethodEnum;
+  cashier: UserShortDTO;
+  createdAt: ISODateTimeString;
 }

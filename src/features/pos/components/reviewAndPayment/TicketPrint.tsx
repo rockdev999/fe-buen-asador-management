@@ -1,6 +1,6 @@
 import { forwardRef } from "react";
 import { formatMoney } from "@/lib/utils";
-import { Sale } from "../../models/sale";
+import { Sale } from "../../../sales/models/sale";
 import { formatDateTime } from "@/lib/formatters";
 
 interface TicketPrintProps {

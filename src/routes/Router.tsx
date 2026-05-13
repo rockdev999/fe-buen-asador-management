@@ -13,6 +13,7 @@ import { Pos } from "@/features/pos/page/Pos";
 import { NotFound } from "@/features/public/NotFound";
 import { RoleBasedRedirect } from "./RoleBasedRedirect";
 import { Orders } from "@/features/pos/page/order/Orders";
+import { Sales } from "@/features/sales/page/Sales";
 
 export const router = createBrowserRouter([
   { path: PATHS.LOGIN, element: <Login /> },
@@ -65,7 +66,7 @@ export const router = createBrowserRouter([
             ),
             children: [
               { path: PATHS.ORDERS, element: <Orders /> },
-              { path: PATHS.SALES, element: <div>Ventas</div> },
+              { path: PATHS.SALES, element: <Sales /> },
               { path: PATHS.SHIFTS, element: <div>Caja</div> },
               { path: PATHS.EXPENSES, element: <div>Egresos</div> },
               { path: PATHS.PAYROLL, element: <div>Nómina</div> },

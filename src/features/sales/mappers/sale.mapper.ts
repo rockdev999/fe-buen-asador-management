@@ -1,8 +1,8 @@
 import { mapLocationDTOToModel } from "@/features/locations/mappers/location.mapper";
-import { SaleDTO } from "../dto/sale.dto";
-import { Sale, SaleProductGroup } from "../models/sale";
-import { mapOrderSaleItemDTOToModel } from "./order.mapper";
-import { OrderSaleItem } from "../models/order";
+import { SaleDTO, SalePageItemDTO } from "../dto/sale.dto";
+import { Sale, SalePageItem, SaleProductGroup } from "../models/sale";
+import { mapOrderSaleItemDTOToModel } from "../../pos/mappers/order.mapper";
+import { OrderSaleItem } from "../../pos/models/order";
 
 function groupDetails(details: OrderSaleItem[]): SaleProductGroup[] {
   const map = new Map<string, SaleProductGroup>();
@@ -65,3 +65,19 @@ export const mapSaleDTOtoModel = (dto: SaleDTO): Sale => {
     audit: dto.audit,
   };
 };
+
+export const mapSalePageItemDTOToModel = (
+  dto: SalePageItemDTO,
+): SalePageItem => ({
+  id: dto.id,
+  ticketCode: dto.ticketCode,
+  customerName: dto.customerName ?? null,
+  status: dto.status,
+  total: dto.total,
+  paymentMethod: dto.paymentMethod,
+  cashier: {
+    id: dto.cashier.id,
+    name: dto.cashier.name,
+  },
+  createdAt: new Date(dto.createdAt),
+});

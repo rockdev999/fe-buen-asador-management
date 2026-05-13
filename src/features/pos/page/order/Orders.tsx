@@ -9,7 +9,7 @@ import { ORDER_DROPDOWNS } from "../../config/orders.table";
 import { ReviewOrderModal } from "../../components/reviewAndPayment/ReviewOrderModal";
 import { PosView } from "../Pos";
 import { PaymentModal } from "../../components/reviewAndPayment/PaymentModal";
-import { useCreateSale } from "../../hooks/useSale";
+import { useCreateSale } from "../../../sales/hooks/useSale";
 import { OrderSuccessModal } from "../../components/reviewAndPayment/OrderSuccessModal";
 import { PaymentMethodEnum } from "@/constants";
 import { useNavigate } from "react-router-dom";

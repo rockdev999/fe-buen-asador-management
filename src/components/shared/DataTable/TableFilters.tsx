@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { Search, X, ChevronDown, Check, SlidersHorizontal } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { Button } from "../Basics/Button";
 
 export interface FilterOption {
   label: string;
@@ -19,6 +20,10 @@ interface TableFiltersProps {
   dropdowns?: FilterDropdown[];
   actions?: React.ReactNode;
   initialValues?: Record<string, string>;
+  children?: React.ReactNode;
+  extraValues?: Record<string, string>;
+  onClearExtra?: () => void;
+  isLoading?: boolean;
 }
 
 export function TableFilters({
@@ -27,13 +32,31 @@ export function TableFilters({
   dropdowns = [],
   actions,
   initialValues = {},
+  children,
+  extraValues = {},
+  isLoading = false,
+  onClearExtra,
 }: TableFiltersProps) {
   const [search, setSearch] = useState(initialValues.search ?? "");
   const [values, setValues] = useState<Record<string, string>>(initialValues);
+  const [activeButton, setActiveButton] = useState<"search" | "clear" | null>(
+    null,
+  );
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
+  const [prevLoading, setPrevLoading] = useState(isLoading);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const hasFilters = !!search || dropdowns.some((d) => !!values[d.key]);
+  if (prevLoading !== isLoading) {
+    setPrevLoading(isLoading);
+    if (!isLoading) {
+      setActiveButton(null);
+    }
+  }
+
+  const hasFilters =
+    !!search ||
+    dropdowns.some((d) => !!values[d.key]) ||
+    Object.values(extraValues).some(Boolean);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -49,18 +72,26 @@ export function TableFilters({
   }, []);
 
   function handleApply() {
-    onApply({ search: search.trim(), ...values });
+    setActiveButton("search");
+    onApply({ search: search.trim(), ...values, ...extraValues });
     setOpenDropdown(null);
   }
 
   function handleClear() {
+    setActiveButton("clear");
     setSearch("");
     const cleared = dropdowns.reduce(
       (acc, d) => ({ ...acc, [d.key]: "" }),
       {} as Record<string, string>,
     );
     setValues(cleared);
-    onApply({ search: "", ...cleared });
+    onClearExtra?.();
+
+    const clearedExtra = Object.keys(extraValues).reduce(
+      (acc, key) => ({ ...acc, [key]: "" }),
+      {} as Record<string, string>,
+    );
+    onApply({ search: "", ...cleared, ...clearedExtra });
   }
 
   function setDropdownValue(key: string, value: string) {
@@ -85,7 +116,7 @@ export function TableFilters({
           onKeyDown={(e) => e.key === "Enter" && handleApply()}
           placeholder={searchPlaceholder}
           className="
-            pl-8 pr-8 h-9 w-52 text-[13px] rounded-xl
+            pl-8 pr-8 h-9 w-44 text-[13px] rounded-xl
             border border-surface bg-surface/40 text-inkblack
             placeholder:text-inkblack/30
             focus:outline-none focus:ring-2 focus:ring-brand/20 focus:border-brand/40 focus:bg-white
@@ -95,7 +126,7 @@ export function TableFilters({
         {search && (
           <button
             type="button"
-            onClick={() => setSearch("")}
+            onClick={() => setSearch("")} // ← solo limpia el texto
             className="absolute right-2.5 top-1/2 -translate-y-1/2 text-inkblack/30 hover:text-inkblack transition-colors"
           >
             <X size={11} />
@@ -184,34 +215,32 @@ export function TableFilters({
         );
       })}
 
+      {/* ← Filtros adicionales (fechas, inputs custom, etc.) */}
+      {children}
+
+      {/* Separador visual si hay children */}
+      {children && <div className="h-5 w-px bg-surface/80 flex-shrink-0" />}
+
       {/* Botón Buscar */}
-      <button
-        type="button"
+      <Button
+        isLoading={isLoading && activeButton === "search"}
         onClick={handleApply}
-        className="
-          h-9 px-5 text-[13px] font-medium rounded-xl
-          bg-brand text-white
-          hover:bg-brand-dark active:scale-[0.97]
-          transition-all duration-150 flex-shrink-0
-        "
+        disabled={isLoading && activeButton !== "search"}
       >
         Buscar
-      </button>
+      </Button>
 
       {/* Limpiar */}
       {hasFilters && (
-        <button
-          type="button"
+        <Button
+          variant="ghost"
+          isLoading={isLoading && activeButton === "clear"}
           onClick={handleClear}
-          className="
-            h-9 px-3 text-[13px] text-inkblack/40 rounded-xl
-            hover:text-inkblack hover:bg-surface/60
-            flex items-center gap-1.5 transition-all duration-150
-          "
+          disabled={isLoading && activeButton !== "clear"}
         >
           <X size={12} />
           Limpiar
-        </button>
+        </Button>
       )}
 
       {/* Acciones */}

@@ -13,7 +13,7 @@ import { OrderSnapshot } from "../models/order-snapshot";
 import { ReviewOrderModal } from "../components/reviewAndPayment/ReviewOrderModal";
 import { usePrintTicket } from "../hooks/usePrintTicket";
 import { TicketPrint } from "../components/reviewAndPayment/TicketPrint";
-import { useCreateSale } from "../hooks/useSale";
+import { useCreateSale } from "../../sales/hooks/useSale";
 // import { Sale } from "../models/sale";
 import { CategoryProduct } from "../models/category.model";
 import { CartPanelSkeleton } from "../components/cardPanel/CartPanelSkeleton";
