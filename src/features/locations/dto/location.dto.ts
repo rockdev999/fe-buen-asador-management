@@ -11,3 +11,9 @@ export interface LocationDTO {
   id: UUID;
   name: string;
 }
+
+export interface LocationSimpleDTO {
+  id: UUID;
+  name: string;
+  active: boolean;
+}

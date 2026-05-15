@@ -1,5 +1,8 @@
 import { RoleEnum } from "@/constants";
-import { UUID } from "@/types/common";
+import { ISODateTimeString, UUID } from "@/types/common";
+import { Role } from "./role.model";
+import { Audit } from "@/types/audit.types";
+import { Location } from "@/features/locations/models/location.model";
 
 export interface User {
   id: UUID;
@@ -19,4 +22,35 @@ export interface UserDetails {
 export interface UserShort {
   id: UUID;
   name: string;
+}
+
+export interface UserLocationItem {
+  id: UUID;
+  name: string;
+  role: Role | null;
+}
+
+export interface UserPageItem {
+  id: UUID;
+  name: string;
+  email: string;
+  active: boolean;
+  createdAt: ISODateTimeString;
+  locations: UserLocationItem[] | null;
+}
+
+export interface UserLocation {
+  id: UUID;
+  location: Location;
+  role: Role | null;
+  activeLocation: boolean;
+}
+
+export interface UserLocations {
+  id: UUID;
+  name: string;
+  email: string;
+  active: boolean;
+  audit: Audit;
+  locations: UserLocation[];
 }

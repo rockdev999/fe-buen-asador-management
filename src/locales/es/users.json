@@ -38,10 +38,14 @@
   "validation": {
     "nameRequired": "El nombre es requerido.",
     "nameMin": "El nombre debe tener al menos 2 caracteres.",
+    "nameMax": "El nombre no puede exceder los 100 caracteres.",
     "emailRequired": "El email es requerido.",
     "emailInvalid": "Ingresa un email válido.",
     "passwordRequired": "La contraseña es requerida.",
+    "passwordConfirmRequired": "Confirma la contraseña.",
+    "passwordsMustMatch": "Las contraseñas deben coincidir.",
     "passwordMin": "La contraseña debe tener al menos 8 caracteres.",
+    "passwordMax": "La contraseña no puede exceder los 50 caracteres.",
     "roleRequired": "Selecciona un rol.",
     "locationRequired": "Selecciona una sucursal."
   }

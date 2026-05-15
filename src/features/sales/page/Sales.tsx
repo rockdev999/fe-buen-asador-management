@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useGetSaleById, useSalesPage } from "../hooks/useSale";
 import { PageHeader } from "@/components/shared/DataTable/PageHeader";
 import { TableFilters } from "@/components/shared/DataTable/TableFilters";
@@ -54,10 +54,6 @@ export function Sales() {
     setSelectedId(id);
     setOpenModal(true);
   };
-
-  useEffect(() => {
-    console.log(queryStatus);
-  }, [queryStatus]);
 
   return (
     <div className="flex flex-col h-full overflow-hidden rounded-2xl">

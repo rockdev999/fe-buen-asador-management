@@ -6,10 +6,16 @@ export const QUERY_KEYS = {
   // Usuarios
   USERS: ["users"],
   USER: (id: string) => ["users", id],
+  PAGINATION_USERS: (params: Record<string, any>) => [
+    "users",
+    "pagination",
+    params,
+  ],
 
   // Sucursales
   LOCATIONS: ["locations"],
   LOCATION: (id: string) => ["locations", id],
+  LOCATION_SIMPLE: ["locations", "simple"],
 
   // Productos
   PRODUCTS: ["products"],

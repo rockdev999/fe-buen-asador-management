@@ -11,3 +11,9 @@ export interface Location {
   id: UUID;
   name: string;
 }
+
+export interface LocationSimple {
+  id: UUID;
+  name: string;
+  active: boolean;
+}
