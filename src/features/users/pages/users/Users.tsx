@@ -17,6 +17,7 @@ import {
 import { useState } from "react";
 import { UserPageItem } from "../../models/user.model";
 import { UserModal } from "../components/UserModal";
+import { JobPositionEnum } from "@/constants/enums/job-position.enum";
 
 export const Users = () => {
   const {
@@ -48,6 +49,7 @@ export const Users = () => {
     active: (filters.active as UserStatusEnum) ?? "",
     locationId: filters.locationId ?? "",
     role: (filters.role as RoleEnum) ?? "",
+    positions: (filters.positions as JobPositionEnum) ?? "",
     sortKey,
     sortDir,
   });
@@ -135,10 +137,7 @@ export const Users = () => {
         <UserModal
           userId={selectedUserId}
           onClose={handleCloseUserModal}
-          onSuccess={() => {
-            refetch();
-            handleCloseUserModal();
-          }}
+          onSuccess={handleCloseUserModal}
           key={selectedUserId ?? "default"}
         />
       )}

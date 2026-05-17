@@ -1,15 +1,25 @@
 import { zodToFormik } from "@/lib/zodToFormik";
 import { mapCreateUserFormToDTO } from "../mappers/user.mapper";
-import { CreateUserForm, userCreateSchema } from "../validators/user.schema";
+import {
+  CreateUserForm,
+  userCreateSchema,
+  userUpdateSchema,
+} from "../validators/user.schema";
 
 export const UserFormConfig = {
   id: "user-form-config",
   initialValues: {
-    name: "",
+    firstName: "",
+    lastName: "",
+    username: "",
     email: "",
+    phone: "",
     password: "",
     repitPassword: "",
+    description: "",
+    position: [],
   } as CreateUserForm,
-  validationSchema: zodToFormik(userCreateSchema),
+  validationSchemaCreate: zodToFormik(userCreateSchema),
+  validationSchemaUpdate: zodToFormik(userUpdateSchema),
   mapFormToDTO: mapCreateUserFormToDTO,
 };

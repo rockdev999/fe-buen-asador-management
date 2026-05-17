@@ -20,6 +20,7 @@ import { SortDirectionEnum } from "@/constants/enums/sort.enum";
 import { UserStatusEnum } from "@/constants/enums/user.enum";
 import { useMemo } from "react";
 import { UUID } from "@/types/common";
+import { JobPositionEnum } from "@/constants/enums/job-position.enum";
 
 interface UseUsersPageParams {
   page: number;
@@ -27,6 +28,7 @@ interface UseUsersPageParams {
   active?: UserStatusEnum | "";
   locationId?: string;
   role?: RoleEnum | "";
+  positions?: JobPositionEnum | "";
   sortKey?: string;
   sortDir?: SortDirectionEnum | null;
 }
@@ -37,6 +39,7 @@ export function useUsersPage({
   active,
   locationId,
   role,
+  positions,
   sortKey,
   sortDir,
 }: UseUsersPageParams) {
@@ -47,6 +50,7 @@ export function useUsersPage({
     ...(active !== undefined && active !== "" && { active }),
     ...(locationId && { locationId }),
     ...(role && { role }),
+    ...(positions && { positions }),
     ...(sortKey && { sortBy: sortKey }),
     ...(sortDir && { sortOrder: sortDir }),
   };
@@ -78,7 +82,7 @@ export const useGetUserWithLocations = (
         .get<ApiResponse<UserLocationsDTO>>(`/users/${id}`)
         .then((r) => r.data.data!),
     enabled: !!id && (options?.enabled ?? true),
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 0, // no caching, always fetch fresh data
   });
 
   const data = useMemo(
@@ -97,6 +101,7 @@ export const useCreateUser = () => {
         .then((r) => r.data.data!),
 
     invalidateKeys: [QUERY_KEYS.USERS],
+    successMessage: "Usuario creado exitosamente",
   });
 
   return { ...handler };
@@ -110,6 +115,7 @@ export const useUpdateUser = (id: UUID) => {
         .then((r) => r.data.data!),
 
     invalidateKeys: [QUERY_KEYS.USERS],
+    successMessage: "Usuario actualizado exitosamente",
   });
 
   return { ...handler };
@@ -123,6 +129,7 @@ export const useDeactivateUser = (id: UUID) => {
         .then((r) => r.data),
 
     invalidateKeys: [QUERY_KEYS.USERS],
+    successMessage: "Usuario desactivado exitosamente",
   });
 
   return { ...handler };

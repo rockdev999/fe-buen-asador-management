@@ -36,9 +36,15 @@
     "revokeLocation": "¿Deseas revocar el acceso de este usuario a la sucursal?"
   },
   "validation": {
-    "nameRequired": "El nombre es requerido.",
-    "nameMin": "El nombre debe tener al menos 2 caracteres.",
-    "nameMax": "El nombre no puede exceder los 100 caracteres.",
+    "firstNameRequired": "El nombre es requerido.",
+    "firstNameMin": "El nombre debe tener al menos 2 caracteres.",
+    "firstNameMax": "El nombre no puede exceder los 50 caracteres.",
+    "lastNameRequired": "El apellido es requerido.",
+    "lastNameMin": "El apellido debe tener al menos 2 caracteres.",
+    "lastNameMax": "El apellido no puede exceder los 50 caracteres.",
+    "usernameRequired": "El nombre de usuario es requerido.",
+    "usernameMin": "El nombre de usuario debe tener al menos 2 caracteres.",
+    "usernameMax": "El nombre de usuario no puede exceder los 30 caracteres.",
     "emailRequired": "El email es requerido.",
     "emailInvalid": "Ingresa un email válido.",
     "passwordRequired": "La contraseña es requerida.",
@@ -47,6 +53,9 @@
     "passwordMin": "La contraseña debe tener al menos 8 caracteres.",
     "passwordMax": "La contraseña no puede exceder los 50 caracteres.",
     "roleRequired": "Selecciona un rol.",
-    "locationRequired": "Selecciona una sucursal."
+    "locationRequired": "Selecciona una sucursal.",
+    "descriptionMax": "La descripción no puede exceder los 200 caracteres.",
+    "phoneInvalid": "Ingresa un número de teléfono válido.",
+    "phoneMax": "El número de teléfono no puede exceder los 20 caracteres."
   }
 }

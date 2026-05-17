@@ -3,6 +3,7 @@ import { LocationDTO } from "@/features/locations/dto/location.dto";
 import { ISODateTimeString, UUID } from "@/types/common";
 import { RoleDTO } from "./role.dto";
 import { Audit } from "@/types/audit.types";
+import { JobPositionEnum } from "@/constants/enums/job-position.enum";
 
 export interface UserDTO {
   id: string;
@@ -32,10 +33,13 @@ export interface UserLocationItemDTO {
 export interface UserPageItemDTO {
   id: UUID;
   name: string;
+  username: string;
   email: string;
+  phone?: string;
   active: boolean;
-  createdAt: ISODateTimeString;
+  positions?: JobPositionEnum[] | [];
   locations: UserLocationItemDTO[] | null;
+  createdAt: ISODateTimeString;
 }
 
 export interface UserLocationDTO {
@@ -47,16 +51,25 @@ export interface UserLocationDTO {
 
 export interface UserLocationsDTO {
   id: UUID;
-  name: string;
+  firstName: string;
+  lastName: string;
+  username: string;
   email: string;
+  phone?: string;
   active: boolean;
-  audit: Audit;
+  description?: string;
+  positions?: JobPositionEnum[] | [];
   locations: UserLocationDTO[];
+  audit: Audit;
 }
 
 export interface CreateUserDTO {
   id?: UUID;
-  name: string;
+  firstName: string;
+  lastName: string;
+  username: string;
   email: string;
   password?: string;
+  description?: string;
+  positions?: JobPositionEnum[] | [];
 }

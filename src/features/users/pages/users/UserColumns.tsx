@@ -4,6 +4,8 @@ import { ROLE_COLORS, ROLE_LABELS } from "@/utils/generalStatus/role-display";
 import { cn } from "@/lib/utils";
 import { CheckCircle, XCircle } from "lucide-react";
 import { formatLocalDate } from "@/lib/formatters";
+import { JOB_POSITION_LABELS } from "@/utils/generalStatus/job-display";
+import { JobPositionEnum } from "@/constants/enums/job-position.enum";
 
 export const USER_COLUMNS: ColumnDef<UserPageItem>[] = [
   {
@@ -11,7 +13,15 @@ export const USER_COLUMNS: ColumnDef<UserPageItem>[] = [
     label: "Nombre",
     sortable: true,
     render: (row) => (
-      <span className="text-[13px] font-medium text-inkblack">{row.name}</span>
+      <span className="text-[11px] text-muted-foreground">{row.name}</span>
+    ),
+  },
+  {
+    key: "username",
+    label: "Usuario",
+    sortable: true,
+    render: (row) => (
+      <span className="text-[11px] text-muted-foreground">{row.username}</span>
     ),
   },
   {
@@ -21,6 +31,46 @@ export const USER_COLUMNS: ColumnDef<UserPageItem>[] = [
     render: (row) => (
       <span className="text-[11px] text-muted-foreground">{row.email}</span>
     ),
+  },
+  {
+    key: "phone",
+    label: "Teléfono",
+    sortable: true,
+    render: (row) => (
+      <span className="text-[11px] text-muted-foreground">
+        {row.phone ?? "--"}
+      </span>
+    ),
+  },
+  {
+    key: "position",
+    label: "Cargo",
+    sortable: true,
+    render: (row) => {
+      if (!row.positions?.length) {
+        return <span className="text-[11px] text-muted-foreground/40">—</span>;
+      }
+      const MAX = 2;
+      const visible = row.positions.slice(0, MAX);
+      const remaining = row.positions.length - MAX;
+      return (
+        <div className="flex items-center gap-1 flex-wrap">
+          {visible.map((pos: JobPositionEnum) => (
+            <span
+              key={pos}
+              className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-surface text-muted-foreground border border-surface/80"
+            >
+              {JOB_POSITION_LABELS[pos] ?? pos}
+            </span>
+          ))}
+          {remaining > 0 && (
+            <span className="text-[10px] text-muted-foreground/50">
+              +{remaining}
+            </span>
+          )}
+        </div>
+      );
+    },
   },
   {
     key: "locations",

@@ -8,6 +8,8 @@ import {
   User,
   Mail,
   AlertTriangle,
+  BriefcaseBusiness,
+  FileText,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useMemo, useState } from "react";
@@ -27,6 +29,8 @@ import { Label } from "@/components/shared/Basics/Label";
 import { FormField } from "@/components/shared/Basics/FormField";
 import { CreateUserForm } from "../../validators/user.schema";
 import { UserModalSkeleton } from "./UserModalSkeleton";
+import { MultiSelectDropdown } from "@/components/shared/Interactives/MultiSelectDropdown";
+import { JOB_POSITION_OPTIONS } from "@/utils/generalStatus/job-display";
 
 interface UserModalProps {
   userId?: UUID | null;
@@ -37,6 +41,7 @@ interface UserModalProps {
 export const UserModal = ({ userId, onClose, onSuccess }: UserModalProps) => {
   const isEdit = !!userId;
   const [showPassword, setShowPassword] = useState(false);
+  const [showRepitPassword, setShowRepitPassword] = useState(false);
   const [confirmDeactivate, setConfirmDeactivate] = useState(false);
 
   const { data: user, status: getUserStatus } = useGetUserWithLocations(
@@ -60,10 +65,14 @@ export const UserModal = ({ userId, onClose, onSuccess }: UserModalProps) => {
     if (isEdit && user) {
       return {
         id: user.id,
-        name: user.name,
+        firstName: user.firstName,
+        lastName: user.lastName,
+        username: user.username,
         email: user.email,
         password: "",
         repitPassword: "",
+        description: user.description,
+        positions: user.positions,
       };
     }
     return UserFormConfig.initialValues;
@@ -81,21 +90,15 @@ export const UserModal = ({ userId, onClose, onSuccess }: UserModalProps) => {
   } = useFormik<CreateUserForm>({
     initialValues: initValues,
     enableReinitialize: true,
-    validate: UserFormConfig.validationSchema,
+    validate: isEdit
+      ? UserFormConfig.validationSchemaUpdate
+      : UserFormConfig.validationSchemaCreate,
     onSubmit: (data: CreateUserForm) => {
-      const dto = UserFormConfig.mapFormToDTO(data);
+      const dto = UserFormConfig.mapFormToDTO(data, isEdit);
       if (isEdit) {
-        updateUser(dto, {
-          onSuccess: () => {
-            onSuccess();
-          },
-        });
+        updateUser(dto, { onSuccess: onSuccess });
       } else {
-        createUser(dto, {
-          onSuccess: () => {
-            onSuccess();
-          },
-        });
+        createUser(dto, { onSuccess: onSuccess });
       }
     },
   });
@@ -180,34 +183,107 @@ export const UserModal = ({ userId, onClose, onSuccess }: UserModalProps) => {
                 </p>
               </div>
 
-              {/* Nombre */}
+              {/* Nombres y apellidos */}
+              <div className="grid gap-3 sm:grid-cols-2">
+                <FormField>
+                  <Label required>Nombres</Label>
+
+                  <div className="relative">
+                    <User
+                      size={14}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/40"
+                    />
+
+                    <input
+                      name="firstName"
+                      value={formValues.firstName}
+                      onChange={formHandleChange}
+                      onBlur={formHandlerBlur}
+                      placeholder="Ej: Juan"
+                      className={cn(
+                        "h-9 w-full rounded-xl border bg-white py-2 pl-9 pr-3 text-[13px] text-inkblack placeholder:text-muted-foreground/30",
+                        "transition-all focus:border-brand/40 focus:outline-none focus:ring-2 focus:ring-brand/20",
+                        formTouched.firstName && formErrors.firstName
+                          ? "border-red-300"
+                          : "border-surface",
+                      )}
+                    />
+                  </div>
+
+                  {formTouched.firstName && formErrors.firstName && (
+                    <p className="text-[10px] text-red-500">
+                      {formErrors.firstName}
+                    </p>
+                  )}
+                </FormField>
+
+                <FormField>
+                  <Label required>Apellidos</Label>
+
+                  <div className="relative">
+                    <User
+                      size={14}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/40"
+                    />
+
+                    <input
+                      name="lastName"
+                      value={formValues.lastName}
+                      onChange={formHandleChange}
+                      onBlur={formHandlerBlur}
+                      placeholder="Ej: Pérez"
+                      className={cn(
+                        "h-9 w-full rounded-xl border bg-white py-2 pl-9 pr-3 text-[13px] text-inkblack placeholder:text-muted-foreground/30",
+                        "transition-all focus:border-brand/40 focus:outline-none focus:ring-2 focus:ring-brand/20",
+                        formTouched.lastName && formErrors.lastName
+                          ? "border-red-300"
+                          : "border-surface",
+                      )}
+                    />
+                  </div>
+
+                  {formTouched.lastName && formErrors.lastName && (
+                    <p className="text-[10px] text-red-500">
+                      {formErrors.lastName}
+                    </p>
+                  )}
+                </FormField>
+              </div>
+
+              {/* Nombre de usuario */}
               <FormField>
-                <Label required>Nombre</Label>
+                <Label required>Nombre de usuario</Label>
 
                 <div className="relative">
-                  <User
+                  <UserCheck
                     size={14}
                     className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/40"
                   />
 
                   <input
-                    name="name"
-                    value={formValues.name}
+                    name="username"
+                    value={formValues.username}
                     onChange={formHandleChange}
                     onBlur={formHandlerBlur}
-                    placeholder="Ej: Juan Pérez"
+                    placeholder="Ej: juan.perez"
                     className={cn(
                       "h-9 w-full rounded-xl border bg-white py-2 pl-9 pr-3 text-[13px] text-inkblack placeholder:text-muted-foreground/30",
                       "transition-all focus:border-brand/40 focus:outline-none focus:ring-2 focus:ring-brand/20",
-                      formTouched.name && formErrors.name
+                      formTouched.username && formErrors.username
                         ? "border-red-300"
                         : "border-surface",
                     )}
                   />
                 </div>
 
-                {formTouched.name && formErrors.name && (
-                  <p className="text-[10px] text-red-500">{formErrors.name}</p>
+                {formTouched.username && formErrors.username ? (
+                  <p className="text-[10px] text-red-500">
+                    {formErrors.username}
+                  </p>
+                ) : (
+                  <p className="text-[10px] text-muted-foreground">
+                    Será usado para identificar al usuario dentro del sistema.
+                  </p>
                 )}
               </FormField>
 
@@ -241,6 +317,98 @@ export const UserModal = ({ userId, onClose, onSuccess }: UserModalProps) => {
                 {formTouched.email && formErrors.email && (
                   <p className="text-[10px] text-red-500">{formErrors.email}</p>
                 )}
+              </FormField>
+
+              <FormField>
+                <Label>Descripción</Label>
+
+                <div className="relative">
+                  <FileText
+                    size={14}
+                    className="absolute left-3 top-3 text-muted-foreground/40"
+                  />
+
+                  <textarea
+                    name="description"
+                    value={formValues.description ?? ""}
+                    onChange={formHandleChange}
+                    onBlur={formHandlerBlur}
+                    placeholder="Ej: Usuario encargado de caja, atención al cliente o administración."
+                    rows={3}
+                    maxLength={200}
+                    className={cn(
+                      "w-full resize-none rounded-xl border bg-white py-2 pl-9 pr-3 text-[13px] text-inkblack placeholder:text-muted-foreground/30",
+                      "transition-all focus:border-brand/40 focus:outline-none focus:ring-2 focus:ring-brand/20",
+                      formTouched.description && formErrors.description
+                        ? "border-red-300"
+                        : "border-surface",
+                    )}
+                  />
+                </div>
+
+                <div className="flex items-center justify-between gap-3">
+                  {formTouched.description && formErrors.description ? (
+                    <p className="text-[10px] text-red-500">
+                      {formErrors.description}
+                    </p>
+                  ) : (
+                    <p className="text-[10px] text-muted-foreground">
+                      Campo opcional para anotar funciones o detalles del
+                      usuario.
+                    </p>
+                  )}
+
+                  <span className="shrink-0 text-[10px] text-muted-foreground">
+                    {formValues.description?.length ?? 0}/200
+                  </span>
+                </div>
+              </FormField>
+
+              <FormField>
+                <Label>Cargos de trabajo</Label>
+
+                <div
+                  className={cn(
+                    "rounded-xl border bg-surface/20 p-3",
+                    formTouched.positions && formErrors.positions
+                      ? "border-red-300"
+                      : "border-surface",
+                  )}
+                >
+                  <div className="mb-3 flex items-start gap-2">
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-brand/10 text-brand">
+                      <BriefcaseBusiness size={14} />
+                    </div>
+
+                    <div>
+                      <p className="text-[12px] font-medium text-inkblack">
+                        Selecciona uno o más cargos
+                      </p>
+
+                      <p className="mt-0.5 text-[11px] text-muted-foreground">
+                        Esto ayuda a identificar las responsabilidades del
+                        usuario.
+                      </p>
+                    </div>
+                  </div>
+
+                  <FormField>
+                    <Label>Cargo(s)</Label>
+                    <MultiSelectDropdown
+                      options={JOB_POSITION_OPTIONS}
+                      value={formValues.positions ?? []}
+                      onChange={(vals) =>
+                        formHandleChange({
+                          target: { name: "positions", value: vals },
+                        })
+                      }
+                      placeholder="Seleccionar cargos..."
+                      searchable
+                      error={formErrors.positions as string}
+                      touched={formTouched.positions as boolean}
+                    />
+                  </FormField>
+                </div>
               </FormField>
 
               {/* Contraseña — solo en creación */}
@@ -297,7 +465,8 @@ export const UserModal = ({ userId, onClose, onSuccess }: UserModalProps) => {
                     <div className="relative">
                       <input
                         name="repitPassword"
-                        type={showPassword ? "text" : "password"}
+                        type={showRepitPassword ? "text" : "password"}
+                        onClick={() => setShowRepitPassword((value) => !value)}
                         value={formValues.repitPassword}
                         onChange={formHandleChange}
                         onBlur={formHandlerBlur}
@@ -313,15 +482,15 @@ export const UserModal = ({ userId, onClose, onSuccess }: UserModalProps) => {
 
                       <button
                         type="button"
-                        onClick={() => setShowPassword((value) => !value)}
+                        onClick={() => setShowRepitPassword((value) => !value)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground/40 transition-colors hover:text-muted-foreground"
                         aria-label={
-                          showPassword
+                          showRepitPassword
                             ? "Ocultar contraseña"
                             : "Mostrar contraseña"
                         }
                       >
-                        {showPassword ? (
+                        {showRepitPassword ? (
                           <EyeOff size={13} />
                         ) : (
                           <Eye size={13} />
@@ -459,6 +628,7 @@ export const UserModal = ({ userId, onClose, onSuccess }: UserModalProps) => {
               isLoading={isSaving}
               disabled={isEdit ? !formDirty || isSaving : isSaving}
               className="h-9 rounded-xl px-4 text-[12px] font-medium"
+              onClick={() => console.log(formErrors)}
             >
               {isEdit ? "Guardar cambios" : "Crear usuario"}
             </Button>

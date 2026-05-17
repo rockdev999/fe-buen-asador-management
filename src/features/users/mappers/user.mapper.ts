@@ -47,7 +47,10 @@ export const mapUserPageItemDTOToModel = (
 ): UserPageItem => ({
   id: dto.id,
   name: dto.name,
+  username: dto.username,
   email: dto.email,
+  phone: dto.phone,
+  positions: dto.positions,
   active: dto.active,
   createdAt: dto.createdAt,
   locations: dto.locations
@@ -68,17 +71,38 @@ export const mapUserLocationsDTOToModel = (
   dto: UserLocationsDTO,
 ): UserLocations => ({
   id: dto.id,
-  name: dto.name,
+  firstName: dto.firstName,
+  lastName: dto.lastName,
+  username: dto.username,
   email: dto.email,
   active: dto.active,
-  audit: dto.audit,
+  description: dto.description ? dto.description : "",
+  positions: dto.positions,
   locations: dto.locations.map(mapUserLocationDTOToModel),
+  audit: dto.audit,
 });
 
 export const mapCreateUserFormToDTO = (
   user: CreateUserForm,
-): CreateUserDTO => ({
-  name: user.name.trim(),
-  email: user.email.trim().toLowerCase(),
-  password: user.password.trim(),
-});
+  isEdit: boolean,
+): CreateUserDTO => {
+  const createDTO = {
+    firstName: user.firstName.trim(),
+    lastName: user.lastName.trim(),
+    username: user.username.trim(),
+    email: user.email.trim().toLowerCase(),
+    password: user.password.trim(),
+    description: user.description ? user.description.trim() : "",
+    positions: user.positions ? user.positions : [],
+  };
+
+  const editDTO = {
+    firstName: user.firstName.trim(),
+    lastName: user.lastName.trim(),
+    username: user.username.trim(),
+    email: user.email.trim().toLowerCase(),
+    description: user.description ? user.description.trim() : "",
+    positions: user.positions ? user.positions : [],
+  };
+  return isEdit ? editDTO : createDTO;
+};

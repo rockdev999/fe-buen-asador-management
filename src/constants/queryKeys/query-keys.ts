@@ -5,7 +5,7 @@ export const QUERY_KEYS = {
 
   // Usuarios
   USERS: ["users"],
-  USER: (id: string) => ["users", id],
+  USER: (id: string) => ["user-detail", id],
   PAGINATION_USERS: (params: Record<string, any>) => [
     "users",
     "pagination",
