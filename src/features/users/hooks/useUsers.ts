@@ -1,6 +1,7 @@
 import {
   useGetHandler,
   usePaginatedGetHandler,
+  usePatchHandler,
   usePostHandler,
   usePutHandler,
 } from "@/hooks/api.handlers";
@@ -122,10 +123,10 @@ export const useUpdateUser = (id: UUID) => {
 };
 
 export const useDeactivateUser = (id: UUID) => {
-  const handler = usePutHandler({
+  const handler = usePatchHandler({
     mutationFn: () =>
       httpClient
-        .put<ApiResponse<null>>(`/users/${id}/deactivate`, {})
+        .patch<ApiResponse<null>>(`/users/${id}/deactivate`, {})
         .then((r) => r.data),
 
     invalidateKeys: [QUERY_KEYS.USERS],

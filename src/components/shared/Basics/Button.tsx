@@ -1,38 +1,73 @@
-import { ButtonHTMLAttributes, forwardRef } from "react";
+import { ButtonHTMLAttributes, forwardRef, ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 interface AppButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   isLoading?: boolean;
-  variant?: "primary" | "secondary" | "ghost" | "danger" | "outline";
-  size?: "sm" | "md" | "lg";
+  loadingText?: ReactNode;
+  variant?:
+    | "primary"
+    | "secondary"
+    | "ghost"
+    | "danger"
+    | "outline"
+    | "link"
+    | "dashed";
+  size?: "xs" | "sm" | "md" | "lg" | "icon-xs" | "icon-sm" | "icon-md";
+  shape?: "default" | "pill" | "circle";
 }
 
 const VARIANT_STYLES: Record<NonNullable<AppButtonProps["variant"]>, string> = {
-  primary: "bg-brand text-white hover:bg-brand-dark",
-  secondary: "bg-surface text-inkblack hover:bg-surface/80",
+  primary:
+    "border border-transparent bg-brand text-white hover:bg-brand-dark shadow-sm",
+
+  secondary:
+    "border border-transparent bg-surface text-inkblack hover:bg-surface/80",
+
   ghost:
-    "bg-transparent text-muted-foreground hover:text-inkblack hover:bg-surface/60",
-  danger: "bg-red-500 text-white hover:bg-red-600",
+    "border border-transparent bg-transparent text-muted-foreground hover:bg-surface/70 hover:text-inkblack",
+
+  danger:
+    "border border-transparent bg-red-500 text-white hover:bg-red-600 shadow-sm",
+
   outline:
-    "bg-transparent border border-surface text-inkblack hover:border-muted-foreground/30",
+    "border border-surface bg-white text-muted-foreground hover:border-brand/40 hover:bg-surface hover:text-brand",
+
+  link: "border border-transparent bg-transparent px-0 text-brand hover:text-brand-dark hover:underline",
+
+  dashed:
+    "border-[1.5px] border-dashed border-surface bg-transparent text-muted-foreground hover:border-brand hover:bg-orange-50 hover:text-brand",
 };
 
 const SIZE_STYLES: Record<NonNullable<AppButtonProps["size"]>, string> = {
-  sm: "h-7 px-3 text-[11px]",
-  md: "h-9 px-5 text-[13px]",
-  lg: "h-11 px-6 text-[14px]",
+  xs: "h-7 px-3 text-[11px]",
+  sm: "h-8 px-3.5 text-[12px]",
+  md: "h-9 px-4 text-[13px]",
+  lg: "h-10 px-5 text-[14px]",
+
+  "icon-xs": "h-5 w-5 p-0 text-[10px]",
+  "icon-sm": "h-7 w-7 p-0 text-[12px]",
+  "icon-md": "h-8 w-8 p-0 text-[13px]",
+};
+
+const SHAPE_STYLES: Record<NonNullable<AppButtonProps["shape"]>, string> = {
+  default: "rounded-xl",
+  pill: "rounded-full",
+  circle: "rounded-full",
 };
 
 export const Button = forwardRef<HTMLButtonElement, AppButtonProps>(
   (
     {
       isLoading = false,
+      loadingText,
       variant = "primary",
       size = "md",
+      shape = "default",
       disabled,
       className,
       children,
       onClick,
+      type = "button",
       ...props
     },
     ref,
@@ -42,28 +77,30 @@ export const Button = forwardRef<HTMLButtonElement, AppButtonProps>(
     return (
       <button
         ref={ref}
+        type={type}
         disabled={isDisabled}
         onClick={isDisabled ? undefined : onClick}
         className={cn(
-          "inline-flex items-center justify-center gap-2 font-medium rounded-xl",
-          "transition-all duration-150 flex-shrink-0 select-none",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/40",
+          "inline-flex flex-shrink-0 select-none items-center justify-center gap-1.5 font-medium",
+          "transition-all duration-150",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand/30 focus-visible:ring-offset-1",
           SIZE_STYLES[size],
+          SHAPE_STYLES[shape],
           VARIANT_STYLES[variant],
-          !isDisabled && "active:scale-[0.97] cursor-pointer",
-          isDisabled && "opacity-50 cursor-not-allowed pointer-events-none",
+          !isDisabled && "cursor-pointer active:scale-[0.98]",
+          isDisabled && "cursor-not-allowed opacity-55 pointer-events-none",
           className,
         )}
         {...props}
       >
-        {isLoading ? (
+        {isLoading && (
           <span
-            className="w-3.5 h-3.5 border-2 border-current/30 border-t-current rounded-full animate-spin flex-shrink-0"
+            className="h-3.5 w-3.5 flex-shrink-0 animate-spin rounded-full border-2 border-current/30 border-t-current"
             aria-hidden="true"
           />
-        ) : (
-          children
         )}
+
+        {isLoading ? (loadingText ?? children) : children}
       </button>
     );
   },

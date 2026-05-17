@@ -3,10 +3,10 @@ import { useAuth } from "../hooks/useAuth";
 import { useEffect } from "react";
 import { PATHS } from "@/routes";
 import { t } from "@/locales/es";
-import { AuthLayout } from "../components/AuthLayout";
+import { AuthLayout } from "./components/AuthLayout";
 import { getInitials } from "@/lib/utils";
-import { SelectLocationCard } from "../components/SelectLocationCard";
-import { LoginCard } from "../components/LoginCard";
+import { SelectLocationCard } from "./components/SelectLocationCard";
+import { LoginCard } from "./components/LoginCard";
 
 export const Login = () => {
   const navigate = useNavigate();

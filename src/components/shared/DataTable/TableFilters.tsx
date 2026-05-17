@@ -223,6 +223,7 @@ export function TableFilters({
 
       {/* Botón Buscar */}
       <Button
+        type="button"
         isLoading={isLoading && activeButton === "search"}
         onClick={handleApply}
         disabled={isLoading && activeButton !== "search"}
@@ -233,6 +234,7 @@ export function TableFilters({
       {/* Limpiar */}
       {hasFilters && (
         <Button
+          type="button"
           variant="ghost"
           isLoading={isLoading && activeButton === "clear"}
           onClick={handleClear}

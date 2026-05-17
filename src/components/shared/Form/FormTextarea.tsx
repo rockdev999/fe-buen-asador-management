@@ -42,6 +42,7 @@ export const FormTextarea = ({
   const fieldId = id ?? name;
   const hasError = touched && error;
   const textValue = typeof value === "string" ? value : "";
+  const shouldShowCounter = Boolean(showCounter && maxLength);
 
   return (
     <FormField className={fieldClassName}>
@@ -73,29 +74,33 @@ export const FormTextarea = ({
             "w-full resize-none rounded-xl border bg-white py-2 pr-3 text-[13px] text-inkblack placeholder:text-muted-foreground/30",
             "transition-all focus:border-brand/40 focus:outline-none focus:ring-2 focus:ring-brand/20",
             Icon ? "pl-9" : "pl-3",
+            shouldShowCounter && "pb-7",
             hasError ? "border-red-300" : "border-surface",
             textareaClassName,
             className,
           )}
           {...props}
         />
-      </div>
-
-      <div className="flex items-center justify-between gap-2">
-        <div>
-          <ErrorMessage touched={touched} error={error} />
-
-          {!hasError && helperText && (
-            <p className="text-[10px] text-muted-foreground">{helperText}</p>
-          )}
-        </div>
 
         {showCounter && maxLength && (
-          <span className="text-[10px] text-muted-foreground">
+          <span
+            className={cn(
+              "pointer-events-none absolute bottom-2 right-3 rounded bg-white/90 px-1 text-[10px]",
+              textValue.length >= Number(maxLength)
+                ? "text-red-500"
+                : "text-muted-foreground",
+            )}
+          >
             {textValue.length}/{maxLength}
           </span>
         )}
       </div>
+
+      {hasError && <ErrorMessage touched={touched} error={error} />}
+
+      {!hasError && helperText && (
+        <p className="text-[10px] text-muted-foreground">{helperText}</p>
+      )}
     </FormField>
   );
 };

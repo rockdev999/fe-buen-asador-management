@@ -67,7 +67,7 @@ export function FormInput({
         />
       </div>
 
-      <ErrorMessage touched={touched} error={error} />
+      {hasError && <ErrorMessage touched={touched} error={error} />}
 
       {!hasError && helperText && (
         <p className="text-[10px] text-muted-foreground">{helperText}</p>

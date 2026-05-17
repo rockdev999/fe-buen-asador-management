@@ -1,13 +1,13 @@
 import { RoleEnum } from "@/constants";
 import { t } from "@/locales/es";
-import { useAuth } from "../hooks/useAuth";
-import { useSelectLocation } from "../hooks/useSelectLocation";
+import { useAuth } from "../../hooks/useAuth";
+import { useSelectLocation } from "../../hooks/useSelectLocation";
 import { useState } from "react";
 import { LocationWithRoleDTO } from "@/features/locations/dto/location.dto";
 import { useAuthStore } from "@/stores/auth.store";
 import { Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/shared/Basics/Button";
 
 const trans = t.auth.selectLocation;
 
@@ -100,13 +100,15 @@ export function SelectLocationCard() {
         {status === "pending" ? trans.submitting : trans.submit}
       </Button>
 
-      <button
+      <Button
         type="button"
+        variant="link"
+        size="xs"
         onClick={handleBack}
-        className="w-full mt-4 text-xs text-brand hover:text-brand-dark transition-colors text-center block"
+        className="mt-4 w-full"
       >
         {trans.back}
-      </button>
+      </Button>
     </div>
   );
 }

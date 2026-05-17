@@ -9,7 +9,7 @@ import { PATHS } from "@/routes";
 import { cn, getInitials } from "@/lib/utils";
 import { Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { AuthLayout } from "../components/AuthLayout";
+import { AuthLayout } from "./components/AuthLayout";
 import { useAuthStore } from "@/stores/auth.store";
 
 const trans = t.auth.selectLocation;
