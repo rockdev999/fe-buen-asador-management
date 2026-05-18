@@ -15,6 +15,11 @@ export const QUERY_KEYS = {
   // Sucursales
   LOCATIONS: ["locations"],
   LOCATION: (id: string) => ["locations", id],
+  PAGINATION_LOCATIONS: (params: Record<string, any>) => [
+    "locations",
+    "pagination",
+    params,
+  ],
   LOCATION_SIMPLE: ["locations", "simple"],
 
   // Productos
@@ -61,4 +66,7 @@ export const QUERY_KEYS = {
 
   // Menú
   MENU: ["menu"],
+
+  // Roles
+  ROLES: ["roles"],
 } as const;

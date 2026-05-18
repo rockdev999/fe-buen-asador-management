@@ -62,3 +62,12 @@ export interface UserLocations {
   locations: UserLocation[];
   audit: Audit;
 }
+
+export interface UserWithLocation {
+  userLocationId: UUID;
+  id: UUID;
+  name: string;
+  email: string;
+  role: Role | null;
+  activeLocation: boolean;
+}

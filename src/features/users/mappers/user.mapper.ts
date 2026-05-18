@@ -7,6 +7,7 @@ import {
   UserLocationItemDTO,
   UserLocationsDTO,
   UserPageItemDTO,
+  UserWithLocationDTO,
 } from "../dto/user.dto";
 import {
   User,
@@ -15,6 +16,7 @@ import {
   UserLocationItem,
   UserLocations,
   UserPageItem,
+  UserWithLocation,
 } from "../models/user.model";
 import { mapRoleDTOToModel } from "./role.mapper";
 import { CreateUserForm } from "../validators/user.schema";
@@ -106,3 +108,14 @@ export const mapCreateUserFormToDTO = (
   };
   return isEdit ? editDTO : createDTO;
 };
+
+export const mapUserWithLocationDTOToModel = (
+  dto: UserWithLocationDTO,
+): UserWithLocation => ({
+  userLocationId: dto.userLocationId,
+  id: dto.id,
+  name: dto.name,
+  email: dto.email,
+  role: dto.role ? mapRoleDTOToModel(dto.role) : null,
+  activeLocation: dto.activeLocation,
+});

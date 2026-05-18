@@ -73,3 +73,12 @@ export interface CreateUserDTO {
   description?: string;
   positions?: JobPositionEnum[] | [];
 }
+
+export interface UserWithLocationDTO {
+  userLocationId: UUID;
+  id: UUID;
+  name: string;
+  email: string;
+  role: RoleDTO | null;
+  activeLocation: boolean;
+}

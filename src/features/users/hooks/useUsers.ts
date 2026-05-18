@@ -22,6 +22,8 @@ import { UserStatusEnum } from "@/constants/enums/user.enum";
 import { useMemo } from "react";
 import { UUID } from "@/types/common";
 import { JobPositionEnum } from "@/constants/enums/job-position.enum";
+import { RoleDTO } from "../dto/role.dto";
+import { mapRoleDTOToModel } from "../mappers/role.mapper";
 
 interface UseUsersPageParams {
   page: number;
@@ -134,4 +136,22 @@ export const useDeactivateUser = (id: UUID) => {
   });
 
   return { ...handler };
+};
+
+export const useGetRoles = () => {
+  const handler = useGetHandler({
+    queryKey: QUERY_KEYS.ROLES,
+    queryFn: () =>
+      httpClient
+        .get<ApiResponse<RoleDTO[]>>("users/roles")
+        .then((r) => r.data.data!),
+    staleTime: 10 * 60 * 1000, // 10 minutes
+  });
+
+  const data = useMemo(
+    () => (handler.data ? handler.data.map(mapRoleDTOToModel) : null),
+    [handler.data],
+  );
+
+  return { ...handler, data };
 };
