@@ -71,3 +71,11 @@ export interface UserWithLocation {
   role: Role | null;
   activeLocation: boolean;
 }
+
+export interface UserSimple {
+  id: UUID;
+  name: string;
+  username: string;
+  positions?: JobPositionEnum[] | [];
+  locations?: UserLocationItem[] | [];
+}

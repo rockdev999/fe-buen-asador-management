@@ -6,6 +6,7 @@ export const QUERY_KEYS = {
   // Usuarios
   USERS: ["users"],
   USER: (id: string) => ["user-detail", id],
+  USER_SIMPLE: ["users", "simple"],
   PAGINATION_USERS: (params: Record<string, any>) => [
     "users",
     "pagination",
@@ -14,6 +15,10 @@ export const QUERY_KEYS = {
 
   // Sucursales
   LOCATIONS: ["locations"],
+  REMOVE_USER_FROM_LOCATION: (locationId: string, userId: string) => [
+    locationId,
+    userId,
+  ],
   LOCATION: (id: string) => ["locations", id],
   PAGINATION_LOCATIONS: (params: Record<string, any>) => [
     "locations",

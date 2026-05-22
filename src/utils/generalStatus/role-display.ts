@@ -4,10 +4,12 @@ export const ROLE_LABELS: Record<RoleEnum, string> = {
   [RoleEnum.MANAGER]: "Gerente",
   [RoleEnum.ADMIN]: "Administrador",
   [RoleEnum.CASHIER]: "Cajero",
+  [RoleEnum.EMPLOYEE]: "Empleado",
 };
 
 export const ROLE_COLORS: Record<RoleEnum, string> = {
   [RoleEnum.MANAGER]: "bg-purple-50 text-purple-700",
   [RoleEnum.ADMIN]: "bg-blue-50 text-blue-700",
   [RoleEnum.CASHIER]: "bg-green-50 text-green-700",
+  [RoleEnum.EMPLOYEE]: "bg-gray-50 text-gray-700",
 };

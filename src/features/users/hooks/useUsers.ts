@@ -9,10 +9,12 @@ import {
   CreateUserDTO,
   UserLocationsDTO,
   UserPageItemDTO,
+  UserSimpleDTO,
 } from "../dto/user.dto";
 import {
   mapUserLocationsDTOToModel,
   mapUserPageItemDTOToModel,
+  mapUserSimpleDTOToModel,
 } from "../mappers/user.mapper";
 import { QUERY_KEYS, RoleEnum } from "@/constants";
 import { httpClient } from "@/services/http.client";
@@ -90,6 +92,24 @@ export const useGetUserWithLocations = (
 
   const data = useMemo(
     () => (handler.data ? mapUserLocationsDTOToModel(handler.data) : null),
+    [handler.data],
+  );
+
+  return { ...handler, data };
+};
+
+export const useGetUsersSimple = () => {
+  const handler = useGetHandler({
+    queryKey: QUERY_KEYS.USER_SIMPLE,
+    queryFn: () =>
+      httpClient
+        .get<ApiResponse<UserSimpleDTO[]>>("users/simple")
+        .then((r) => r.data.data!),
+    staleTime: 10 * 60 * 1000, // 10 minutes
+  });
+
+  const data = useMemo(
+    () => (handler.data ? handler.data.map(mapUserSimpleDTOToModel) : null),
     [handler.data],
   );
 

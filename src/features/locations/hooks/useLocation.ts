@@ -4,6 +4,7 @@ import {
   usePaginatedGetHandler,
   usePatchHandler,
   usePostHandler,
+  usePutHandler,
 } from "@/hooks/api.handlers";
 import { httpClient } from "@/services/http.client";
 import { ApiResponse } from "@/types/api.types";
@@ -89,7 +90,7 @@ export const useCreateLocation = () => {
         .post<ApiResponse<CreateLocationDTO>>("/locations", dto)
         .then((r) => r.data.data!),
 
-    invalidateKeys: [QUERY_KEYS.LOCATIONS],
+    invalidateKeys: [],
     successMessage: "Sucursal creada exitosamente",
   });
 
@@ -97,14 +98,28 @@ export const useCreateLocation = () => {
 };
 
 export const useUpdateLocation = (id: string) => {
-  const handler = usePostHandler({
+  const handler = usePutHandler({
     mutationFn: (dto: CreateLocationDTO) =>
       httpClient
-        .post<ApiResponse<CreateLocationDTO>>(`/locations/${id}`, dto)
+        .put<ApiResponse<CreateLocationDTO>>(`/locations/${id}`, dto)
         .then((r) => r.data.data!),
 
     invalidateKeys: [QUERY_KEYS.LOCATIONS],
     successMessage: "Sucursal actualizada exitosamente",
+  });
+
+  return { ...handler };
+};
+
+export const useActivateLocation = (id: string) => {
+  const handler = usePatchHandler({
+    mutationFn: () =>
+      httpClient
+        .patch<ApiResponse<null>>(`/locations/${id}/activate`, {})
+        .then((r) => r.data),
+
+    invalidateKeys: [],
+    successMessage: "Sucursal activada exitosamente",
   });
 
   return { ...handler };
@@ -117,7 +132,7 @@ export const useDeactivateLocation = (id: string) => {
         .patch<ApiResponse<null>>(`/locations/${id}/deactivate`, {})
         .then((r) => r.data),
 
-    invalidateKeys: [QUERY_KEYS.LOCATIONS],
+    invalidateKeys: [],
     successMessage: "Sucursal desactivada exitosamente",
   });
 
@@ -144,4 +159,40 @@ export const useGetLocation = (
   );
 
   return { ...handler, data };
+};
+
+export const useAssignUsersToLocation = () => {
+  return usePostHandler({
+    mutationFn: ({
+      locationId,
+      dto,
+    }: {
+      locationId: string;
+      dto: { users: { userId: string; roleId: string }[] };
+    }) =>
+      httpClient
+        .post<ApiResponse<null>>(`/locations/${locationId}/users`, dto)
+        .then((r) => r.data.data!),
+    invalidateKeys: [],
+    successMessage: "Usuarios asignados correctamente",
+  });
+};
+
+export const useDeactivateUserByLocation = () => {
+  return usePatchHandler({
+    mutationFn: ({
+      locationId,
+      userId,
+    }: {
+      locationId: string;
+      userId: string;
+    }) =>
+      httpClient
+        .patch<
+          ApiResponse<LocationDetailDTO>
+        >(`/locations/${locationId}/users/${userId}`)
+        .then((r) => r.data.data!),
+    invalidateKeys: [],
+    successMessage: "Usuario removido de la sucursal",
+  });
 };

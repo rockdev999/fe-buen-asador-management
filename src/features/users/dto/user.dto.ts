@@ -82,3 +82,11 @@ export interface UserWithLocationDTO {
   role: RoleDTO | null;
   activeLocation: boolean;
 }
+
+export interface UserSimpleDTO {
+  id: UUID;
+  name: string;
+  username: string;
+  positions?: JobPositionEnum[] | [];
+  locations: UserLocationItemDTO[] | [];
+}

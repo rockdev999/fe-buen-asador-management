@@ -6,9 +6,9 @@ export interface Audit {
   createdBy: {
     id: UUID;
     name: string;
-  };
+  } | null;
   updatedBy: {
     id: UUID;
     name: string;
-  };
+  } | null;
 }

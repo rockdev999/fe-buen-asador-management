@@ -173,7 +173,7 @@ export function TableFilters({
               <div
                 className="
                 absolute top-full left-0 mt-1.5 z-50 min-w-[160px]
-                bg-white border border-surface rounded-2xl shadow-xl shadow-inkblack/8
+                bg-white border border-surface/250 rounded-2xl shadow-xl shadow-inkblack/8
                 overflow-hidden py-1.5
               "
               >

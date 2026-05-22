@@ -54,6 +54,7 @@ export const Locations = () => {
   const handleCloseLocationModal = () => {
     setSelectedLocationId(null);
     setOpenLocationModal(false);
+    refetch();
   };
 
   function handleApplyFilters(newFilters: Record<string, string>) {

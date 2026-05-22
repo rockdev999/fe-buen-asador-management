@@ -15,6 +15,7 @@ import { RoleBasedRedirect } from "./RoleBasedRedirect";
 import { Orders } from "@/features/pos/page/order/Orders";
 import { Sales } from "@/features/sales/page/Sales";
 import { Users } from "@/features/users/pages/users/Users";
+import { Locations } from "@/features/locations/pages/Locations";
 
 export const router = createBrowserRouter([
   { path: PATHS.LOGIN, element: <Login /> },
@@ -43,7 +44,7 @@ export const router = createBrowserRouter([
             element: <RoleRoute roles={[RoleEnum.MANAGER]} />,
             children: [
               { path: PATHS.USERS, element: <Users /> },
-              { path: PATHS.LOCATIONS, element: <div>Sucursales</div> },
+              { path: PATHS.LOCATIONS, element: <Locations /> },
             ],
           },
 

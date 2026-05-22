@@ -7,6 +7,7 @@ import {
   UserLocationItemDTO,
   UserLocationsDTO,
   UserPageItemDTO,
+  UserSimpleDTO,
   UserWithLocationDTO,
 } from "../dto/user.dto";
 import {
@@ -16,6 +17,7 @@ import {
   UserLocationItem,
   UserLocations,
   UserPageItem,
+  UserSimple,
   UserWithLocation,
 } from "../models/user.model";
 import { mapRoleDTOToModel } from "./role.mapper";
@@ -118,4 +120,14 @@ export const mapUserWithLocationDTOToModel = (
   email: dto.email,
   role: dto.role ? mapRoleDTOToModel(dto.role) : null,
   activeLocation: dto.activeLocation,
+});
+
+export const mapUserSimpleDTOToModel = (dto: UserSimpleDTO): UserSimple => ({
+  id: dto.id,
+  name: dto.name,
+  username: dto.username,
+  positions: dto.positions,
+  locations: dto.locations
+    ? dto.locations.map(mapUserLocationItemDTOToModel)
+    : [],
 });

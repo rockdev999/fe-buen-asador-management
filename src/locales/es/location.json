@@ -1,0 +1,8 @@
+{
+  "validation": {
+    "nameRequired": "El nombre es obligatorio",
+    "nameMin": "El nombre debe tener al menos 3 caracteres",
+    "nameMax": "El nombre no puede exceder los 50 caracteres",
+    "addressMax": "La dirección no puede exceder los 100 caracteres"
+  }
+}
