@@ -1,5 +1,5 @@
 import { UUID } from "@/types/common";
-import { Modifier } from "./modifier";
+import { Modifier } from "../../catalog/modifiers/models/modifier.model";
 
 export interface CartItemUnit {
   unitId: string;

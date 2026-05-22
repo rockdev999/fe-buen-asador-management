@@ -1,4 +1,4 @@
-import { MenuCategory } from "@/features/pos/models/category.model";
+import { MenuCategory } from "@/features/catalog/categories/models/category.model";
 import { cn } from "@/lib/utils";
 
 interface CategoryTabsProps {

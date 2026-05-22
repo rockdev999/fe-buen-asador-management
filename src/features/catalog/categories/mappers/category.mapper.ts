@@ -1,13 +1,14 @@
 import {
   CategoryDTO,
   CategoryProductDTO,
+  CategoryShortDTO,
   MenuCategoryDTO,
-} from "../../pos/dto/cateogory.dto";
+} from "../dto/cateogory.dto";
 import {
   Category,
   CategoryProduct,
   MenuCategory,
-} from "../../pos/models/category.model";
+} from "../models/category.model";
 
 export const mapCategoryDTOToModel = (dto: CategoryDTO): Category => ({
   id: dto.id,
@@ -38,4 +39,11 @@ export const mapMenuCategoryDTOToModel = (
   name: dto.name,
   sortOrder: dto.sortOrder,
   products: dto.products.map(mapCategoryProductDTOToModel),
+});
+
+export const mapCategoryShortDTOToModel = (
+  dto: CategoryShortDTO,
+): { id: string; name: string } => ({
+  id: dto.id,
+  name: dto.name,
 });

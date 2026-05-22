@@ -2,12 +2,15 @@ import { QUERY_KEYS } from "@/constants";
 import { useGetHandler } from "@/hooks/api.handlers";
 import { httpClient } from "@/services/http.client";
 import { ApiResponse } from "@/types/api.types";
-import { CategoryDTO, MenuCategoryDTO } from "../dto/cateogory.dto";
+import {
+  CategoryDTO,
+  MenuCategoryDTO,
+} from "../../catalog/categories/dto/cateogory.dto";
 import { useMemo } from "react";
 import {
   mapCategoryDTOToModel,
   mapMenuCategoryDTOToModel,
-} from "../mappers/category.mapper";
+} from "../../catalog/categories/mappers/category.mapper";
 
 export const useCategoriesHandler = (enabled: boolean = true) => {
   const handler = useGetHandler({

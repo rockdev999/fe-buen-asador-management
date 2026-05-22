@@ -1,7 +1,7 @@
 import { OrderEnum, OrderTypeEnum } from "@/constants";
 import { CartItem, CartItemUnit } from "../models/cart";
 import { create } from "zustand";
-import { CategoryProduct } from "../models/category.model";
+import { CategoryProduct } from "../../catalog/categories/models/category.model";
 
 interface CartState {
   items: CartItem[];

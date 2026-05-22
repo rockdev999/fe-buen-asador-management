@@ -4,7 +4,10 @@ import { ProductCard } from "./ProductCard";
 import { t } from "@/locales/es";
 import { useGetMenuHandler } from "../../hooks/useCategories";
 import { CategoryTabsSkeleton } from "./CategoryTabsSkeleton";
-import { CategoryProduct, MenuCategory } from "../../models/category.model";
+import {
+  CategoryProduct,
+  MenuCategory,
+} from "../../../catalog/categories/models/category.model";
 import { ProductGridSkeleton } from "./ProductCardSkeleton";
 
 const trans = t.pos.products;

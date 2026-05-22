@@ -1,7 +1,7 @@
 import { Image } from "@/components/shared/Basics/Image";
 import { formatMoney } from "@/lib/money";
 import { cn } from "@/lib/utils";
-import { CategoryProduct } from "../../models/category.model";
+import { CategoryProduct } from "../../../catalog/categories/models/category.model";
 
 interface ProductCardProps {
   product: CategoryProduct;

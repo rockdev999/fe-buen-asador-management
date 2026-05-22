@@ -1,5 +1,5 @@
+import { Modifier } from "@/features/catalog/modifiers/models/modifier.model";
 import { ModifierDTO } from "../dto/modifier.dto";
-import { Modifier } from "../models/modifier";
 
 export const mapModifierDTOToModel = (dto: ModifierDTO): Modifier => {
   return {

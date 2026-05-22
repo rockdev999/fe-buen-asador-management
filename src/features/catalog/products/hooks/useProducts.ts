@@ -2,9 +2,9 @@ import { QUERY_KEYS } from "@/constants";
 import { useGetHandler } from "@/hooks/api.handlers";
 import { httpClient } from "@/services/http.client";
 import { ApiResponse } from "@/types/api.types";
-import { ProductDTO } from "../dto/product.dto";
 import { useMemo } from "react";
 import { mapProductDTOToModel } from "../mappers/product.mapper";
+import { ProductDTO } from "../dto/product.dto";
 
 export const useProductsHandler = (enabled: boolean = true) => {
   const handler = useGetHandler({

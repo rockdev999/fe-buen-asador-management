@@ -2,9 +2,9 @@ import { QUERY_KEYS } from "@/constants";
 import { useGetHandler } from "@/hooks/api.handlers";
 import { httpClient } from "@/services/http.client";
 import { ApiResponse } from "@/types/api.types";
-import { ModifierDTO } from "../dto/modifier.dto";
+import { ModifierDTO } from "../../catalog/modifiers/dto/modifier.dto";
 import { useMemo } from "react";
-import { mapModifierDTOToModel } from "../mappers/modifier.mapper";
+import { mapModifierDTOToModel } from "@/features/catalog/modifiers/mappers/modifier.mapper";
 
 export const useModifiers = (enabled: boolean = true) => {
   const handler = useGetHandler({

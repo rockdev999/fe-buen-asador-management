@@ -5,7 +5,7 @@ import { useModifiers } from "../../hooks/useModifiers";
 import { cn } from "@/lib/utils";
 import { formatMoney } from "@/lib/utils";
 import type { CartItem, CartItemUnit } from "../../models/cart";
-import type { Modifier } from "../../models/modifier";
+import type { Modifier } from "../../../catalog/modifiers/models/modifier.model";
 
 interface CartItemEditModalProps {
   item: CartItem;

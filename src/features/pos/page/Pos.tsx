@@ -15,7 +15,7 @@ import { usePrintTicket } from "../hooks/usePrintTicket";
 import { TicketPrint } from "../components/reviewAndPayment/TicketPrint";
 import { useCreateSale } from "../../sales/hooks/useSale";
 // import { Sale } from "../models/sale";
-import { CategoryProduct } from "../models/category.model";
+import { CategoryProduct } from "../../catalog/categories/models/category.model";
 import { CartPanelSkeleton } from "../components/cardPanel/CartPanelSkeleton";
 
 export type PosView = "idle" | "review" | "payment" | "success" | "invoice";
