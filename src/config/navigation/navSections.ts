@@ -16,11 +16,12 @@ import {
   Wallet,
 } from "lucide-react";
 
-interface NavItem {
+export interface NavItem {
   label: string;
-  path: string;
+  path?: string;
   icon: React.ElementType;
   roles?: RoleEnum[];
+  children?: NavItem[];
 }
 
 interface NavSection {
@@ -56,10 +57,29 @@ export const NAV_SECTIONS: NavSection[] = [
         roles: [RoleEnum.MANAGER],
       },
       {
-        label: "Productos",
-        path: PATHS.PRODUCTS,
+        label: "Catálogo",
         icon: ShoppingBag,
         roles: [RoleEnum.MANAGER, RoleEnum.ADMIN],
+        children: [
+          {
+            label: "Productos",
+            path: PATHS.PRODUCTS,
+            icon: ShoppingBag,
+            roles: [RoleEnum.MANAGER, RoleEnum.ADMIN],
+          },
+          {
+            label: "Categorías",
+            path: PATHS.CATEGORIES,
+            icon: ClipboardList,
+            roles: [RoleEnum.MANAGER, RoleEnum.ADMIN],
+          },
+          {
+            label: "Modificadores",
+            path: PATHS.MODIFIERS,
+            icon: Package,
+            roles: [RoleEnum.MANAGER, RoleEnum.ADMIN],
+          },
+        ],
       },
       {
         label: "Inventario",

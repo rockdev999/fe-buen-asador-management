@@ -7,7 +7,11 @@ export const PATHS = {
   LOCATIONS: "/locations",
 
   // Manager + Admin
-  PRODUCTS: "/products",
+  CATALOG: "/catalog",
+  PRODUCTS: "/catalog/products",
+  CATEGORIES: "/catalog/categories",
+  MODIFIERS: "/catalog/modifiers",
+
   INVENTORY: "/inventory",
   INGREDIENTS: "/ingredients",
   FINANCES: "/finances",
