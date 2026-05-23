@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { CategoryTabs } from "./CategoryTabs";
 import { ProductCard } from "./ProductCard";
 import { t } from "@/locales/es";
-import { useGetMenuHandler } from "../../hooks/useCategories";
+import { useGetMenuHandler } from "../../../catalog/categories/hooks/useCategories";
 import { CategoryTabsSkeleton } from "./CategoryTabsSkeleton";
 import {
   CategoryProduct,

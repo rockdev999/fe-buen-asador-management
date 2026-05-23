@@ -16,6 +16,7 @@ import { Orders } from "@/features/pos/page/order/Orders";
 import { Sales } from "@/features/sales/page/Sales";
 import { Users } from "@/features/users/pages/users/Users";
 import { Locations } from "@/features/locations/pages/Locations";
+import { Products } from "@/features/catalog/products/pages/Products";
 
 export const router = createBrowserRouter([
   { path: PATHS.LOGIN, element: <Login /> },
@@ -52,7 +53,7 @@ export const router = createBrowserRouter([
           {
             element: <RoleRoute roles={[RoleEnum.MANAGER, RoleEnum.ADMIN]} />,
             children: [
-              { path: PATHS.PRODUCTS, element: <div>Productos</div> },
+              { path: PATHS.PRODUCTS, element: <Products /> },
               { path: PATHS.INVENTORY, element: <div>Inventario</div> },
               { path: PATHS.INGREDIENTS, element: <div>Insumos</div> },
               { path: PATHS.REPORTS, element: <div>Reportes</div> },

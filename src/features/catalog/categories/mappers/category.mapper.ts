@@ -7,6 +7,7 @@ import {
 import {
   Category,
   CategoryProduct,
+  CategoryShort,
   MenuCategory,
 } from "../models/category.model";
 
@@ -43,7 +44,16 @@ export const mapMenuCategoryDTOToModel = (
 
 export const mapCategoryShortDTOToModel = (
   dto: CategoryShortDTO,
-): { id: string; name: string } => ({
+): { id: string; name: string; sortOrder: number } => ({
   id: dto.id,
   name: dto.name,
+  sortOrder: dto.sortOrder,
+});
+
+export const mapCategorySimpleDTOToModel = (
+  dto: CategoryShortDTO,
+): CategoryShort => ({
+  id: dto.id,
+  name: dto.name,
+  sortOrder: dto.sortOrder,
 });

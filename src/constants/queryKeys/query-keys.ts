@@ -34,6 +34,11 @@ export const QUERY_KEYS = {
   CATEGORY: (id: string) => ["categories", id],
   MODIFIERS: ["modifiers"],
   MODIFIER: (id: string) => ["modifiers", id],
+  PAGINATION_PRODUCTS: (params: Record<string, any>) => [
+    "products",
+    "pagination",
+    params,
+  ],
 
   // Sales
   SALES: ["sales"],

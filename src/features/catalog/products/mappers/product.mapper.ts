@@ -1,7 +1,12 @@
 import { mapLocationDTOToModel } from "@/features/locations/mappers/location.mapper";
 import { mapCategoryShortDTOToModel } from "../../categories/mappers/category.mapper";
-import { ProductDTO, ProductPageItemDTO } from "../dto/product.dto";
+import {
+  CreateProductDTO,
+  ProductDTO,
+  ProductPageItemDTO,
+} from "../dto/product.dto";
 import { Product, ProductPageItem } from "../models/product.model";
+import { CreateProductForm } from "../validators/product.schema";
 
 export const mapProductDTOToModel = (dto: ProductDTO): Product => ({
   id: dto.id,
@@ -13,11 +18,13 @@ export const mapProductDTOToModel = (dto: ProductDTO): Product => ({
   available: dto.available,
   isQuantifiable: dto.isQuantifiable,
   haveModifiers: dto.haveModifiers,
+  sortOrder: dto.sortOrder,
   category: {
     id: dto.category.id,
     name: dto.category.name,
+    sortOrder: dto.category.sortOrder,
   },
-  locationId: dto.locationId,
+  location: mapLocationDTOToModel(dto.location),
   createdAt: dto.createdAt ? new Date(dto.createdAt) : null,
   updatedAt: dto.updatedAt ? new Date(dto.updatedAt) : null,
 });
@@ -38,3 +45,39 @@ export const mapProductPageItemDTOToModel = (
   category: mapCategoryShortDTOToModel(dto.category),
   location: mapLocationDTOToModel(dto.location),
 });
+
+export const mapProductFormToDTO = (
+  form: CreateProductForm,
+): CreateProductDTO => ({
+  id: form?.id ?? "",
+  name: form.name,
+  brand: form.brand ?? null,
+  description: form.description ?? null,
+  imageUrl: form.imageUrl ?? null,
+  price: form.price,
+  available: form.available,
+  isQuantifiable: form.isQuantifiable,
+  haveModifiers: form.haveModifiers,
+  categoryId: form.categoryId,
+  sortOrder: form.sortOrder,
+  locationId: form.locationId,
+});
+
+export const mapProductDTOToFormData = (
+  form: CreateProductForm,
+  file: File | null,
+  removeImage: boolean = false,
+): FormData => {
+  const dto = mapProductFormToDTO(form);
+  const formData = new FormData();
+
+  formData.append(
+    "dto",
+    JSON.stringify({ ...dto, ...(removeImage && { removeImage: "true" }) }),
+  );
+  if (file) {
+    formData.append("file", file);
+  }
+
+  return formData;
+};

@@ -10,6 +10,7 @@ export interface Category {
 export interface CategoryShort {
   id: UUID;
   name: string;
+  sortOrder?: number;
 }
 
 export interface CategoryProduct {

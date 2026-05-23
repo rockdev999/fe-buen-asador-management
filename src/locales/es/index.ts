@@ -6,6 +6,7 @@ import finances from "./finances.json";
 import sidebar from "./sidebar.json";
 import pos from "./pos.json";
 import location from "./location.json";
+import catalog from "./catalog.json";
 
 export const t = {
   common,
@@ -16,6 +17,7 @@ export const t = {
   sidebar,
   pos,
   location,
+  catalog,
 } as const;
 
 export type Translations = typeof t;

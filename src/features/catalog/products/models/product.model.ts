@@ -12,8 +12,9 @@ export interface Product {
   available: boolean;
   isQuantifiable: boolean;
   haveModifiers: boolean;
+  sortOrder: number;
   category: CategoryShort;
-  locationId: UUID;
+  location: Location;
   createdAt: Date | null;
   updatedAt?: Date | null;
 }

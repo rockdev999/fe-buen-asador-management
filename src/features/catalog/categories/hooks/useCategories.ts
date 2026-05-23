@@ -4,13 +4,15 @@ import { httpClient } from "@/services/http.client";
 import { ApiResponse } from "@/types/api.types";
 import {
   CategoryDTO,
+  CategoryShortDTO,
   MenuCategoryDTO,
-} from "../../catalog/categories/dto/cateogory.dto";
+} from "../dto/cateogory.dto";
 import { useMemo } from "react";
 import {
   mapCategoryDTOToModel,
+  mapCategorySimpleDTOToModel,
   mapMenuCategoryDTOToModel,
-} from "../../catalog/categories/mappers/category.mapper";
+} from "../mappers/category.mapper";
 
 export const useCategoriesHandler = (enabled: boolean = true) => {
   const handler = useGetHandler({
@@ -44,6 +46,27 @@ export const useGetMenuHandler = (enabled: boolean = true) => {
 
   const data = useMemo(
     () => (handler.data ? handler.data.map(mapMenuCategoryDTOToModel) : null),
+    [handler.data],
+  );
+
+  return { ...handler, data };
+};
+
+export const useCategoriesSimpleHandler = (enabled: boolean = true) => {
+  const handler = useGetHandler({
+    queryKey: QUERY_KEYS.CATEGORIES,
+    queryFn: () =>
+      httpClient
+        .get<
+          ApiResponse<CategoryShortDTO[]>
+        >("/categories/simple", { params: { available: true } })
+        .then((r) => r.data.data!),
+    enabled,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  const data = useMemo(
+    () => handler.data?.map(mapCategorySimpleDTOToModel) ?? null,
     [handler.data],
   );
 

@@ -100,7 +100,16 @@ export const LocationModal = ({
     return LocationFormConfig.initialValues;
   }, [isEdit, location]);
 
-  const formik = useFormik<CreateLocationForm>({
+  const {
+    values: formValues,
+    touched: formTouched,
+    errors: formErrors,
+    handleBlur: formHandlerBlur,
+    handleChange: formHandleChange,
+    handleSubmit: formHandleSubmit,
+    handleReset: formHandleReset,
+    dirty: formDirty,
+  } = useFormik<CreateLocationForm>({
     initialValues: initValues,
     enableReinitialize: true,
     validate: isEdit
@@ -204,8 +213,8 @@ export const LocationModal = ({
       />
 
       <form
-        onSubmit={formik.handleSubmit}
-        onReset={formik.handleReset}
+        onSubmit={formHandleSubmit}
+        onReset={formHandleReset}
         className="flex min-h-0 flex-1 flex-col"
       >
         <div className="flex-1 overflow-y-auto">
@@ -246,12 +255,12 @@ export const LocationModal = ({
                     name="name"
                     label="Nombre de la sucursal"
                     icon={Building2}
-                    value={formik.values.name}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
+                    value={formValues.name}
+                    onChange={formHandleChange}
+                    onBlur={formHandlerBlur}
                     placeholder="Ej: Sucursal Zona Sur"
-                    touched={formik.touched.name}
-                    error={formik.errors.name}
+                    touched={formTouched.name}
+                    error={formErrors.name}
                     className="h-9 rounded-xl bg-white text-[13px]"
                   />
                   <FormInput
@@ -260,12 +269,12 @@ export const LocationModal = ({
                     name="address"
                     label="Dirección"
                     icon={MapPin}
-                    value={formik.values.address}
-                    onChange={formik.handleChange}
-                    onBlur={formik.handleBlur}
+                    value={formValues.address}
+                    onChange={formHandleChange}
+                    onBlur={formHandlerBlur}
                     placeholder="Ej: Av. Siempre Viva 123"
-                    touched={formik.touched.address}
-                    error={formik.errors.address}
+                    touched={formTouched.address}
+                    error={formErrors.address}
                     className="h-9 rounded-xl bg-white text-[13px]"
                   />
                 </div>
@@ -350,10 +359,10 @@ export const LocationModal = ({
                     </div>
                     <div className="min-w-0">
                       <p className="truncate text-[13px] font-medium text-inkblack">
-                        {location?.name ?? formik.values.name}
+                        {location?.name ?? formValues.name}
                       </p>
                       <p className="mt-0.5 text-[11px] text-muted-foreground">
-                        {location?.address ?? formik.values.address}
+                        {location?.address ?? formValues.address}
                       </p>
                     </div>
                   </div>
@@ -475,7 +484,7 @@ export const LocationModal = ({
               <Button
                 type="submit"
                 isLoading={isSaving}
-                disabled={isEdit ? !formik.dirty || isSaving : isSaving}
+                disabled={isEdit ? !formDirty || isSaving : isSaving}
                 loadingText={isEdit ? "Guardando..." : "Creando..."}
               >
                 {isEdit ? "Actualizar y continuar" : "Crear y continuar"}

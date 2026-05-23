@@ -11,9 +11,10 @@ export interface ProductDTO {
   price: number;
   available: boolean;
   isQuantifiable: boolean;
+  sortOrder: number;
   haveModifiers: boolean;
   category: CategoryShortDTO;
-  locationId: UUID;
+  location: LocationDTO;
   createdAt: ISODateTimeString;
   updatedAt: ISODateTimeString;
 }
@@ -31,4 +32,19 @@ export interface ProductPageItemDTO {
   sortOrder: number;
   category: CategoryShortDTO;
   location: LocationDTO;
+}
+
+export interface CreateProductDTO {
+  id?: UUID;
+  name: string;
+  brand: string | null;
+  description: string | null;
+  imageUrl: string | null;
+  price: number;
+  available: boolean;
+  isQuantifiable: boolean;
+  sortOrder: number;
+  haveModifiers: boolean;
+  categoryId: UUID;
+  locationId: UUID;
 }

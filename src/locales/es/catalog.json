@@ -1,0 +1,43 @@
+{
+  "category": {},
+  "products": {
+    "validation": {
+      "nameRequired": "El nombre del producto es requerido.",
+      "nameMin": "El nombre del producto debe tener al menos 2 caracteres.",
+      "nameMax": "El nombre del producto no puede exceder los 150 caracteres.",
+
+      "brandMax": "La marca no puede exceder los 255 caracteres.",
+
+      "descriptionMax": "La descripción no puede exceder los 500 caracteres.",
+
+      "imageUrlInvalid": "Ingresa una URL de imagen válida.",
+      "imageUrlMax": "La URL de la imagen no puede exceder los 500 caracteres.",
+
+      "priceRequired": "El precio es requerido.",
+      "priceInvalid": "Ingresa un precio válido.",
+      "pricePositive": "El precio debe ser mayor a 0.",
+      "priceMax": "El precio no puede exceder los 999999.",
+
+      "availableRequired": "Indica si el producto está disponible.",
+      "availableInvalid": "El estado de disponibilidad no es válido.",
+
+      "isQuantifiableRequired": "Indica si el producto es cuantificable.",
+      "isQuantifiableInvalid": "El valor de cuantificable no es válido.",
+
+      "sortOrderRequired": "El orden es requerido.",
+      "sortOrderInvalid": "Ingresa un orden válido.",
+      "sortOrderInteger": "El orden debe ser un número entero.",
+      "sortOrderMin": "El orden no puede ser menor a 0.",
+
+      "haveModifiersRequired": "Indica si el producto tiene modificadores.",
+      "haveModifiersInvalid": "El valor de modificadores no es válido.",
+
+      "locationRequired": "Selecciona una sucursal.",
+      "locationInvalid": "La sucursal seleccionada no es válida.",
+
+      "categoryRequired": "Selecciona una categoría.",
+      "categoryInvalid": "La categoría seleccionada no es válida."
+    }
+  },
+  "modifier": {}
+}

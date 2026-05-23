@@ -18,14 +18,19 @@ export interface AsyncDropdownOption<T = any> {
 
 interface AsyncDropdownProps<T = any> {
   placeholder?: string;
-  value?: string; // id seleccionado
+  value?: string;
   onChange?: (id: string, data: T | null) => void;
   options: AsyncDropdownOption<T>[];
   isLoading?: boolean;
   emptyText?: string;
   searchable?: boolean;
   className?: string;
-  renderSelected?: (data: T) => React.ReactNode; // cómo mostrar el valor seleccionado
+  renderSelected?: (data: T) => React.ReactNode;
+
+  allowClear?: boolean;
+  clearLabel?: string;
+  disabled?: boolean;
+  fullWidth?: boolean;
 }
 
 export function AsyncDropdown<T>({
@@ -38,6 +43,11 @@ export function AsyncDropdown<T>({
   searchable = false,
   className,
   renderSelected,
+
+  allowClear = true,
+  clearLabel = "Todos",
+  disabled = false,
+  fullWidth = false,
 }: AsyncDropdownProps<T>) {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -93,9 +103,14 @@ export function AsyncDropdown<T>({
       {/* Trigger */}
       <button
         type="button"
-        onClick={() => setOpen((p) => !p)}
+        disabled={disabled}
+        onClick={() => {
+          if (!disabled) setOpen((prev) => !prev);
+        }}
         className={cn(
-          "h-9 px-3.5 flex items-center gap-2 text-[13px] rounded-xl border transition-all duration-200 min-w-[140px]",
+          "h-9 px-3.5 flex items-center gap-2 text-[13px] rounded-xl border transition-all duration-200",
+          fullWidth ? "w-full" : "min-w-[140px]",
+          disabled && "cursor-not-allowed opacity-60",
           isActive
             ? "border-brand/40 bg-brand/8 text-brand font-medium"
             : "border-surface bg-surface/40 text-inkblack/50 hover:border-inkblack/20 hover:bg-surface hover:text-inkblack",
@@ -111,7 +126,7 @@ export function AsyncDropdown<T>({
             : placeholder}
         </span>
 
-        {isActive ? (
+        {isActive && allowClear ? (
           <span
             onClick={handleClearSelection}
             className="text-brand/50 hover:text-brand transition-colors cursor-pointer flex-shrink-0"
@@ -146,25 +161,29 @@ export function AsyncDropdown<T>({
           )}
 
           {/* Todos */}
-          <button
-            type="button"
-            onClick={() => {
-              onChange?.("", null);
-              setOpen(false);
-              setSearch("");
-            }}
-            className={cn(
-              "w-full flex items-center justify-between px-3.5 py-2 text-[13px] transition-colors",
-              !value
-                ? "text-brand font-medium bg-brand/5"
-                : "text-inkblack/50 hover:bg-surface/60 hover:text-inkblack",
-            )}
-          >
-            <span>Todos</span>
-            {!value && <Check size={12} />}
-          </button>
+          {allowClear && (
+            <>
+              <button
+                type="button"
+                onClick={() => {
+                  onChange?.("", null);
+                  setOpen(false);
+                  setSearch("");
+                }}
+                className={cn(
+                  "w-full flex items-center justify-between px-3.5 py-2 text-[13px] transition-colors",
+                  !value
+                    ? "text-brand font-medium bg-brand/5"
+                    : "text-inkblack/50 hover:bg-surface/60 hover:text-inkblack",
+                )}
+              >
+                <span>{clearLabel}</span>
+                {!value && <Check size={12} />}
+              </button>
 
-          <div className="h-px bg-surface mx-3 my-1" />
+              <div className="h-px bg-surface mx-3 my-1" />
+            </>
+          )}
 
           {/* Contenido */}
           <div className="max-h-52 overflow-y-auto">
