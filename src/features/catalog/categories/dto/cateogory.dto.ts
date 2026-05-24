@@ -1,10 +1,11 @@
-import { ISODateTimeString, UUID } from "@/types/common";
+import { Audit } from "@/types/audit.types";
+import { UUID } from "@/types/common";
 
 export interface CategoryDTO {
   id: UUID;
   name: string;
-  createdAt: ISODateTimeString;
-  updatedAt: ISODateTimeString;
+  sortOrder: number;
+  audit: Audit;
 }
 
 export interface CategoryShortDTO {
@@ -31,4 +32,10 @@ export interface MenuCategoryDTO {
   name: string;
   sortOrder: number;
   products: CategoryProductDTO[];
+}
+
+export interface CreateCategoryDTO {
+  id?: UUID;
+  name: string;
+  sortOrder: number;
 }

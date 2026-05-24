@@ -1,10 +1,11 @@
+import { Audit } from "@/types/audit.types";
 import { UUID } from "@/types/common";
 
 export interface Category {
-  id: UUID;
+  id?: UUID;
   name: string;
-  createdAt: Date | null;
-  updatedAt?: Date | null;
+  sortOrder: string;
+  audit: Audit | null;
 }
 
 export interface CategoryShort {

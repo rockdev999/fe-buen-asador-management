@@ -2,6 +2,7 @@ import {
   CategoryDTO,
   CategoryProductDTO,
   CategoryShortDTO,
+  CreateCategoryDTO,
   MenuCategoryDTO,
 } from "../dto/cateogory.dto";
 import {
@@ -10,12 +11,13 @@ import {
   CategoryShort,
   MenuCategory,
 } from "../models/category.model";
+import { CreateCategoryForm } from "../validators/category.schema";
 
 export const mapCategoryDTOToModel = (dto: CategoryDTO): Category => ({
   id: dto.id,
   name: dto.name,
-  createdAt: dto.createdAt ? new Date(dto.createdAt) : null,
-  updatedAt: dto.updatedAt ? new Date(dto.updatedAt) : null,
+  sortOrder: String(dto.sortOrder),
+  audit: dto.audit,
 });
 
 export const mapCategoryProductDTOToModel = (
@@ -56,4 +58,12 @@ export const mapCategorySimpleDTOToModel = (
   id: dto.id,
   name: dto.name,
   sortOrder: dto.sortOrder,
+});
+
+export const mapCategoryFormToDTO = (
+  form: CreateCategoryForm,
+): CreateCategoryDTO => ({
+  id: form.id,
+  name: form.name,
+  sortOrder: Number(form.sortOrder),
 });

@@ -1,5 +1,13 @@
 {
-  "category": {},
+  "category": {
+    "validation": {
+      "nameRequired": "El nombre de la categoría es requerido.",
+      "nameMin": "El nombre de la categoría debe tener al menos 2 caracteres.",
+      "nameMax": "El nombre de la categoría no puede exceder los 150 caracteres.",
+      "sortOrderRequired": "El orden es requerido.",
+      "sortOrderInvalid": "Ingresa un orden válido."
+    }
+  },
   "products": {
     "validation": {
       "nameRequired": "El nombre del producto es requerido.",

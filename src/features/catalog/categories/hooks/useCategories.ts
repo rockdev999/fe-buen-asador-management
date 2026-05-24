@@ -1,10 +1,16 @@
 import { QUERY_KEYS } from "@/constants";
-import { useGetHandler } from "@/hooks/api.handlers";
+import {
+  useDeleteHandler,
+  useGetHandler,
+  usePostHandler,
+  usePutHandler,
+} from "@/hooks/api.handlers";
 import { httpClient } from "@/services/http.client";
 import { ApiResponse } from "@/types/api.types";
 import {
   CategoryDTO,
   CategoryShortDTO,
+  CreateCategoryDTO,
   MenuCategoryDTO,
 } from "../dto/cateogory.dto";
 import { useMemo } from "react";
@@ -71,4 +77,46 @@ export const useCategoriesSimpleHandler = (enabled: boolean = true) => {
   );
 
   return { ...handler, data };
+};
+
+export const useCreateCategory = () => {
+  const handler = usePostHandler({
+    mutationFn: (dto: CreateCategoryDTO) =>
+      httpClient
+        .post<ApiResponse<CreateCategoryDTO>>("/categories", dto)
+        .then((r) => r.data.data!),
+
+    invalidateKeys: [],
+    successMessage: "Categoría creada exitosamente",
+  });
+
+  return { ...handler };
+};
+
+export const useUpdateCategory = (categoryId: string) => {
+  const handler = usePutHandler({
+    mutationFn: (dto: CreateCategoryDTO) =>
+      httpClient
+        .put<ApiResponse<CreateCategoryDTO>>(`/categories/${categoryId}`, dto)
+        .then((r) => r.data.data!),
+
+    invalidateKeys: [],
+    successMessage: "Categoría actualizada exitosamente",
+  });
+
+  return { ...handler };
+};
+
+export const useDeleteCategory = (categoryId: string) => {
+  const handler = useDeleteHandler({
+    mutationFn: () =>
+      httpClient
+        .delete<ApiResponse<null>>(`/categories/${categoryId}`)
+        .then((r) => r.data.data!),
+
+    invalidateKeys: [],
+    successMessage: "Categoría eliminada exitosamente",
+  });
+
+  return { ...handler };
 };
