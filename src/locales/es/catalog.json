@@ -47,5 +47,21 @@
       "categoryInvalid": "La categoría seleccionada no es válida."
     }
   },
-  "modifier": {}
+  "modifier": {
+    "validation": {
+      "nameRequired": "El nombre del modificador es requerido.",
+      "nameMin": "El nombre del modificador debe tener al menos 2 caracteres.",
+      "nameMax": "El nombre del modificador no puede exceder los 150 caracteres.",
+
+      "extraPriceRequired": "El precio extra es requerido.",
+      "extraPricePositive": "El precio extra debe ser mayor o igual a 0.",
+      "extraPriceMax": "El precio extra no puede exceder los 999999.",
+
+      "activeRequired": "Indica si el modificador está activo.",
+      "activeInvalid": "El estado de activo no es válido.",
+
+      "locationRequired": "Selecciona una sucursal.",
+      "locationInvalid": "La sucursal seleccionada no es válida."
+    }
+  }
 }

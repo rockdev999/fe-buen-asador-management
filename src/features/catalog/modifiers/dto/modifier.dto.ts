@@ -1,3 +1,5 @@
+import { LocationDTO } from "@/features/locations/dto/location.dto";
+import { Audit } from "@/types/audit.types";
 import { UUID } from "@/types/common";
 
 export interface ModifierDTO {
@@ -5,7 +7,14 @@ export interface ModifierDTO {
   name: string;
   extraPrice: number;
   active: boolean;
+  location: LocationDTO;
+  audit: Audit;
+}
+
+export interface CreateModifierDTO {
+  id?: UUID;
+  name: string;
+  extraPrice: number;
+  active?: boolean;
   locationId: UUID;
-  createdAt: string;
-  updatedAt: string;
 }

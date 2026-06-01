@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useModifiers } from "../../hooks/useModifiers";
+import { useModifiersHandler } from "../../../catalog/modifiers/hooks/useModifiers";
 import { cn } from "@/lib/utils";
 import { formatMoney } from "@/lib/utils";
 import type { CartItem, CartItemUnit } from "../../models/cart";
@@ -18,7 +18,7 @@ export function CartItemEditModal({
   onSave,
   onClose,
 }: CartItemEditModalProps) {
-  const { data: modifiers, status } = useModifiers();
+  const { data: modifiers, status } = useModifiersHandler();
 
   const [units, setUnits] = useState<CartItemUnit[]>(
     item.units.length > 0
