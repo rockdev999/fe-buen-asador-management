@@ -17,10 +17,9 @@ export const modifierCreateSchema = z.object({
     .min(1, v.extraPricePositive)
     .max(999999, v.extraPriceMax),
   active: z.boolean().optional(),
-  location: z.object({
-    id: z.string().uuid(v.locationInvalid),
-    name: z.string().min(1, v.locationRequired).trim(),
-  }),
+  locationIds: z
+    .array(z.string().uuid({ error: v.locationInvalid }))
+    .min(1, { error: v.locationRequired }),
 });
 
 export type CreateModifierForm = z.infer<typeof modifierCreateSchema>;

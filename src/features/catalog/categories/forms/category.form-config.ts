@@ -10,6 +10,7 @@ export const CategoryFormConfig = {
   initialValues: {
     name: "",
     sortOrder: "",
+    locationIds: [],
   } as CreateCategoryForm,
   validationSchemaCreate: zodToFormik(categoryCreateSchema),
   mapFormToDTO: mapCategoryFormToDTO,

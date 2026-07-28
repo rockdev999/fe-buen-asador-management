@@ -24,9 +24,8 @@ export const mapProductDTOToModel = (dto: ProductDTO): Product => ({
     name: dto.category.name,
     sortOrder: dto.category.sortOrder,
   },
-  location: mapLocationDTOToModel(dto.location),
-  createdAt: dto.createdAt ? new Date(dto.createdAt) : null,
-  updatedAt: dto.updatedAt ? new Date(dto.updatedAt) : null,
+  locations: dto.locations.map(mapLocationDTOToModel),
+  audit: dto.audit,
 });
 
 export const mapProductPageItemDTOToModel = (
@@ -43,7 +42,8 @@ export const mapProductPageItemDTOToModel = (
   haveModifiers: dto.haveModifiers,
   sortOrder: dto.sortOrder,
   category: mapCategoryShortDTOToModel(dto.category),
-  location: mapLocationDTOToModel(dto.location),
+  locations:
+    dto.locations.length > 0 ? dto.locations.map(mapLocationDTOToModel) : [],
 });
 
 export const mapProductFormToDTO = (
@@ -60,7 +60,7 @@ export const mapProductFormToDTO = (
   haveModifiers: form.haveModifiers,
   categoryId: form.categoryId,
   sortOrder: form.sortOrder,
-  locationId: form.locationId,
+  locationIds: form.locationIds,
 });
 
 export const mapProductDTOToFormData = (

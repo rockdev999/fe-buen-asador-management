@@ -1,5 +1,6 @@
 import { CategoryShort } from "@/features/catalog/categories/models/category.model";
 import { Location } from "@/features/locations/models/location.model";
+import { Audit } from "@/types/audit.types";
 import { UUID } from "@/types/common";
 
 export interface Product {
@@ -14,9 +15,8 @@ export interface Product {
   haveModifiers: boolean;
   sortOrder: number;
   category: CategoryShort;
-  location: Location;
-  createdAt: Date | null;
-  updatedAt?: Date | null;
+  locations: Location[];
+  audit: Audit;
 }
 
 export interface ProductPageItem {
@@ -31,5 +31,5 @@ export interface ProductPageItem {
   haveModifiers: boolean;
   sortOrder: number;
   category: CategoryShort;
-  location: Location;
+  locations: Location[];
 }

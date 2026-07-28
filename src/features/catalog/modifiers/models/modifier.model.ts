@@ -7,6 +7,6 @@ export interface Modifier {
   name: string;
   extraPrice: number;
   active: boolean;
-  location: Location;
+  locations: Location[];
   audit: Audit;
 }

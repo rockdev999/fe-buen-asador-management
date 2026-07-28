@@ -1,4 +1,5 @@
 import { Modifier } from "@/features/catalog/modifiers/models/modifier.model";
+import { mapLocationDTOToModel } from "@/features/locations/mappers/location.mapper";
 import { CreateModifierDTO, ModifierDTO } from "../dto/modifier.dto";
 import { CreateModifierForm } from "../validators/modifier.schema";
 
@@ -8,7 +9,7 @@ export const mapModifierDTOToModel = (dto: ModifierDTO): Modifier => {
     name: dto.name,
     extraPrice: dto.extraPrice,
     active: dto.active,
-    location: dto.location,
+    locations: dto.locations.map(mapLocationDTOToModel),
     audit: dto.audit,
   };
 };
@@ -20,5 +21,5 @@ export const mapModifierFormToDTO = (
   name: form.name,
   extraPrice: form.extraPrice,
   active: form.active,
-  locationId: form.location.id,
+  locationIds: form.locationIds,
 });

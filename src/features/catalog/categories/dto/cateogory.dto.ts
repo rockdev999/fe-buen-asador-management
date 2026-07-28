@@ -1,3 +1,4 @@
+import { LocationDTO } from "@/features/locations/dto/location.dto";
 import { Audit } from "@/types/audit.types";
 import { UUID } from "@/types/common";
 
@@ -5,6 +6,7 @@ export interface CategoryDTO {
   id: UUID;
   name: string;
   sortOrder: number;
+  locations: LocationDTO[];
   audit: Audit;
 }
 
@@ -38,4 +40,5 @@ export interface CreateCategoryDTO {
   id?: UUID;
   name: string;
   sortOrder: number;
+  locationIds: UUID[];
 }

@@ -19,9 +19,7 @@ import { ModifierFormConfig } from "../../forms/modifier.form-config";
 import { MoneyInput } from "@/components/shared/Interactives/MoneyInput";
 import { FormField } from "@/components/shared/Basics/FormField";
 import { Label } from "@/components/shared/Basics/Label";
-import { AsyncDropdown } from "@/components/shared/Interactives/AsyncDropdown";
-import { LocationSimple } from "@/features/locations/models/location.model";
-import { ErrorMessage } from "@/components/shared/Basics/ErrorMessage";
+import { MultiSelectDropdown } from "@/components/shared/Interactives/MultiSelectDropdown";
 import { useGetLocationSimple } from "@/features/locations/hooks/useLocation";
 import { ModifierModalSkeleton } from "./ModifierModalSkeleton";
 import { FormSwitch } from "@/components/shared/Basics/FormSwitch";
@@ -59,10 +57,7 @@ export const ModifierModal = ({
         name: modifier.name,
         extraPrice: modifier.extraPrice ?? 0,
         active: modifier.active ?? false,
-        location: {
-          id: modifier.location.id,
-          name: modifier.location.name,
-        },
+        locationIds: modifier.locations.map((location) => location.id),
       };
     }
     return ModifierFormConfig.initialValues;
@@ -96,14 +91,6 @@ export const ModifierModal = ({
   const handleDelete = () => {
     if (!modifier) return;
     deleteModifier(modifier.id!, { onSuccess });
-  };
-
-  const handleDropdownChange = async (
-    field: "categoryId" | "locationId",
-    id: string,
-  ) => {
-    await formSetFieldValue(field, id, true);
-    await formSetFieldTouched(field, true, false);
   };
 
   if (locationsStatus === "pending") {
@@ -144,41 +131,24 @@ export const ModifierModal = ({
             />
 
             <FormField>
-              <Label required>Sucursal</Label>
-              <AsyncDropdown<LocationSimple>
-                fullWidth
-                allowClear={false}
-                placeholder="Seleccionar sucursal"
-                emptyText="No hay sucursales disponibles"
-                value={formValues.location.id}
+              <Label required>Sucursales</Label>
+              <MultiSelectDropdown
                 options={
                   locations?.map((location) => ({
-                    id: location.id,
-                    data: location,
-                    searchText: location.name,
-                    render: (item) => (
-                      <div className="flex flex-col">
-                        <span className="text-[13px] font-medium text-inkblack">
-                          {item.name}
-                        </span>
-                      </div>
-                    ),
+                    value: location.id,
+                    label: location.name,
                   })) ?? []
                 }
-                onChange={(data) => {
-                  handleDropdownChange("location", {
-                    id: data.id,
-                    name: data.name,
-                  });
+                value={formValues.locationIds ?? []}
+                onChange={(vals) => {
+                  formSetFieldValue("locationIds", vals, true);
+                  formSetFieldTouched("locationIds", true, false);
                 }}
-                renderSelected={(location) => location.name}
+                placeholder="Seleccionar sucursales..."
+                emptyText="No hay sucursales disponibles"
+                error={formErrors.locationIds as string}
+                touched={formTouched.locationIds as boolean}
               />
-              {formErrors.location?.id && (
-                <ErrorMessage
-                  touched={formTouched.location?.id}
-                  error={formErrors.location?.id}
-                />
-              )}
               {!hasLocations && (
                 <EmptyFieldHint text="Primero crea una sucursal para poder registrar productos." />
               )}
@@ -247,12 +217,12 @@ export const ModifierModal = ({
               />
             </div>
 
-            {/* Info global */}
+            {/* Info */}
             <div className="flex items-start gap-2 rounded-xl border border-blue-100 bg-blue-50/60 px-3 py-2.5">
               <Tags size={13} className="mt-0.5 shrink-0 text-blue-500" />
               <p className="text-[11px] leading-4 text-blue-700">
-                Este modificador estará disponible para todos los productos de
-                todas las sucursales.
+                Este modificador estará disponible para los productos de las
+                sucursales seleccionadas.
               </p>
             </div>
           </FormSection>

@@ -84,10 +84,9 @@ export const productCreateSchema = z.object({
         : v.haveModifiersInvalid,
   }),
 
-  locationId: z
-    .string()
-    .min(1, { error: v.locationRequired })
-    .uuid({ error: v.locationInvalid }),
+  locationIds: z
+    .array(z.string().uuid({ error: v.locationInvalid }))
+    .min(1, { error: v.locationRequired }),
 
   categoryId: z
     .string()

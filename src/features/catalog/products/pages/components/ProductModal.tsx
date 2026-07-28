@@ -33,6 +33,7 @@ import { FormSwitch } from "@/components/shared/Basics/FormSwitch";
 import { LocationSimple } from "@/features/locations/models/location.model";
 import { ImageUploader } from "@/components/shared/Interactives/ImageUploader";
 import { AsyncDropdown } from "@/components/shared/Interactives/AsyncDropdown";
+import { MultiSelectDropdown } from "@/components/shared/Interactives/MultiSelectDropdown";
 import { ProductModalSkeleton } from "./ProductModalSkeleton";
 
 interface ProductModalProps {
@@ -84,7 +85,7 @@ export const ProductModal = ({
         isQuantifiable: product.isQuantifiable,
         haveModifiers: product.haveModifiers,
         categoryId: product.category.id ?? "",
-        locationId: product.location.id ?? "",
+        locationIds: product.locations.map((location) => location.id),
         sortOrder: product.sortOrder ?? 0,
       };
     }
@@ -120,10 +121,7 @@ export const ProductModal = ({
     },
   });
 
-  const handleDropdownChange = async (
-    field: "categoryId" | "locationId",
-    id: string,
-  ) => {
+  const handleDropdownChange = async (field: "categoryId", id: string) => {
     await setFieldValue(field, id, true);
     await setFieldTouched(field, true, false);
   };
@@ -270,38 +268,24 @@ export const ProductModal = ({
               </FormField>
 
               <FormField>
-                <Label required>Sucursal</Label>
-                <AsyncDropdown<LocationSimple>
-                  fullWidth
-                  allowClear={false}
-                  placeholder="Seleccionar sucursal"
-                  emptyText="No hay sucursales disponibles"
-                  value={formValues.locationId}
+                <Label required>Sucursales</Label>
+                <MultiSelectDropdown
                   options={
                     locations?.map((location) => ({
-                      id: location.id,
-                      data: location,
-                      searchText: location.name,
-                      render: (item) => (
-                        <div className="flex flex-col">
-                          <span className="text-[13px] font-medium text-inkblack">
-                            {item.name}
-                          </span>
-                        </div>
-                      ),
+                      value: location.id,
+                      label: location.name,
                     })) ?? []
                   }
-                  onChange={(id) => {
-                    handleDropdownChange("locationId", id);
+                  value={formValues.locationIds ?? []}
+                  onChange={(vals) => {
+                    setFieldValue("locationIds", vals, true);
+                    setFieldTouched("locationIds", true, false);
                   }}
-                  renderSelected={(location) => location.name}
+                  placeholder="Seleccionar sucursales..."
+                  emptyText="No hay sucursales disponibles"
+                  error={formErrors.locationIds as string}
+                  touched={formTouched.locationIds as boolean}
                 />
-                {formErrors.locationId && (
-                  <ErrorMessage
-                    touched={formTouched.locationId}
-                    error={formErrors.locationId}
-                  />
-                )}
                 {!hasLocations && (
                   <EmptyFieldHint text="Primero crea una sucursal para poder registrar productos." />
                 )}

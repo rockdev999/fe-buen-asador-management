@@ -5,8 +5,5 @@ export interface ModifierForm {
   name: string;
   extraPrice: number;
   active?: boolean;
-  location: {
-    id: UUID;
-    name: string;
-  };
+  locationIds: UUID[];
 }

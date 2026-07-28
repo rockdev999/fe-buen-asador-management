@@ -1,3 +1,4 @@
+import { Location } from "@/features/locations/models/location.model";
 import { Audit } from "@/types/audit.types";
 import { UUID } from "@/types/common";
 
@@ -5,6 +6,7 @@ export interface Category {
   id?: UUID;
   name: string;
   sortOrder: string;
+  locations: Location[];
   audit: Audit | null;
 }
 

@@ -6,6 +6,8 @@ import { PanelHeader } from "@/components/shared/Overlay/PanelHeader";
 import { PanelFooter } from "@/components/shared/Overlay/PanelFooter";
 import { FormSection } from "@/components/shared/Form/FormSection";
 import { FormInput } from "@/components/shared/Form/FormInput";
+import { FormField } from "@/components/shared/Basics/FormField";
+import { Label } from "@/components/shared/Basics/Label";
 import { Button } from "@/components/shared/Basics/Button";
 import { Tags, ListOrdered } from "lucide-react";
 import { Category } from "../../models/category.model";
@@ -16,15 +18,19 @@ import {
 } from "../../hooks/useCategories";
 import { CategoryFormConfig } from "../../forms/category.form-config";
 import { CreateCategoryForm } from "../../validators/category.schema";
+import { MultiSelectDropdown } from "@/components/shared/Interactives/MultiSelectDropdown";
+import { LocationSimple } from "@/features/locations/models/location.model";
 
 interface CategoryModalProps {
   category: Category | null;
+  locations: LocationSimple[] | null;
   onClose: () => void;
   onSuccess: () => void;
 }
 
 export const CategoryModal = ({
   category,
+  locations,
   onClose,
   onSuccess,
 }: CategoryModalProps) => {
@@ -46,6 +52,7 @@ export const CategoryModal = ({
         id: category.id ?? "",
         name: category.name,
         sortOrder: category.sortOrder ?? "",
+        locationIds: category.locations.map((location) => location.id),
       };
     }
     return CategoryFormConfig.initialValues;
@@ -57,6 +64,7 @@ export const CategoryModal = ({
     errors: formErrors,
     handleChange: formHandleChange,
     setFieldValue: formSetFieldValue,
+    setFieldTouched: formSetFieldTouched,
     handleBlur: formHandleBlur,
     handleSubmit: formSubmitHandler,
     handleReset: formHandleReset,
@@ -152,12 +160,33 @@ export const CategoryModal = ({
               />
             </div>
 
-            {/* Info global */}
+            <FormField>
+              <Label required>Sucursales</Label>
+              <MultiSelectDropdown
+                options={
+                  locations?.map((location) => ({
+                    value: location.id,
+                    label: location.name,
+                  })) ?? []
+                }
+                value={formValues.locationIds ?? []}
+                onChange={(vals) => {
+                  formSetFieldValue("locationIds", vals, true);
+                  formSetFieldTouched("locationIds", true, false);
+                }}
+                placeholder="Seleccionar sucursales..."
+                emptyText="No hay sucursales disponibles"
+                error={formErrors.locationIds as string}
+                touched={formTouched.locationIds as boolean}
+              />
+            </FormField>
+
+            {/* Info */}
             <div className="flex items-start gap-2 rounded-xl border border-blue-100 bg-blue-50/60 px-3 py-2.5">
               <Tags size={13} className="mt-0.5 shrink-0 text-blue-500" />
               <p className="text-[11px] leading-4 text-blue-700">
-                Esta categoría estará disponible para todos los productos de
-                todas las sucursales.
+                Esta categoría estará disponible para los productos de las
+                sucursales seleccionadas.
               </p>
             </div>
           </FormSection>

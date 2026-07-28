@@ -6,6 +6,7 @@ import { CategoryCard } from "./components/CategoryCard";
 import { useCategoriesHandler } from "../hooks/useCategories";
 import { Category } from "../models/category.model";
 import { CategoryModal } from "./components/CategoryModal";
+import { useGetLocationSimple } from "@/features/locations/hooks/useLocation";
 
 export function Categories() {
   const [search, setSearch] = useState("");
@@ -15,6 +16,7 @@ export function Categories() {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const { data: categories, refetch } = useCategoriesHandler();
+  const { data: locations } = useGetLocationSimple();
 
   const categoryList = categories ?? [];
 
@@ -118,6 +120,7 @@ export function Categories() {
       {isModalOpen && (
         <CategoryModal
           category={selectedCategory}
+          locations={locations}
           onClose={handleCloseModal}
           onSuccess={handleSuccess}
         />

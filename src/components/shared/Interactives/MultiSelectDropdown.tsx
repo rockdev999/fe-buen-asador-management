@@ -169,7 +169,7 @@ export function MultiSelectDropdown({
       </button>
 
       {touched && error && (
-        <p className="text-[10px] text-red-500 mt-0.5">{error}</p>
+        <p className="text-[12px] text-red-500 mt-0.5">{error}</p>
       )}
 
       {/* Dropdown */}

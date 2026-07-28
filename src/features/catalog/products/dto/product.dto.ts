@@ -1,6 +1,7 @@
 import { LocationDTO } from "@/features/locations/dto/location.dto";
 import { CategoryShortDTO } from "@/features/catalog/categories/dto/cateogory.dto";
-import { ISODateTimeString, UUID } from "@/types/common";
+import { UUID } from "@/types/common";
+import { Audit } from "@/types/audit.types";
 
 export interface ProductDTO {
   id: UUID;
@@ -14,9 +15,8 @@ export interface ProductDTO {
   sortOrder: number;
   haveModifiers: boolean;
   category: CategoryShortDTO;
-  location: LocationDTO;
-  createdAt: ISODateTimeString;
-  updatedAt: ISODateTimeString;
+  locations: LocationDTO[];
+  audit: Audit;
 }
 
 export interface ProductPageItemDTO {
@@ -31,7 +31,7 @@ export interface ProductPageItemDTO {
   haveModifiers: boolean;
   sortOrder: number;
   category: CategoryShortDTO;
-  location: LocationDTO;
+  locations: LocationDTO[] | [];
 }
 
 export interface CreateProductDTO {
@@ -46,5 +46,5 @@ export interface CreateProductDTO {
   sortOrder: number;
   haveModifiers: boolean;
   categoryId: UUID;
-  locationId: UUID;
+  locationIds: UUID[];
 }

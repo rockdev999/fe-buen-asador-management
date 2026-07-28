@@ -11,10 +11,7 @@ export const ModifierFormConfig = {
     name: "",
     extraPrice: 0,
     active: true,
-    location: {
-      id: "",
-      name: "",
-    },
+    locationIds: [] as string[],
   } as CreateModifierForm,
   validationSchemaCreate: zodToFormik(modifierCreateSchema),
   mapFormToDTO: mapModifierFormToDTO,

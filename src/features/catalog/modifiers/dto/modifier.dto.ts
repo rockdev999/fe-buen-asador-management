@@ -7,7 +7,7 @@ export interface ModifierDTO {
   name: string;
   extraPrice: number;
   active: boolean;
-  location: LocationDTO;
+  locations: LocationDTO[];
   audit: Audit;
 }
 
@@ -16,5 +16,5 @@ export interface CreateModifierDTO {
   name: string;
   extraPrice: number;
   active?: boolean;
-  locationId: UUID;
+  locationIds: UUID[];
 }

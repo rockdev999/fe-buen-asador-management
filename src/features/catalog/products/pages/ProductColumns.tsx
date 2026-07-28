@@ -55,13 +55,42 @@ export const PRODUCT_COLUMNS: ColumnDef<ProductPageItem>[] = [
   },
   {
     key: "locationName",
-    label: "Sucursal",
+    label: "Sucursales",
     sortable: true,
-    render: (row) => (
-      <span className="text-[12px] text-muted-foreground">
-        {row.location.name}
-      </span>
-    ),
+    render: (row) => {
+      if (!row.locations?.length) {
+        return <span className="text-[11px] text-muted-foreground/40">--</span>;
+      }
+
+      const MAX_VISIBLE = 1;
+      const visible = row.locations.slice(0, MAX_VISIBLE);
+      const remaining = row.locations.length - MAX_VISIBLE;
+
+      return (
+        <div className="flex items-center gap-1 flex-wrap max-w-[220px]">
+          {visible.map((loc) => (
+            <span
+              key={loc.id}
+              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium bg-surface text-inkblack border border-surface/80 whitespace-nowrap"
+              title={loc.name}
+            >
+              {loc.name}
+            </span>
+          ))}
+          {remaining > 0 && (
+            <span
+              className="text-[10px] text-muted-foreground/60 whitespace-nowrap"
+              title={row.locations
+                .slice(MAX_VISIBLE)
+                .map((l) => l.name)
+                .join(", ")}
+            >
+              +{remaining} más
+            </span>
+          )}
+        </div>
+      );
+    },
   },
   {
     key: "price",

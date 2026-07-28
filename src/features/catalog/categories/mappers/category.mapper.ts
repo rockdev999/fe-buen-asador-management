@@ -1,3 +1,4 @@
+import { mapLocationDTOToModel } from "@/features/locations/mappers/location.mapper";
 import {
   CategoryDTO,
   CategoryProductDTO,
@@ -17,6 +18,7 @@ export const mapCategoryDTOToModel = (dto: CategoryDTO): Category => ({
   id: dto.id,
   name: dto.name,
   sortOrder: String(dto.sortOrder),
+  locations: (dto.locations ?? []).map(mapLocationDTOToModel),
   audit: dto.audit,
 });
 
@@ -66,4 +68,5 @@ export const mapCategoryFormToDTO = (
   id: form.id,
   name: form.name,
   sortOrder: Number(form.sortOrder),
+  locationIds: form.locationIds,
 });

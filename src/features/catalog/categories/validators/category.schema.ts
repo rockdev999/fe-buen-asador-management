@@ -12,6 +12,9 @@ export const categoryCreateSchema = z.object({
     .max(150, v.nameMax)
     .trim(),
   sortOrder: z.string().min(1, v.sortOrderRequired).default("0"),
+  locationIds: z
+    .array(z.string().uuid({ error: v.locationInvalid }))
+    .min(1, { error: v.locationRequired }),
 });
 
 export type CreateCategoryForm = z.infer<typeof categoryCreateSchema>;

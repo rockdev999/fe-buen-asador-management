@@ -1,4 +1,4 @@
-import { FolderTree, ListOrdered } from "lucide-react";
+import { Building2, FolderTree, ListOrdered } from "lucide-react";
 import { Category } from "../../models/category.model";
 import { formatLocalDate } from "@/lib/formatters";
 
@@ -27,6 +27,26 @@ export function CategoryCard({ category, onEdit }: CategoryCardProps) {
             <div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
               <ListOrdered size={12} />
               <span>Orden {category.sortOrder}</span>
+            </div>
+
+            <div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
+              <Building2 size={12} className="shrink-0" />
+              {category.locations.length === 0 ? (
+                <span className="italic">Sin sucursales</span>
+              ) : (
+                <span className="truncate">
+                  {category.locations
+                    .slice(0, 2)
+                    .map((location) => location.name)
+                    .join(", ")}
+                  {category.locations.length > 2 && (
+                    <span className="font-medium text-brand">
+                      {" "}
+                      +{category.locations.length - 2}
+                    </span>
+                  )}
+                </span>
+              )}
             </div>
           </div>
         </div>
