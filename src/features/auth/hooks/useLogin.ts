@@ -14,6 +14,7 @@ export function useLogin() {
       httpClient
         .post<LoginLocationsDTO>("/auth/login", mapLoginFormToDTO(form))
         .then((r) => r.data),
+    retry: false,
 
     onSuccessCallback: (data) => {
       setTempAuth(

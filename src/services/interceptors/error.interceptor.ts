@@ -1,11 +1,22 @@
-import { API_ERROR_CODES, HTTP_STATUS, MESSAGES } from "@/constants";
+import {
+  API_ERROR_CODES,
+  HTTP_STATUS,
+  KNOWN_ERROR_MESSAGES,
+  MESSAGES,
+} from "@/constants";
+import { KnownErrorCode } from "@/constants/httpCodes/error-codes";
 import { useAuthStore } from "@/stores/auth.store";
 import { ApiErrorResponse } from "@/types/api.types";
 import axios, { AxiosError } from "axios";
 import { toast } from "sonner";
 
+function isKnownErrorCode(code: string | undefined): code is KnownErrorCode {
+  return !!code && code in KNOWN_ERROR_MESSAGES;
+}
+
 function getErrorMessage(error: AxiosError<ApiErrorResponse>): string {
   const status = error.response?.status;
+  const errorCode = error.response?.data?.errorCode;
   const beMessage = error.response?.data?.message;
 
   if (!error.response) {
@@ -13,6 +24,8 @@ function getErrorMessage(error: AxiosError<ApiErrorResponse>): string {
     if (error.code === "ECONNABORTED") return MESSAGES.ERROR.TIMEOUT;
     return MESSAGES.ERROR.OFFLINE;
   }
+
+  if (isKnownErrorCode(errorCode)) return KNOWN_ERROR_MESSAGES[errorCode];
 
   if (beMessage) return beMessage;
 

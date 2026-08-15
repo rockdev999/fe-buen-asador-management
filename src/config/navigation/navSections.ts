@@ -3,6 +3,7 @@ import { PATHS } from "@/routes";
 import {
   Archive,
   BarChart3,
+  Boxes,
   Building2,
   ChefHat,
   ClipboardList,
@@ -84,7 +85,7 @@ export const NAV_SECTIONS: NavSection[] = [
       {
         label: "Inventario",
         path: PATHS.INVENTORY,
-        icon: Package,
+        icon: Boxes,
         roles: [RoleEnum.MANAGER, RoleEnum.ADMIN],
       },
       {

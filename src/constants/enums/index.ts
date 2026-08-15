@@ -1,4 +1,5 @@
 export * from "./expense.enum";
+export * from "./ingredient.enum";
 export * from "./inventory.enum";
 export * from "./invoice.enum";
 export * from "./kardex.enum";

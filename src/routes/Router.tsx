@@ -19,6 +19,8 @@ import { Locations } from "@/features/locations/pages/Locations";
 import { Products } from "@/features/catalog/products/pages/Products";
 import { Categories } from "@/features/catalog/categories/pages/Categories";
 import { Modifiers } from "@/features/catalog/modifiers/pages/Modifiers";
+import { Inventory } from "@/features/inventory/pages/inventory/Inventory";
+import { Supplies } from "@/features/supplies/pages/supplies/Supplies";
 
 export const router = createBrowserRouter([
   { path: PATHS.LOGIN, element: <Login /> },
@@ -58,8 +60,8 @@ export const router = createBrowserRouter([
               { path: PATHS.PRODUCTS, element: <Products /> },
               { path: PATHS.CATEGORIES, element: <Categories /> },
               { path: PATHS.MODIFIERS, element: <Modifiers /> },
-              { path: PATHS.INVENTORY, element: <div>Inventario</div> },
-              { path: PATHS.INGREDIENTS, element: <div>Insumos</div> },
+              { path: PATHS.INVENTORY, element: <Inventory /> },
+              { path: PATHS.INGREDIENTS, element: <Supplies /> },
               { path: PATHS.REPORTS, element: <div>Reportes</div> },
             ],
           },

@@ -55,6 +55,34 @@ export const QUERY_KEYS = {
   KARDEX: (productId: string) => ["inventory", "kardex", productId],
   STOCK_ALERTS: ["inventory", "alerts"],
 
+  // Insumos
+  INGREDIENTS: ["ingredients"],
+  INGREDIENT: (id: string) => ["ingredients", id],
+  INGREDIENTS_SIMPLE: ["ingredients", "simple"],
+  PAGINATION_INGREDIENTS: (params: Record<string, any>) => [
+    "ingredients",
+    "pagination",
+    params,
+  ],
+  INGREDIENT_STOCK: (locationId: string) => [
+    "ingredients",
+    "stock",
+    locationId,
+  ],
+  INGREDIENT_KARDEX: (ingredientId: string) => [
+    "ingredients",
+    "kardex",
+    ingredientId,
+  ],
+  INGREDIENT_STOCK_ALERTS: ["ingredients", "alerts"],
+  RECIPES: ["ingredients", "recipes"],
+  RECIPES_BY_PRODUCT: (productId: string) => [
+    "ingredients",
+    "recipes",
+    "product",
+    productId,
+  ],
+
   // Finanzas
   INCOMES: ["finances", "incomes"],
   EXPENSES: ["finances", "expenses"],

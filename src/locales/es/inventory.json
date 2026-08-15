@@ -1,0 +1,17 @@
+{
+  "stock": {
+    "validation": {
+      "productRequired": "El producto es requerido.",
+      "locationRequired": "La sucursal es requerida.",
+
+      "adjustmentTypeRequired": "Selecciona un tipo de ajuste.",
+
+      "quantityRequired": "La cantidad es requerida.",
+      "quantityInvalid": "Ingresa una cantidad válida.",
+      "quantityMin": "La cantidad no puede ser menor a 0.",
+      "quantityMax": "La cantidad no puede exceder los 999999.",
+
+      "notesMax": "Las notas no pueden exceder los 500 caracteres."
+    }
+  }
+}

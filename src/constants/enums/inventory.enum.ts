@@ -7,3 +7,9 @@ export enum StockMesurementUnitTypeEnum {
   MEDIUM = 'MEDIUM',
   LARGE = 'LARGE',
 }
+
+export enum AdjustmentType {
+  ADD = 'ADD',
+  SUBTRACT = 'SUBTRACT',
+  SET = 'SET',
+}

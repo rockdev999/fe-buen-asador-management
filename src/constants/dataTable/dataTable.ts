@@ -23,7 +23,13 @@ export interface TableConfig {
   urlWithArgs?: (...args: any[]) => string;
 }
 
-type TableKey = "ORDERS" | "SALES" | "USERS" | "LOCATIONS" | "PRODUCTS";
+type TableKey =
+  | "ORDERS"
+  | "SALES"
+  | "USERS"
+  | "LOCATIONS"
+  | "PRODUCTS"
+  | "INGREDIENTS";
 
 type DataTableConfig = Record<TableKey, TableConfig>;
 
@@ -86,5 +92,17 @@ export const DATA_TABLE: DataTableConfig = {
     showPagination: true,
     showResults: true,
     url: "/products",
+  },
+
+  INGREDIENTS: {
+    id: "dt-ingredients",
+    defaultSorting: {
+      columnKey: "name",
+      direction: SortDirectionEnum.ASC,
+    },
+    limit: 10,
+    showPagination: true,
+    showResults: true,
+    url: "/ingredients",
   },
 };

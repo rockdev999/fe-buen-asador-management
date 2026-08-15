@@ -1,0 +1,46 @@
+{
+  "ingredient": {
+    "validation": {
+      "nameRequired": "El nombre del insumo es requerido.",
+      "nameMin": "El nombre del insumo debe tener al menos 2 caracteres.",
+      "nameMax": "El nombre del insumo no puede exceder los 150 caracteres.",
+
+      "unitOfMeasureRequired": "Selecciona una unidad de medida.",
+
+      "descriptionMax": "La descripción no puede exceder los 500 caracteres."
+    }
+  },
+  "stock": {
+    "validation": {
+      "ingredientRequired": "El insumo es requerido.",
+      "locationRequired": "La sucursal es requerida.",
+
+      "adjustmentTypeRequired": "Selecciona un tipo de ajuste.",
+
+      "quantityRequired": "La cantidad es requerida.",
+      "quantityInvalid": "Ingresa una cantidad válida.",
+      "quantityMin": "La cantidad no puede ser menor a 0.",
+      "quantityMax": "La cantidad no puede exceder los 999999.",
+
+      "unitCostInvalid": "Ingresa un costo unitario válido.",
+      "unitCostPositive": "El costo unitario debe ser mayor a 0.",
+      "unitCostMax": "El costo unitario no puede exceder los 999999.",
+
+      "notesMax": "Las notas no pueden exceder los 500 caracteres."
+    }
+  },
+  "recipe": {
+    "validation": {
+      "productRequired": "Selecciona un producto.",
+      "ingredientRequired": "Selecciona un insumo.",
+
+      "quantityUsedRequired": "La cantidad utilizada es requerida.",
+      "quantityUsedInvalid": "Ingresa una cantidad válida.",
+      "quantityUsedPositive": "La cantidad utilizada debe ser mayor a 0.",
+      "quantityUsedMax": "La cantidad utilizada no puede exceder los 999999.",
+
+      "ingredientsMin": "Agrega al menos un insumo a la receta.",
+      "ingredientsDuplicate": "No puedes repetir el mismo insumo en la receta."
+    }
+  }
+}
