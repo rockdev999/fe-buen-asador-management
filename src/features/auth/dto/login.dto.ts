@@ -14,7 +14,7 @@ export interface LoginLocationsDTO {
 }
 
 export interface SelectLocationRequestDTO {
-  locationId: UUID;
+  locationId: UUID | null;
 }
 
 export interface SelectLocationDTO {

@@ -16,7 +16,7 @@ export interface UserDetailsDTO {
   name: string;
   email: string;
   role: RoleEnum;
-  location: LocationDTO;
+  location: LocationDTO | null;
 }
 
 export interface UserShortDTO {

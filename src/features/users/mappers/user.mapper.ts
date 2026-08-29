@@ -34,8 +34,8 @@ export const mapUserDetailsDTOToModel = (dto: UserDetailsDTO): UserDetails => ({
   name: dto.name,
   email: dto.email,
   role: dto.role,
-  locationId: dto.location.id,
-  locationName: dto.location.name,
+  locationId: dto.location?.id ?? null,
+  locationName: dto.location?.name ?? null,
 });
 
 export const mapUserLocationItemDTOToModel = (

@@ -1,6 +1,7 @@
+import { useState } from "react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { PATHS } from "@/routes";
-import { Building2, LogOut, User } from "lucide-react";
+import { Building2, LogOut, Repeat, User } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import {
   DropdownMenu,
@@ -12,10 +13,18 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { getInitials } from "@/lib/utils";
 import { RoleEnum } from "@/constants";
+import { t } from "@/locales/es";
+import { SwitchLocationModal } from "@/features/auth/components/SwitchLocationModal";
+
+const trans = t.auth.switchLocation;
 
 export function Topbar() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const [isSwitchLocationOpen, setIsSwitchLocationOpen] = useState(false);
+
+  const canSwitchLocation =
+    user?.role === RoleEnum.ADMIN || user?.role === RoleEnum.CASHIER;
 
   function handleLogout() {
     logout();
@@ -68,6 +77,15 @@ export function Topbar() {
               <User size={14} />
               Mi perfil
             </DropdownMenuItem>
+            {canSwitchLocation && (
+              <DropdownMenuItem
+                className="gap-2 cursor-pointer"
+                onClick={() => setIsSwitchLocationOpen(true)}
+              >
+                <Repeat size={14} />
+                {trans.trigger}
+              </DropdownMenuItem>
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="gap-2 cursor-pointer text-destructive focus:text-destructive"
@@ -79,6 +97,10 @@ export function Topbar() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      {isSwitchLocationOpen && (
+        <SwitchLocationModal onClose={() => setIsSwitchLocationOpen(false)} />
+      )}
     </header>
   );
 }

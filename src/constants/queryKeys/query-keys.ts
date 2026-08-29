@@ -2,6 +2,7 @@
 export const QUERY_KEYS = {
   // Auth
   ME: ["me"],
+  MY_LOCATIONS: ["auth", "my-locations"],
 
   // Usuarios
   USERS: ["users"],

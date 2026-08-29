@@ -16,8 +16,8 @@ export interface UserDetails {
   name: string;
   email: string;
   role: RoleEnum;
-  locationId: UUID;
-  locationName: string;
+  locationId: UUID | null;
+  locationName: string | null;
 }
 
 export interface UserShort {

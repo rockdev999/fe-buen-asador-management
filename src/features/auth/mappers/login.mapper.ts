@@ -25,6 +25,6 @@ export const mapAuthUserDTOToModel = (dto: SelectLocationDTO): AuthUser => ({
   name: dto.user.name,
   email: dto.user.email,
   role: dto.user.role,
-  locationId: dto.user.location.id,
-  locationName: dto.user.location.name,
+  locationId: dto.user.location?.id ?? null,
+  locationName: dto.user.location?.name ?? null,
 });
