@@ -1,6 +1,11 @@
 import { mapLocationDTOToModel } from "@/features/locations/mappers/location.mapper";
-import { SaleDTO, SalePageItemDTO } from "../dto/sale.dto";
-import { Sale, SalePageItem, SaleProductGroup } from "../models/sale";
+import { ManagerSalePageItemDTO, SaleDTO, SalePageItemDTO } from "../dto/sale.dto";
+import {
+  ManagerSalePageItem,
+  Sale,
+  SalePageItem,
+  SaleProductGroup,
+} from "../models/sale";
 import { mapOrderSaleItemDTOToModel } from "../../pos/mappers/order.mapper";
 import { OrderSaleItem } from "../../pos/models/order";
 
@@ -80,4 +85,12 @@ export const mapSalePageItemDTOToModel = (
     name: dto.cashier.name,
   },
   createdAt: new Date(dto.createdAt),
+});
+
+export const mapManagerSalePageItemDTOToModel = (
+  dto: ManagerSalePageItemDTO,
+): ManagerSalePageItem => ({
+  ...mapSalePageItemDTOToModel(dto),
+  locationId: dto.location.id,
+  locationName: dto.location.name,
 });

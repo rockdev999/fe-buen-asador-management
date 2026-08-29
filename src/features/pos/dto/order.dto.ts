@@ -81,3 +81,10 @@ export interface OrderPageItemDTO {
   subtotal: number;
   updatedAt: string | null;
 }
+
+export interface ManagerOrderPageItemDTO extends OrderPageItemDTO {
+  location: {
+    id: UUID;
+    name: string;
+  };
+}

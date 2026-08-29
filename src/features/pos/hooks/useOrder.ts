@@ -4,7 +4,12 @@ import {
   usePostHandler,
   usePutHandler,
 } from "@/hooks/api.handlers";
-import { CreateOrderDTO, OrderDTO, OrderPageItemDTO } from "../dto/order.dto";
+import {
+  CreateOrderDTO,
+  ManagerOrderPageItemDTO,
+  OrderDTO,
+  OrderPageItemDTO,
+} from "../dto/order.dto";
 import { httpClient } from "@/services/http.client";
 import { ApiResponse } from "@/types/api.types";
 import { DATA_TABLE, OrderStatusEnum, QUERY_KEYS } from "@/constants";
@@ -12,6 +17,7 @@ import { useMemo } from "react";
 import {
   mapOrderDTOToModel,
   mapOrderDTOToSnapshot,
+  mapManagerOrderPageItemDTOToModel,
   mapOrderPageItemDTOToModel,
 } from "../mappers/order.mapper";
 import { SortDirectionEnum } from "@/constants/enums/sort.enum";
@@ -64,6 +70,66 @@ export function useOrdersPage({
     params,
     enabled: !!locationId,
     staleTime: 30 * 1000,
+  });
+}
+
+interface UseManagerOrdersPageParams {
+  page: number;
+  search?: string;
+  status?: string;
+  type?: string;
+  channel?: string;
+  locationId?: string;
+  updatedDate?: string;
+  includeAll?: boolean;
+  sortKey?: string;
+  sortDir?: SortDirectionEnum | null;
+}
+
+// Vista global (todas las sucursales) exclusiva de MANAGER — /orders/page,
+// a diferencia de /orders/:locationId/page-by-location que depende del
+// locationId del token (null para MANAGER).
+export function useManagerOrdersPage({
+  page,
+  search,
+  status,
+  type,
+  channel,
+  locationId,
+  updatedDate,
+  includeAll,
+  sortKey,
+  sortDir,
+}: UseManagerOrdersPageParams) {
+  const params = {
+    page,
+    limit: DATA_TABLE.ORDERS.limit ?? 10,
+    ...(search && { search }),
+    ...(status && { status }),
+    ...(type && { type }),
+    ...(channel && { channel }),
+    ...(locationId && { locationId }),
+    ...(updatedDate && { updatedDate }),
+    ...(includeAll && { includeAll }),
+    ...(sortKey && { sortBy: sortKey }),
+    ...(sortDir && { sortOrder: sortDir }),
+  };
+
+  return usePaginatedGetHandler<
+    ManagerOrderPageItemDTO,
+    ReturnType<typeof mapManagerOrderPageItemDTOToModel>
+  >({
+    queryKey: QUERY_KEYS.PAGINATION_ORDERS_MANAGER(params),
+    queryFn: () =>
+      httpClient
+        .get<ApiResponse<ManagerOrderPageItemDTO[]>>("/orders/page", {
+          params,
+        })
+        .then((r) => r.data),
+    select: mapManagerOrderPageItemDTOToModel,
+    params,
+    enabled: true,
+    staleTime: 0,
   });
 }
 

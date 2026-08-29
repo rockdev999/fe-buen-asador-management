@@ -3,12 +3,18 @@ import {
   usePaginatedGetHandler,
   usePostHandler,
 } from "@/hooks/api.handlers";
-import { CreateSaleDTO, SaleDTO, SalePageItemDTO } from "../dto/sale.dto";
+import {
+  CreateSaleDTO,
+  ManagerSalePageItemDTO,
+  SaleDTO,
+  SalePageItemDTO,
+} from "../dto/sale.dto";
 import { ApiResponse } from "@/types/api.types";
 import { DATA_TABLE, QUERY_KEYS } from "@/constants";
 import { httpClient } from "@/services/http.client";
 import { useMemo } from "react";
 import {
+  mapManagerSalePageItemDTOToModel,
   mapSaleDTOtoModel,
   mapSalePageItemDTOToModel,
 } from "../mappers/sale.mapper";
@@ -65,6 +71,69 @@ export function useSalesPage({
     params,
     enabled: !!locationId,
     staleTime: 30 * 1000, // 30 seconds
+  });
+}
+
+interface UseManagerSalesPageParams {
+  page: number;
+  search?: string;
+  status?: string;
+  paymentMethod?: string;
+  cashierId?: string;
+  locationId?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  shiftId?: string;
+  sortKey?: string;
+  sortDir?: SortDirectionEnum | null;
+}
+
+// Vista global (todas las sucursales) exclusiva de MANAGER — /sales/page,
+// a diferencia de /sales/:locationId/page-by-location que depende del
+// locationId del token (null para MANAGER).
+export function useManagerSalesPage({
+  page,
+  search,
+  status,
+  paymentMethod,
+  cashierId,
+  locationId,
+  dateFrom,
+  dateTo,
+  shiftId,
+  sortKey,
+  sortDir,
+}: UseManagerSalesPageParams) {
+  const params = {
+    page,
+    limit: DATA_TABLE.SALES.limit ?? 10,
+    ...(search && { search }),
+    ...(status && { status }),
+    ...(paymentMethod && { paymentMethod }),
+    ...(cashierId && { cashierId }),
+    ...(locationId && { locationId }),
+    ...(dateFrom && { dateFrom }),
+    ...(dateTo && { dateTo }),
+    ...(shiftId && { shiftId }),
+    ...(sortKey && { sortBy: sortKey }),
+    ...(sortDir && { sortOrder: sortDir.toUpperCase() }),
+  };
+
+  return usePaginatedGetHandler<
+    ManagerSalePageItemDTO,
+    ReturnType<typeof mapManagerSalePageItemDTOToModel>
+  >({
+    queryKey: QUERY_KEYS.PAGINATION_SALES_MANAGER(params),
+    queryFn: () =>
+      httpClient
+        .get<ApiResponse<ManagerSalePageItemDTO[]>>("/sales/page", {
+          params,
+        })
+        .then((r) => r.data),
+    select: mapManagerSalePageItemDTOToModel,
+    params,
+    enabled: true,
+    staleTime: 0,
   });
 }
 

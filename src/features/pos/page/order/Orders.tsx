@@ -14,8 +14,19 @@ import { OrderSuccessModal } from "../../components/reviewAndPayment/OrderSucces
 import { PaymentMethodEnum } from "@/constants";
 import { useNavigate } from "react-router-dom";
 import { PATHS } from "@/routes";
+import { useAuth } from "@/features/auth/hooks/useAuth";
+import { ManagerOrders } from "./ManagerOrders";
 
 export function Orders() {
+  const { isManager } = useAuth();
+
+  if (isManager) return <ManagerOrders />;
+
+  return <CashierAdminOrders />;
+}
+
+// Vista operativa por sucursal (ADMIN/CASHIER) — usa el locationId del token.
+function CashierAdminOrders() {
   const [page, setPage] = useState(1);
   const [sortKey, setSortKey] = useState(
     ORDERS_TABLE_CONFIG.defaultSorting.columnKey,

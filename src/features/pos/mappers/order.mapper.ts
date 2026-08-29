@@ -1,6 +1,7 @@
 import { OrderEnum, OrderStatusEnum, OrderTypeEnum } from "@/constants";
 import {
   CreateOrderDTO,
+  ManagerOrderPageItemDTO,
   ModifierItemDTO,
   OrderDTO,
   OrderItemDTO,
@@ -8,6 +9,7 @@ import {
 } from "../dto/order.dto";
 import { CartItem } from "../models/cart";
 import {
+  ManagerOrderPageItem,
   ModifierSaleItem,
   Order,
   OrderItem,
@@ -188,4 +190,12 @@ export const mapOrderPageItemDTOToModel = (
   status: dto.status,
   subtotal: dto.subtotal,
   updatedAt: dto.updatedAt,
+});
+
+export const mapManagerOrderPageItemDTOToModel = (
+  dto: ManagerOrderPageItemDTO,
+): ManagerOrderPageItem => ({
+  ...mapOrderPageItemDTOToModel(dto),
+  locationId: dto.location.id,
+  locationName: dto.location.name,
 });

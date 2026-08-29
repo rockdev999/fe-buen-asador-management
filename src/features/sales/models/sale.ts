@@ -49,3 +49,8 @@ export interface SalePageItem {
   cashier: UserShort;
   createdAt: Date;
 }
+
+export interface ManagerSalePageItem extends SalePageItem {
+  locationId: UUID;
+  locationName: string;
+}

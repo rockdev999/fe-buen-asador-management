@@ -51,3 +51,10 @@ export interface SalePageItemDTO {
   cashier: UserShortDTO;
   createdAt: ISODateTimeString;
 }
+
+export interface ManagerSalePageItemDTO extends SalePageItemDTO {
+  location: {
+    id: UUID;
+    name: string;
+  };
+}

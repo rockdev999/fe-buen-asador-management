@@ -49,6 +49,12 @@ export const QUERY_KEYS = {
     "pagination",
     params,
   ],
+  PAGINATION_SALES_MANAGER: (params: Record<string, any>) => [
+    "sales",
+    "manager",
+    "pagination",
+    params,
+  ],
 
   // Inventario
   INVENTORY: ["inventory"],
@@ -93,6 +99,12 @@ export const QUERY_KEYS = {
   // POS — Órdenes
   ORDERS: ["orders"],
   ORDER: (id: string) => ["orders", id],
+  PAGINATION_ORDERS_MANAGER: (params: Record<string, any>) => [
+    "orders",
+    "manager",
+    "pagination",
+    params,
+  ],
 
   // Turnos
   SHIFTS: ["shifts"],

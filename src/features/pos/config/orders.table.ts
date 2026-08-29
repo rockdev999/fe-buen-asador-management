@@ -32,3 +32,12 @@ export const ORDER_DROPDOWNS: FilterDropdown[] = [
     ],
   },
 ];
+
+export const MANAGER_ORDER_DROPDOWNS: FilterDropdown[] = [
+  ...ORDER_DROPDOWNS,
+  {
+    key: "includeAll",
+    placeholder: "Vista",
+    options: [{ label: "Incluir pagados", value: "true" }],
+  },
+];

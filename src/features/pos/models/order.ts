@@ -66,3 +66,8 @@ export interface OrderPageItem {
   subtotal: number;
   updatedAt: string | null;
 }
+
+export interface ManagerOrderPageItem extends OrderPageItem {
+  locationId: UUID;
+  locationName: string;
+}

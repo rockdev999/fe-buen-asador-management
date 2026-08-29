@@ -21,3 +21,5 @@ export const SALES_DROPDOWNS: FilterDropdown[] = [
     ],
   },
 ];
+
+export const MANAGER_SALES_DROPDOWNS: FilterDropdown[] = SALES_DROPDOWNS;
