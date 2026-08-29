@@ -39,17 +39,17 @@ export function LoginCard() {
       </div>
       <FormInput
         required
-        id="email"
-        name="email"
-        label={trans.email}
-        type="email"
-        autoComplete="email"
-        value={formValues.email}
-        placeholder={trans.emailPlaceholder}
+        id="identifier"
+        name="identifier"
+        label={trans.identifier}
+        type="text"
+        autoComplete="username"
+        value={formValues.identifier}
+        placeholder={trans.identifierPlaceholder}
         onBlur={formHandlerBlur}
         onChange={formHandleChange}
-        touched={formTouched.email}
-        error={formErrors.email}
+        touched={formTouched.identifier}
+        error={formErrors.identifier}
       />
 
       <FormPassword

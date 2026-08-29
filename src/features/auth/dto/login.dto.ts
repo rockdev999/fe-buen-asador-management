@@ -3,7 +3,7 @@ import { UserDetailsDTO, UserDTO } from "@/features/users/dto/user.dto";
 import { UUID } from "@/types/common";
 
 export interface LoginRequestDTO {
-  email: string;
+  identifier: string;
   password: string;
 }
 

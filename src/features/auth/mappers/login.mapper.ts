@@ -10,7 +10,7 @@ import { mapLocationWithRoleDTOToModel } from "@/features/locations/mappers/loca
 import { AuthUser } from "../models/auth.model";
 
 export const mapLoginFormToDTO = (form: LoginForm): LoginRequestDTO => ({
-  email: form.email,
+  identifier: form.identifier,
   password: form.password,
 });
 

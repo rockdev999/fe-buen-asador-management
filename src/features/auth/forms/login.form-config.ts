@@ -6,7 +6,7 @@ import { LoginForm } from "./login.form";
 export const loginFormConfig = {
   id: "login-form-config",
   initialValues: {
-    email: "",
+    identifier: "",
     password: "",
   } as LoginForm,
   validationSchema: zodToFormik(loginSchema),
