@@ -1,3 +1,5 @@
+import { RoleEnum } from "@/constants";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 import { httpClient } from "@/services/http.client";
 import { ApiErrorResponse, ApiMeta, ApiResponse } from "@/types/api.types";
 import {
@@ -28,6 +30,15 @@ function resolveStatus(
   if (isError) return "error";
   if (isSuccess) return "success";
   return "idle";
+}
+
+// ─── Guard por rol ─────────────────────────────────────────────────────────────
+// Evita disparar peticiones a endpoints restringidos por rol (evita 403 innecesarios
+// y sus toasts de error) sin tener que repetir el check en cada componente.
+
+function useRoleAllowed(roles?: RoleEnum[]): boolean {
+  const { hasRole } = useAuth();
+  return !roles || roles.length === 0 || hasRole(...roles);
 }
 
 // ─── HTTP helpers (fetch puro, sin hooks) ─────────────────────────────────────
@@ -88,6 +99,8 @@ interface UseGetHandlerOptions<TDto, TModel> extends Omit<
   select?: (data: TDto) => TModel;
   enabled?: boolean;
   staleTime?: number;
+  /** Si se define, la petición solo se dispara cuando el usuario tiene alguno de estos roles. */
+  roles?: RoleEnum[];
 }
 
 export function useGetHandler<TDto, TModel = TDto>({
@@ -96,13 +109,17 @@ export function useGetHandler<TDto, TModel = TDto>({
   select,
   enabled = true,
   staleTime = 1000 * 60 * 5,
+  roles,
   ...options
 }: UseGetHandlerOptions<TDto, TModel>) {
+  const isRoleAllowed = useRoleAllowed(roles);
+  const finalEnabled = enabled && isRoleAllowed;
+
   const query = useQuery<TDto, ApiErrorResponse, TModel>({
     queryKey,
     queryFn,
     select,
-    enabled,
+    enabled: finalEnabled,
     staleTime,
     ...options,
   });
@@ -111,9 +128,9 @@ export function useGetHandler<TDto, TModel = TDto>({
 
   return {
     ...query,
-    status: resolveStatus(enabled, isActive, query.isSuccess, query.isError),
+    status: resolveStatus(finalEnabled, isActive, query.isSuccess, query.isError),
     data: query.data ?? null,
-    isLoading: isActive && enabled,
+    isLoading: isActive && finalEnabled,
   };
 }
 
@@ -127,6 +144,8 @@ interface UsePaginatedGetHandlerOptions<TDto, TModel> {
   enabled?: boolean;
   staleTime?: number;
   retry?: boolean | number;
+  /** Si se define, la petición solo se dispara cuando el usuario tiene alguno de estos roles. */
+  roles?: RoleEnum[];
 }
 
 export function usePaginatedGetHandler<TDto, TModel>({
@@ -137,11 +156,15 @@ export function usePaginatedGetHandler<TDto, TModel>({
   enabled = true,
   staleTime = 1000 * 60 * 2,
   retry = false,
+  roles,
 }: UsePaginatedGetHandlerOptions<TDto, TModel>) {
+  const isRoleAllowed = useRoleAllowed(roles);
+  const finalEnabled = enabled && isRoleAllowed;
+
   const query = useQuery<ApiResponse<TDto[]>, ApiErrorResponse>({
     queryKey,
     queryFn: () => queryFn(params),
-    enabled,
+    enabled: finalEnabled,
     staleTime,
     retry,
   });
@@ -162,10 +185,10 @@ export function usePaginatedGetHandler<TDto, TModel>({
 
   return {
     ...query,
-    status: resolveStatus(enabled, isActive, query.isSuccess, query.isError),
+    status: resolveStatus(finalEnabled, isActive, query.isSuccess, query.isError),
     data: mapped?.data ?? null,
     meta: mapped?.meta ?? null,
-    isLoading: isActive && enabled,
+    isLoading: isActive && finalEnabled,
   };
 }
 

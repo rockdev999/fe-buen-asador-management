@@ -21,6 +21,8 @@ import { Categories } from "@/features/catalog/categories/pages/Categories";
 import { Modifiers } from "@/features/catalog/modifiers/pages/Modifiers";
 import { Inventory } from "@/features/inventory/pages/inventory/Inventory";
 import { Supplies } from "@/features/supplies/pages/supplies/Supplies";
+import { Expenses } from "@/features/finances/expenses/pages/Expenses";
+import { Payroll } from "@/features/finances/payroll/pages/Payroll";
 
 export const router = createBrowserRouter([
   { path: PATHS.LOGIN, element: <Login /> },
@@ -77,8 +79,8 @@ export const router = createBrowserRouter([
               { path: PATHS.ORDERS, element: <Orders /> },
               { path: PATHS.SALES, element: <Sales /> },
               { path: PATHS.SHIFTS, element: <div>Caja</div> },
-              { path: PATHS.EXPENSES, element: <div>Egresos</div> },
-              { path: PATHS.PAYROLL, element: <div>Nómina</div> },
+              { path: PATHS.EXPENSES, element: <Expenses /> },
+              { path: PATHS.PAYROLL, element: <Payroll /> },
             ],
           },
 

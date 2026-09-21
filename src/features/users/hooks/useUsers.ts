@@ -116,6 +116,32 @@ export const useGetUsersSimple = () => {
   return { ...handler, data };
 };
 
+// PATCH /users/:id/locations/:locationId/wage — ADMIN solo puede editar
+// empleados de su propia sucursal (403 si intenta otra); MANAGER sin
+// restricción. El backend resuelve el alcance, el FE solo envía el monto.
+export const useUpdateUserWage = () => {
+  const handler = usePatchHandler({
+    mutationFn: ({
+      userId,
+      locationId,
+      dailyWage,
+    }: {
+      userId: string;
+      locationId: string;
+      dailyWage: number;
+    }) =>
+      httpClient
+        .patch<
+          ApiResponse<null>
+        >(`/users/${userId}/locations/${locationId}/wage`, { dailyWage })
+        .then((r) => r.data.data),
+    invalidateKeys: [],
+    successMessage: "Sueldo diario actualizado exitosamente",
+  });
+
+  return { ...handler };
+};
+
 export const useCreateUser = () => {
   const handler = usePostHandler({
     mutationFn: (dto: CreateUserDTO) =>

@@ -6,7 +6,7 @@ import {
   usePutHandler,
 } from "@/hooks/api.handlers";
 import { httpClient } from "@/services/http.client";
-import { ApiResponse } from "@/types/api.types";
+import { ApiErrorResponse, ApiResponse } from "@/types/api.types";
 import {
   CategoryDTO,
   CategoryShortDTO,
@@ -79,7 +79,11 @@ export const useCategoriesSimpleHandler = (enabled: boolean = true) => {
   return { ...handler, data };
 };
 
-export const useCreateCategory = () => {
+interface CategoryMutationOptions {
+  onErrorCallback?: (error: ApiErrorResponse) => void;
+}
+
+export const useCreateCategory = (options?: CategoryMutationOptions) => {
   const handler = usePostHandler({
     mutationFn: (dto: CreateCategoryDTO) =>
       httpClient
@@ -88,12 +92,16 @@ export const useCreateCategory = () => {
 
     invalidateKeys: [],
     successMessage: "Categoría creada exitosamente",
+    onErrorCallback: options?.onErrorCallback,
   });
 
   return { ...handler };
 };
 
-export const useUpdateCategory = (categoryId: string) => {
+export const useUpdateCategory = (
+  categoryId: string,
+  options?: CategoryMutationOptions,
+) => {
   const handler = usePutHandler({
     mutationFn: (dto: CreateCategoryDTO) =>
       httpClient
@@ -102,6 +110,7 @@ export const useUpdateCategory = (categoryId: string) => {
 
     invalidateKeys: [],
     successMessage: "Categoría actualizada exitosamente",
+    onErrorCallback: options?.onErrorCallback,
   });
 
   return { ...handler };

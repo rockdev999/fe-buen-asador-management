@@ -23,6 +23,7 @@ import { PanelHeader } from "@/components/shared/Overlay/PanelHeader";
 import { PanelFooter } from "@/components/shared/Overlay/PanelFooter";
 import {
   AlertCircle,
+  Building2,
   ImageIcon,
   ListOrdered,
   Package,
@@ -35,6 +36,8 @@ import { ImageUploader } from "@/components/shared/Interactives/ImageUploader";
 import { AsyncDropdown } from "@/components/shared/Interactives/AsyncDropdown";
 import { MultiSelectDropdown } from "@/components/shared/Interactives/MultiSelectDropdown";
 import { ProductModalSkeleton } from "./ProductModalSkeleton";
+import { useAuth } from "@/features/auth/hooks/useAuth";
+import { ApiErrorResponse } from "@/types/api.types";
 
 interface ProductModalProps {
   productId?: UUID | null;
@@ -53,6 +56,9 @@ export const ProductModal = ({
 }: ProductModalProps) => {
   const isEdit = !!productId;
 
+  const { user, isManager } = useAuth();
+  const adminLocationId = user?.locationId ?? null;
+
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [removeImage, setRemoveImage] = useState(false);
 
@@ -60,9 +66,18 @@ export const ProductModal = ({
     productId ?? "",
   );
 
-  const { mutate: createProduct, status: createStatus } = useCreateProduct();
+  const handleForbiddenLocation = (error: ApiErrorResponse) => {
+    if (error.errorCode === "FORBIDDEN") {
+      setFieldError("locationIds", error.message);
+    }
+  };
+
+  const { mutate: createProduct, status: createStatus } = useCreateProduct({
+    onErrorCallback: handleForbiddenLocation,
+  });
   const { mutate: updateProduct, status: updateStatus } = useUpdateProduct(
     productId ?? "",
+    { onErrorCallback: handleForbiddenLocation },
   );
   const { mutate: deleteProduct, status: deleteStatus } = useDeleteProduct(
     productId ?? "",
@@ -72,6 +87,8 @@ export const ProductModal = ({
   const hasLocations = Boolean(locations?.length);
   const hasImageChanges = imageFile !== null || removeImage;
 
+  // ADMIN opera fijo en su propia sucursal: el backend rechaza cualquier otro
+  // locationId con 403, así que ni se muestra el selector ni se permite editarlo.
   const initValues: CreateProductForm = useMemo(() => {
     if (isEdit && product) {
       return {
@@ -85,12 +102,19 @@ export const ProductModal = ({
         isQuantifiable: product.isQuantifiable,
         haveModifiers: product.haveModifiers,
         categoryId: product.category.id ?? "",
-        locationIds: product.locations.map((location) => location.id),
+        locationIds: isManager
+          ? product.locations.map((location) => location.id)
+          : adminLocationId
+            ? [adminLocationId]
+            : [],
         sortOrder: product.sortOrder ?? 0,
       };
     }
-    return ProductFormConfig.initialValues;
-  }, [isEdit, product]);
+    return {
+      ...ProductFormConfig.initialValues,
+      locationIds: isManager || !adminLocationId ? [] : [adminLocationId],
+    };
+  }, [isEdit, product, isManager, adminLocationId]);
 
   const {
     values: formValues,
@@ -100,6 +124,7 @@ export const ProductModal = ({
     handleChange: formHandleChange,
     setFieldValue,
     setFieldTouched,
+    setFieldError,
     handleSubmit: formHandleSubmit,
     handleReset: formHandleReset,
     dirty: formDirty,
@@ -108,8 +133,13 @@ export const ProductModal = ({
     enableReinitialize: true,
     validate: ProductFormConfig.validationSchemaCreate,
     onSubmit: (data: CreateProductForm) => {
+      // Defensa extra: nunca confiar en el estado del form para el rol ADMIN,
+      // por si queda un valor viejo en caché o hay un bug de UI.
+      const submitData = isManager
+        ? data
+        : { ...data, locationIds: adminLocationId ? [adminLocationId] : [] };
       const formData = ProductFormConfig.mapFormToFormData(
-        data,
+        submitData,
         imageFile,
         removeImage,
       );
@@ -269,25 +299,40 @@ export const ProductModal = ({
 
               <FormField>
                 <Label required>Sucursales</Label>
-                <MultiSelectDropdown
-                  options={
-                    locations?.map((location) => ({
-                      value: location.id,
-                      label: location.name,
-                    })) ?? []
-                  }
-                  value={formValues.locationIds ?? []}
-                  onChange={(vals) => {
-                    setFieldValue("locationIds", vals, true);
-                    setFieldTouched("locationIds", true, false);
-                  }}
-                  placeholder="Seleccionar sucursales..."
-                  emptyText="No hay sucursales disponibles"
-                  error={formErrors.locationIds as string}
-                  touched={formTouched.locationIds as boolean}
-                />
-                {!hasLocations && (
-                  <EmptyFieldHint text="Primero crea una sucursal para poder registrar productos." />
+                {isManager ? (
+                  <>
+                    <MultiSelectDropdown
+                      options={
+                        locations?.map((location) => ({
+                          value: location.id,
+                          label: location.name,
+                        })) ?? []
+                      }
+                      value={formValues.locationIds ?? []}
+                      onChange={(vals) => {
+                        setFieldValue("locationIds", vals, true);
+                        setFieldTouched("locationIds", true, false);
+                      }}
+                      placeholder="Seleccionar sucursales..."
+                      emptyText="No hay sucursales disponibles"
+                      error={formErrors.locationIds as string}
+                      touched={formTouched.locationIds as boolean}
+                    />
+                    {!hasLocations && (
+                      <EmptyFieldHint text="Primero crea una sucursal para poder registrar productos." />
+                    )}
+                  </>
+                ) : (
+                  <div className="flex h-9 items-center gap-2 rounded-xl border border-surface bg-surface/40 px-3 text-[13px] text-inkblack">
+                    <Building2 size={14} className="text-muted-foreground" />
+                    {user?.locationName ?? "Tu sucursal"}
+                  </div>
+                )}
+                {formErrors.locationIds && (
+                  <ErrorMessage
+                    touched={!!formTouched.locationIds}
+                    error={formErrors.locationIds as string}
+                  />
                 )}
               </FormField>
             </div>

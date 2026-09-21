@@ -44,6 +44,26 @@
       "dateRequired": "La fecha es requerida."
     }
   },
+  "payroll": {
+    "title": "Nómina",
+    "createTitle": "Registrar pago",
+    "fields": {
+      "employeeName": "Nombre del empleado",
+      "roleDescription": "Cargo",
+      "amount": "Monto",
+      "notes": "Notas",
+      "registeredBy": "Registrado por",
+      "date": "Fecha"
+    },
+    "success": {
+      "created": "Pago de nómina registrado exitosamente."
+    },
+    "validation": {
+      "employeeNameRequired": "El nombre del empleado es requerido.",
+      "amountRequired": "El monto es requerido.",
+      "amountPositive": "El monto debe ser mayor a 0."
+    }
+  },
   "invoice": {
     "title": "Facturas",
     "status": {

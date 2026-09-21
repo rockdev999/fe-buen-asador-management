@@ -132,6 +132,7 @@ export const IngredientModal = ({
               onBlur={formHandleBlur}
               touched={formTouched.name}
               error={formErrors.name}
+              disabled={!isManager}
               className="h-9 rounded-xl bg-white text-[13px]"
             />
 
@@ -140,6 +141,7 @@ export const IngredientModal = ({
               <AsyncDropdown<IngredientUnitEnum>
                 fullWidth
                 allowClear={false}
+                disabled={!isManager}
                 placeholder="Seleccionar unidad"
                 value={formValues.unitOfMeasure}
                 options={UNIT_OPTIONS}
@@ -167,6 +169,7 @@ export const IngredientModal = ({
               touched={formTouched.description}
               error={formErrors.description}
               rows={3}
+              disabled={!isManager}
               helperText="Opcional. Máximo 500 caracteres."
               className="rounded-xl bg-white text-[13px]"
             />
@@ -193,7 +196,15 @@ export const IngredientModal = ({
             <Button
               type="submit"
               isLoading={isSaving}
-              disabled={isEdit ? !formDirty || isSaving : isSaving}
+              disabled={
+                !isManager ||
+                (isEdit ? !formDirty || isSaving : isSaving)
+              }
+              title={
+                !isManager
+                  ? "Solo un gerente puede crear o editar insumos"
+                  : undefined
+              }
             >
               {isEdit ? "Actualizar" : "Crear"}
             </Button>

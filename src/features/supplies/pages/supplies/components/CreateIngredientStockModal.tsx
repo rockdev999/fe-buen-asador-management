@@ -1,6 +1,6 @@
 import { useFormik } from "formik";
 import { useMemo } from "react";
-import { Info, PackagePlus } from "lucide-react";
+import { Building2, Info, PackagePlus } from "lucide-react";
 import { AppModal } from "@/components/shared/Overlay/AppModal";
 import { PanelHeader } from "@/components/shared/Overlay/PanelHeader";
 import { PanelFooter } from "@/components/shared/Overlay/PanelFooter";
@@ -17,6 +17,8 @@ import {
   AsyncDropdownOption,
 } from "@/components/shared/Interactives/AsyncDropdown";
 import { LocationSimple } from "@/features/locations/models/location.model";
+import { useAuth } from "@/features/auth/hooks/useAuth";
+import { ApiErrorResponse } from "@/types/api.types";
 import { useIngredientsSimpleHandler } from "../../../hooks/useIngredients";
 import {
   useAdjustIngredientStock,
@@ -39,6 +41,15 @@ export const CreateIngredientStockModal = ({
   onClose,
   onSuccess,
 }: CreateIngredientStockModalProps) => {
+  const { user, isManager } = useAuth();
+  const adminLocationId = user?.locationId ?? null;
+
+  const handleForbiddenLocation = (error: ApiErrorResponse) => {
+    if (error.errorCode === "FORBIDDEN") {
+      setFieldError("locationId", error.message);
+    }
+  };
+
   const {
     values: formValues,
     touched: formTouched,
@@ -46,12 +57,18 @@ export const CreateIngredientStockModal = ({
     handleBlur: formHandleBlur,
     setFieldValue,
     setFieldTouched,
+    setFieldError,
     handleSubmit: formHandleSubmit,
     handleReset: formHandleReset,
   } = useFormik<CreateIngredientStockForm>({
     initialValues: {
       ...CreateIngredientStockFormConfig.initialValues,
-      locationId: defaultLocationId ?? "",
+      // ADMIN opera fijo en su propia sucursal: el backend rechaza cualquier
+      // otro locationId con 403, así que ni se muestra el selector ni se
+      // permite editarlo.
+      locationId: isManager
+        ? (defaultLocationId ?? "")
+        : (adminLocationId ?? ""),
     },
     validate: CreateIngredientStockFormConfig.validationSchemaCreate,
     onSubmit: (data) => {
@@ -60,13 +77,21 @@ export const CreateIngredientStockModal = ({
     },
   });
 
+  // Defensa extra: para ADMIN nunca confiar en formValues.locationId (no hay
+  // selector que lo cambie, pero por si queda un valor viejo en caché).
+  const effectiveLocationId = isManager
+    ? formValues.locationId
+    : (adminLocationId ?? "");
+
   const { mutate: adjustStock, status: createStatus } =
-    useAdjustIngredientStock(formValues.locationId);
+    useAdjustIngredientStock(effectiveLocationId, {
+      onErrorCallback: handleForbiddenLocation,
+    });
 
   const { data: ingredients, status: ingredientsStatus } =
     useIngredientsSimpleHandler();
   const { data: existingStock, status: existingStockStatus } =
-    useIngredientStockHandler(formValues.locationId, !!formValues.locationId);
+    useIngredientStockHandler(effectiveLocationId, !!effectiveLocationId);
 
   const hasLocations = Boolean(locations?.length);
   const existingIngredientIds = useMemo(
@@ -116,7 +141,7 @@ export const CreateIngredientStockModal = ({
 
   const isLoadingIngredients =
     ingredientsStatus === "pending" ||
-    (!!formValues.locationId && existingStockStatus === "pending");
+    (!!effectiveLocationId && existingStockStatus === "pending");
 
   return (
     <AppModal size="lg" maxHeightClassName="max-h-[85vh]" contentClassName="max-w-lg">
@@ -136,23 +161,30 @@ export const CreateIngredientStockModal = ({
           <FormSection icon={PackagePlus} title="Insumo y sucursal">
             <FormField>
               <Label required>Sucursal</Label>
-              <AsyncDropdown<LocationSimple>
-                fullWidth
-                allowClear={false}
-                placeholder="Seleccionar sucursal"
-                emptyText="No hay sucursales disponibles"
-                value={formValues.locationId}
-                options={locationOptions}
-                onChange={(id) => handleLocationChange(id)}
-                renderSelected={(location) => location.name}
-              />
+              {isManager ? (
+                <AsyncDropdown<LocationSimple>
+                  fullWidth
+                  allowClear={false}
+                  placeholder="Seleccionar sucursal"
+                  emptyText="No hay sucursales disponibles"
+                  value={formValues.locationId}
+                  options={locationOptions}
+                  onChange={(id) => handleLocationChange(id)}
+                  renderSelected={(location) => location.name}
+                />
+              ) : (
+                <div className="flex h-9 items-center gap-2 rounded-xl border border-surface bg-surface/40 px-3 text-[13px] text-inkblack">
+                  <Building2 size={14} className="text-muted-foreground" />
+                  {user?.locationName ?? "Tu sucursal"}
+                </div>
+              )}
               {formErrors.locationId && (
                 <ErrorMessage
-                  touched={formTouched.locationId}
+                  touched={!!formTouched.locationId}
                   error={formErrors.locationId}
                 />
               )}
-              {!hasLocations && (
+              {isManager && !hasLocations && (
                 <EmptyFieldHint text="Primero crea una sucursal para poder registrar stock." />
               )}
             </FormField>
@@ -163,9 +195,9 @@ export const CreateIngredientStockModal = ({
                 fullWidth
                 searchable
                 allowClear={false}
-                disabled={!formValues.locationId}
+                disabled={!effectiveLocationId}
                 placeholder={
-                  formValues.locationId
+                  effectiveLocationId
                     ? "Seleccionar insumo"
                     : "Selecciona primero una sucursal"
                 }
@@ -182,7 +214,7 @@ export const CreateIngredientStockModal = ({
                   error={formErrors.ingredientId}
                 />
               )}
-              {formValues.locationId &&
+              {effectiveLocationId &&
                 !isLoadingIngredients &&
                 availableIngredients.length === 0 && (
                   <EmptyFieldHint text="Todos los insumos ya tienen stock registrado en esta sucursal." />
@@ -264,7 +296,7 @@ export const CreateIngredientStockModal = ({
           <Button
             type="submit"
             isLoading={createStatus === "pending"}
-            disabled={!formValues.locationId || !formValues.ingredientId}
+            disabled={!effectiveLocationId || !formValues.ingredientId}
           >
             Registrar stock
           </Button>

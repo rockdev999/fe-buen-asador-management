@@ -1,4 +1,4 @@
-import { DATA_TABLE, QUERY_KEYS } from "@/constants";
+import { DATA_TABLE, QUERY_KEYS, RoleEnum } from "@/constants";
 import {
   useGetHandler,
   usePaginatedGetHandler,
@@ -65,6 +65,7 @@ export function useLocationsPage({
   });
 }
 
+// Solo MANAGER puede listar todas las sucursales (GET /locations/simple es 403 para el resto).
 export const useGetLocationSimple = () => {
   const handler = useGetHandler({
     queryKey: QUERY_KEYS.LOCATION_SIMPLE,
@@ -73,6 +74,7 @@ export const useGetLocationSimple = () => {
         .get<ApiResponse<LocationSimpleDTO[]>>("/locations/simple")
         .then((r) => r.data.data!),
     staleTime: 5 * 60 * 1000, // 5 minutes
+    roles: [RoleEnum.MANAGER],
   });
 
   const data = useMemo(

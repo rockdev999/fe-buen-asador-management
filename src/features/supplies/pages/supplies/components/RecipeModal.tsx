@@ -63,6 +63,7 @@ interface CreateRecipeModalProps {
 const EMPTY_ROW = { ingredientId: "", quantityUsed: 0 };
 
 const CreateRecipeModal = ({ onClose, onSuccess }: CreateRecipeModalProps) => {
+  const { isManager } = useAuth();
   const { data: products, status: productsStatus } = useProductsHandler();
   const { data: ingredients, status: ingredientsStatus } =
     useIngredientsSimpleHandler();
@@ -287,7 +288,14 @@ const CreateRecipeModal = ({ onClose, onSuccess }: CreateRecipeModalProps) => {
           <Button type="button" variant="outline" onClick={onClose}>
             Cancelar
           </Button>
-          <Button type="submit" isLoading={isSaving}>
+          <Button
+            type="submit"
+            isLoading={isSaving}
+            disabled={!isManager || isSaving}
+            title={
+              !isManager ? "Solo un gerente puede crear recetas" : undefined
+            }
+          >
             Crear receta
           </Button>
         </PanelFooter>
@@ -398,6 +406,7 @@ const EditRecipeModal = ({
                   );
                 }}
                 onBlur={formHandleBlur}
+                disabled={!isManager}
                 className="h-9 rounded-xl bg-white text-[13px]"
               />
               <ErrorMessage
@@ -429,7 +438,10 @@ const EditRecipeModal = ({
             <Button
               type="submit"
               isLoading={isSaving}
-              disabled={!formDirty || isSaving}
+              disabled={!isManager || !formDirty || isSaving}
+              title={
+                !isManager ? "Solo un gerente puede editar recetas" : undefined
+              }
             >
               Actualizar
             </Button>

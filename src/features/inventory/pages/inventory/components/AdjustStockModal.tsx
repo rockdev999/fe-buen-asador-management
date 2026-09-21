@@ -1,4 +1,5 @@
 import { useFormik } from "formik";
+import { useState } from "react";
 import { AlertCircle, Info, PackagePlus } from "lucide-react";
 import { AppModal } from "@/components/shared/Overlay/AppModal";
 import { PanelHeader } from "@/components/shared/Overlay/PanelHeader";
@@ -16,6 +17,7 @@ import { useAdjustStock } from "../../../hooks/useInventory";
 import { AdjustStockFormConfig } from "../../../forms/inventory.form-config";
 import { AdjustStockForm } from "../../../validators/inventory.schema";
 import { ADJUSTMENT_TYPE_LABELS, STOCK_UNIT_LABELS } from "../../../config/inventory.table";
+import { ApiErrorResponse } from "@/types/api.types";
 
 interface AdjustStockModalProps {
   stockItem: StockProduct;
@@ -28,8 +30,15 @@ export const AdjustStockModal = ({
   onClose,
   onSuccess,
 }: AdjustStockModalProps) => {
+  const [locationError, setLocationError] = useState<string | null>(null);
+
   const { mutate: adjustStock, status: adjustStatus } = useAdjustStock(
     stockItem.location.id,
+    {
+      onErrorCallback: (error: ApiErrorResponse) => {
+        if (error.errorCode === "FORBIDDEN") setLocationError(error.message);
+      },
+    },
   );
 
   const {
@@ -75,6 +84,15 @@ export const AdjustStockModal = ({
       >
         <div className="flex-1 overflow-y-auto px-5 py-4">
           <FormSection icon={PackagePlus} title="Ajuste de inventario">
+            {locationError && (
+              <div className="flex items-start gap-2 rounded-xl border border-destructive/20 bg-destructive/5 px-3 py-2.5">
+                <AlertCircle size={13} className="mt-0.5 shrink-0 text-destructive" />
+                <p className="text-[11px] leading-4 text-destructive">
+                  {locationError}
+                </p>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-3 rounded-2xl border border-surface bg-surface/20 p-3">
               <div>
                 <p className="text-[10px] uppercase tracking-wider text-muted-foreground/60">

@@ -9,7 +9,7 @@ import { FormInput } from "@/components/shared/Form/FormInput";
 import { FormField } from "@/components/shared/Basics/FormField";
 import { Label } from "@/components/shared/Basics/Label";
 import { Button } from "@/components/shared/Basics/Button";
-import { Tags, ListOrdered } from "lucide-react";
+import { Tags, ListOrdered, Building2 } from "lucide-react";
 import { Category } from "../../models/category.model";
 import {
   useCreateCategory,
@@ -20,6 +20,9 @@ import { CategoryFormConfig } from "../../forms/category.form-config";
 import { CreateCategoryForm } from "../../validators/category.schema";
 import { MultiSelectDropdown } from "@/components/shared/Interactives/MultiSelectDropdown";
 import { LocationSimple } from "@/features/locations/models/location.model";
+import { ErrorMessage } from "@/components/shared/Basics/ErrorMessage";
+import { useAuth } from "@/features/auth/hooks/useAuth";
+import { ApiErrorResponse } from "@/types/api.types";
 
 interface CategoryModalProps {
   category: Category | null;
@@ -36,9 +39,21 @@ export const CategoryModal = ({
 }: CategoryModalProps) => {
   const isEdit = !!category;
 
-  const { mutate: createCategory, status: createStatus } = useCreateCategory();
+  const { user, isManager } = useAuth();
+  const adminLocationId = user?.locationId ?? null;
+
+  const handleForbiddenLocation = (error: ApiErrorResponse) => {
+    if (error.errorCode === "FORBIDDEN") {
+      formSetFieldError("locationIds", error.message);
+    }
+  };
+
+  const { mutate: createCategory, status: createStatus } = useCreateCategory({
+    onErrorCallback: handleForbiddenLocation,
+  });
   const { mutate: updateCategory, status: updateStatus } = useUpdateCategory(
     category?.id ?? "",
+    { onErrorCallback: handleForbiddenLocation },
   );
   const { mutate: deleteCategory, status: deleteStatus } = useDeleteCategory(
     category?.id ?? "",
@@ -46,17 +61,26 @@ export const CategoryModal = ({
 
   const isSaving = createStatus === "pending" || updateStatus === "pending";
 
+  // ADMIN opera fijo en su propia sucursal: el backend rechaza cualquier otro
+  // locationId con 403, así que ni se muestra el selector ni se permite editarlo.
   const initValues: CreateCategoryForm = useMemo(() => {
     if (isEdit && category) {
       return {
         id: category.id ?? "",
         name: category.name,
         sortOrder: category.sortOrder ?? "",
-        locationIds: category.locations.map((location) => location.id),
+        locationIds: isManager
+          ? category.locations.map((location) => location.id)
+          : adminLocationId
+            ? [adminLocationId]
+            : [],
       };
     }
-    return CategoryFormConfig.initialValues;
-  }, [isEdit, category]);
+    return {
+      ...CategoryFormConfig.initialValues,
+      locationIds: isManager || !adminLocationId ? [] : [adminLocationId],
+    };
+  }, [isEdit, category, isManager, adminLocationId]);
 
   const {
     values: formValues,
@@ -65,6 +89,7 @@ export const CategoryModal = ({
     handleChange: formHandleChange,
     setFieldValue: formSetFieldValue,
     setFieldTouched: formSetFieldTouched,
+    setFieldError: formSetFieldError,
     handleBlur: formHandleBlur,
     handleSubmit: formSubmitHandler,
     handleReset: formHandleReset,
@@ -75,6 +100,11 @@ export const CategoryModal = ({
     validate: CategoryFormConfig.validationSchemaCreate,
     onSubmit: (data) => {
       const dto = CategoryFormConfig.mapFormToDTO(data);
+      // Defensa extra: nunca confiar en el estado del form para el rol ADMIN,
+      // por si queda un valor viejo en caché o hay un bug de UI.
+      if (!isManager) {
+        dto.locationIds = adminLocationId ? [adminLocationId] : [];
+      }
       if (isEdit) {
         updateCategory(dto, { onSuccess });
       } else {
@@ -162,22 +192,33 @@ export const CategoryModal = ({
 
             <FormField>
               <Label required>Sucursales</Label>
-              <MultiSelectDropdown
-                options={
-                  locations?.map((location) => ({
-                    value: location.id,
-                    label: location.name,
-                  })) ?? []
-                }
-                value={formValues.locationIds ?? []}
-                onChange={(vals) => {
-                  formSetFieldValue("locationIds", vals, true);
-                  formSetFieldTouched("locationIds", true, false);
-                }}
-                placeholder="Seleccionar sucursales..."
-                emptyText="No hay sucursales disponibles"
+              {isManager ? (
+                <MultiSelectDropdown
+                  options={
+                    locations?.map((location) => ({
+                      value: location.id,
+                      label: location.name,
+                    })) ?? []
+                  }
+                  value={formValues.locationIds ?? []}
+                  onChange={(vals) => {
+                    formSetFieldValue("locationIds", vals, true);
+                    formSetFieldTouched("locationIds", true, false);
+                  }}
+                  placeholder="Seleccionar sucursales..."
+                  emptyText="No hay sucursales disponibles"
+                  error={formErrors.locationIds as string}
+                  touched={formTouched.locationIds as boolean}
+                />
+              ) : (
+                <div className="flex h-9 items-center gap-2 rounded-xl border border-surface bg-surface/40 px-3 text-[13px] text-inkblack">
+                  <Building2 size={14} className="text-muted-foreground" />
+                  {user?.locationName ?? "Tu sucursal"}
+                </div>
+              )}
+              <ErrorMessage
+                touched={!!formTouched.locationIds}
                 error={formErrors.locationIds as string}
-                touched={formTouched.locationIds as boolean}
               />
             </FormField>
 

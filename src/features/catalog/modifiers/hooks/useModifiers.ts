@@ -6,7 +6,7 @@ import {
   usePutHandler,
 } from "@/hooks/api.handlers";
 import { httpClient } from "@/services/http.client";
-import { ApiResponse } from "@/types/api.types";
+import { ApiErrorResponse, ApiResponse } from "@/types/api.types";
 import { CreateModifierDTO, ModifierDTO } from "../dto/modifier.dto";
 import { useMemo } from "react";
 import { mapModifierDTOToModel } from "@/features/catalog/modifiers/mappers/modifier.mapper";
@@ -30,7 +30,11 @@ export const useModifiersHandler = (enabled: boolean = true) => {
   return { ...handler, data };
 };
 
-export const useCreateModifier = () => {
+interface ModifierMutationOptions {
+  onErrorCallback?: (error: ApiErrorResponse) => void;
+}
+
+export const useCreateModifier = (options?: ModifierMutationOptions) => {
   const handler = usePostHandler({
     mutationFn: (dto: CreateModifierDTO) =>
       httpClient
@@ -39,12 +43,16 @@ export const useCreateModifier = () => {
 
     invalidateKeys: [],
     successMessage: "Modificador creado exitosamente",
+    onErrorCallback: options?.onErrorCallback,
   });
 
   return { ...handler };
 };
 
-export const useUpdateModifier = (modifierId: string) => {
+export const useUpdateModifier = (
+  modifierId: string,
+  options?: ModifierMutationOptions,
+) => {
   const handler = usePutHandler({
     mutationFn: (dto: CreateModifierDTO) =>
       httpClient
@@ -53,6 +61,7 @@ export const useUpdateModifier = (modifierId: string) => {
 
     invalidateKeys: [],
     successMessage: "Modificador actualizado exitosamente",
+    onErrorCallback: options?.onErrorCallback,
   });
 
   return { ...handler };

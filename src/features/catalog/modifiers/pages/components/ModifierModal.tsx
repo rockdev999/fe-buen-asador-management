@@ -7,7 +7,7 @@ import { PanelFooter } from "@/components/shared/Overlay/PanelFooter";
 import { FormSection } from "@/components/shared/Form/FormSection";
 import { FormInput } from "@/components/shared/Form/FormInput";
 import { Button } from "@/components/shared/Basics/Button";
-import { Tags, ListOrdered, AlertCircle } from "lucide-react";
+import { Tags, ListOrdered, AlertCircle, Building2 } from "lucide-react";
 import { Modifier } from "../../models/modifier.model";
 import {
   useCreateModifier,
@@ -23,6 +23,9 @@ import { MultiSelectDropdown } from "@/components/shared/Interactives/MultiSelec
 import { useGetLocationSimple } from "@/features/locations/hooks/useLocation";
 import { ModifierModalSkeleton } from "./ModifierModalSkeleton";
 import { FormSwitch } from "@/components/shared/Basics/FormSwitch";
+import { ErrorMessage } from "@/components/shared/Basics/ErrorMessage";
+import { useAuth } from "@/features/auth/hooks/useAuth";
+import { ApiErrorResponse } from "@/types/api.types";
 
 interface ModifierModalProps {
   modifier: Modifier | null;
@@ -37,10 +40,23 @@ export const ModifierModal = ({
 }: ModifierModalProps) => {
   const isEdit = !!modifier;
 
+  const { user, isManager } = useAuth();
+  const adminLocationId = user?.locationId ?? null;
+
   const { data: locations, status: locationsStatus } = useGetLocationSimple();
-  const { mutate: createModifier, status: createStatus } = useCreateModifier();
+
+  const handleForbiddenLocation = (error: ApiErrorResponse) => {
+    if (error.errorCode === "FORBIDDEN") {
+      formSetFieldError("locationIds", error.message);
+    }
+  };
+
+  const { mutate: createModifier, status: createStatus } = useCreateModifier({
+    onErrorCallback: handleForbiddenLocation,
+  });
   const { mutate: updateModifier, status: updateStatus } = useUpdateModifier(
     modifier?.id ?? "",
+    { onErrorCallback: handleForbiddenLocation },
   );
   const { mutate: deleteModifier, status: deleteStatus } = useDeleteModifier(
     modifier?.id ?? "",
@@ -50,6 +66,8 @@ export const ModifierModal = ({
 
   const hasLocations = Boolean(locations?.length);
 
+  // ADMIN opera fijo en su propia sucursal: el backend rechaza cualquier otro
+  // locationId con 403, así que ni se muestra el selector ni se permite editarlo.
   const initValues: CreateModifierForm = useMemo(() => {
     if (isEdit && modifier) {
       return {
@@ -57,11 +75,18 @@ export const ModifierModal = ({
         name: modifier.name,
         extraPrice: modifier.extraPrice ?? 0,
         active: modifier.active ?? false,
-        locationIds: modifier.locations.map((location) => location.id),
+        locationIds: isManager
+          ? modifier.locations.map((location) => location.id)
+          : adminLocationId
+            ? [adminLocationId]
+            : [],
       };
     }
-    return ModifierFormConfig.initialValues;
-  }, [isEdit, modifier]);
+    return {
+      ...ModifierFormConfig.initialValues,
+      locationIds: isManager || !adminLocationId ? [] : [adminLocationId],
+    };
+  }, [isEdit, modifier, isManager, adminLocationId]);
 
   const {
     values: formValues,
@@ -70,6 +95,7 @@ export const ModifierModal = ({
     handleChange: formHandleChange,
     setFieldValue: formSetFieldValue,
     setFieldTouched: formSetFieldTouched,
+    setFieldError: formSetFieldError,
     handleBlur: formHandleBlur,
     handleSubmit: formSubmitHandler,
     handleReset: formHandleReset,
@@ -80,6 +106,11 @@ export const ModifierModal = ({
     validate: ModifierFormConfig.validationSchemaCreate,
     onSubmit: (data) => {
       const dto = ModifierFormConfig.mapFormToDTO(data);
+      // Defensa extra: nunca confiar en el estado del form para el rol ADMIN,
+      // por si queda un valor viejo en caché o hay un bug de UI.
+      if (!isManager) {
+        dto.locationIds = adminLocationId ? [adminLocationId] : [];
+      }
       if (isEdit) {
         updateModifier(dto, { onSuccess });
       } else {
@@ -132,25 +163,40 @@ export const ModifierModal = ({
 
             <FormField>
               <Label required>Sucursales</Label>
-              <MultiSelectDropdown
-                options={
-                  locations?.map((location) => ({
-                    value: location.id,
-                    label: location.name,
-                  })) ?? []
-                }
-                value={formValues.locationIds ?? []}
-                onChange={(vals) => {
-                  formSetFieldValue("locationIds", vals, true);
-                  formSetFieldTouched("locationIds", true, false);
-                }}
-                placeholder="Seleccionar sucursales..."
-                emptyText="No hay sucursales disponibles"
-                error={formErrors.locationIds as string}
-                touched={formTouched.locationIds as boolean}
-              />
-              {!hasLocations && (
-                <EmptyFieldHint text="Primero crea una sucursal para poder registrar productos." />
+              {isManager ? (
+                <>
+                  <MultiSelectDropdown
+                    options={
+                      locations?.map((location) => ({
+                        value: location.id,
+                        label: location.name,
+                      })) ?? []
+                    }
+                    value={formValues.locationIds ?? []}
+                    onChange={(vals) => {
+                      formSetFieldValue("locationIds", vals, true);
+                      formSetFieldTouched("locationIds", true, false);
+                    }}
+                    placeholder="Seleccionar sucursales..."
+                    emptyText="No hay sucursales disponibles"
+                    error={formErrors.locationIds as string}
+                    touched={formTouched.locationIds as boolean}
+                  />
+                  {!hasLocations && (
+                    <EmptyFieldHint text="Primero crea una sucursal para poder registrar productos." />
+                  )}
+                </>
+              ) : (
+                <div className="flex h-9 items-center gap-2 rounded-xl border border-surface bg-surface/40 px-3 text-[13px] text-inkblack">
+                  <Building2 size={14} className="text-muted-foreground" />
+                  {user?.locationName ?? "Tu sucursal"}
+                </div>
+              )}
+              {formErrors.locationIds && (
+                <ErrorMessage
+                  touched={!!formTouched.locationIds}
+                  error={formErrors.locationIds as string}
+                />
               )}
             </FormField>
 

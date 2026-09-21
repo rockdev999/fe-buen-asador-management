@@ -12,10 +12,12 @@ import { useRecipesByProductHandler, useRecipesHandler } from "../../../hooks/us
 import { Recipe } from "../../../models/recipe.model";
 import { RECIPE_COLUMNS } from "../RecipeColumns";
 import { RecipeModal } from "./RecipeModal";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 
 const PAGE_LIMIT = 10;
 
 export const RecipesTab = () => {
+  const { isManager } = useAuth();
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [productId, setProductId] = useState("");
@@ -93,10 +95,12 @@ export const RecipesTab = () => {
           setPage(1);
         }}
         actions={
-          <Button size="sm" onClick={handleOpenCreateModal}>
-            <Plus size={13} />
-            Nueva receta
-          </Button>
+          isManager ? (
+            <Button size="sm" onClick={handleOpenCreateModal}>
+              <Plus size={13} />
+              Nueva receta
+            </Button>
+          ) : undefined
         }
       >
         <AsyncDropdown

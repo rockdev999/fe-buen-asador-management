@@ -29,7 +29,9 @@ type TableKey =
   | "USERS"
   | "LOCATIONS"
   | "PRODUCTS"
-  | "INGREDIENTS";
+  | "INGREDIENTS"
+  | "EXPENSES"
+  | "PAYROLL";
 
 type DataTableConfig = Record<TableKey, TableConfig>;
 
@@ -104,5 +106,29 @@ export const DATA_TABLE: DataTableConfig = {
     showPagination: true,
     showResults: true,
     url: "/ingredients",
+  },
+
+  EXPENSES: {
+    id: "dt-expenses",
+    defaultSorting: {
+      columnKey: "createdAt",
+      direction: SortDirectionEnum.DESC,
+    },
+    limit: 10,
+    showPagination: true,
+    showResults: true,
+    url: "/finances/expenses",
+  },
+
+  PAYROLL: {
+    id: "dt-payroll",
+    defaultSorting: {
+      columnKey: "createdAt",
+      direction: SortDirectionEnum.DESC,
+    },
+    limit: 10,
+    showPagination: true,
+    showResults: true,
+    url: "/finances/payroll",
   },
 };

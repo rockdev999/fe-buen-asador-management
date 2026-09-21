@@ -93,6 +93,40 @@ export const QUERY_KEYS = {
   // Finanzas
   INCOMES: ["finances", "incomes"],
   EXPENSES: ["finances", "expenses"],
+  EXPENSE: (id: string) => ["finances", "expenses", id],
+  EXPENSE_CATEGORIES: ["finances", "expenses", "categories"],
+  PAGINATION_EXPENSES: (params: Record<string, any>) => [
+    "finances",
+    "expenses",
+    "pagination",
+    params,
+  ],
+  EXPENSES_REPORT: (params: Record<string, any>) => [
+    "finances",
+    "reports",
+    "expenses",
+    params,
+  ],
+  PAYROLL: (params: Record<string, any>) => ["finances", "payroll", params],
+  PAYROLL_DETAIL: (id: string) => ["finances", "payroll", id],
+  PAYROLL_PAY_SHEET: (locationId: string) => [
+    "finances",
+    "payroll",
+    "pay-sheet",
+    locationId,
+  ],
+  PAGINATION_PAYROLL: (params: Record<string, any>) => [
+    "finances",
+    "payroll",
+    "pagination",
+    params,
+  ],
+  PAYROLL_REPORT: (params: Record<string, any>) => [
+    "finances",
+    "reports",
+    "payroll",
+    params,
+  ],
   INVOICES: ["finances", "invoices"],
   REPORTS: ["finances", "reports"],
 

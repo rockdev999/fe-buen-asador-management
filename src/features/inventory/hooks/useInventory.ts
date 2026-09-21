@@ -1,7 +1,7 @@
 import { QUERY_KEYS } from "@/constants";
 import { useGetHandler, usePostHandler, usePutHandler } from "@/hooks/api.handlers";
 import { httpClient } from "@/services/http.client";
-import { ApiResponse } from "@/types/api.types";
+import { ApiErrorResponse, ApiResponse } from "@/types/api.types";
 import { useMemo } from "react";
 import {
   mapKardexDTOToModel,
@@ -36,7 +36,10 @@ export const useStockHandler = (locationId: string, enabled: boolean = true) => 
   return { ...handler, data };
 };
 
-export const useAdjustStock = (locationId: string) => {
+export const useAdjustStock = (
+  locationId: string,
+  options?: { onErrorCallback?: (error: ApiErrorResponse) => void },
+) => {
   const handler = usePostHandler({
     mutationFn: (dto: AdjustStockDTO) =>
       httpClient
@@ -48,6 +51,7 @@ export const useAdjustStock = (locationId: string) => {
     // refetch() desde quien llama — invalidarlo aquí duplicaría la petición.
     invalidateKeys: [QUERY_KEYS.STOCK_ALERTS],
     successMessage: "Stock ajustado exitosamente",
+    onErrorCallback: options?.onErrorCallback,
   });
 
   return { ...handler };

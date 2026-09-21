@@ -7,7 +7,7 @@ import {
   usePutHandler,
 } from "@/hooks/api.handlers";
 import { httpClient } from "@/services/http.client";
-import { ApiResponse } from "@/types/api.types";
+import { ApiErrorResponse, ApiResponse } from "@/types/api.types";
 import { useMemo } from "react";
 import {
   mapProductDTOToModel,
@@ -109,7 +109,11 @@ export const useGetProductById = (
   return { ...handler, data };
 };
 
-export const useCreateProduct = () => {
+interface ProductMutationOptions {
+  onErrorCallback?: (error: ApiErrorResponse) => void;
+}
+
+export const useCreateProduct = (options?: ProductMutationOptions) => {
   const handler = usePostHandler({
     mutationFn: (formData: FormData) =>
       httpClient
@@ -120,12 +124,13 @@ export const useCreateProduct = () => {
 
     invalidateKeys: [],
     successMessage: "Producto creado exitosamente",
+    onErrorCallback: options?.onErrorCallback,
   });
 
   return { ...handler };
 };
 
-export const useUpdateProduct = (id: string) => {
+export const useUpdateProduct = (id: string, options?: ProductMutationOptions) => {
   const handler = usePutHandler({
     mutationFn: (formData: FormData) =>
       httpClient
@@ -136,6 +141,7 @@ export const useUpdateProduct = (id: string) => {
 
     invalidateKeys: [],
     successMessage: "Producto actualizado exitosamente",
+    onErrorCallback: options?.onErrorCallback,
   });
 
   return { ...handler };

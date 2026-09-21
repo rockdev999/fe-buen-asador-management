@@ -1,7 +1,7 @@
 import { QUERY_KEYS } from "@/constants";
 import { useGetHandler, usePostHandler, usePutHandler } from "@/hooks/api.handlers";
 import { httpClient } from "@/services/http.client";
-import { ApiResponse } from "@/types/api.types";
+import { ApiErrorResponse, ApiResponse } from "@/types/api.types";
 import { useMemo } from "react";
 import {
   mapIngredientKardexDTOToModel,
@@ -39,7 +39,10 @@ export const useIngredientStockHandler = (
   return { ...handler, data };
 };
 
-export const useAdjustIngredientStock = (locationId: string) => {
+export const useAdjustIngredientStock = (
+  locationId: string,
+  options?: { onErrorCallback?: (error: ApiErrorResponse) => void },
+) => {
   const handler = usePostHandler({
     mutationFn: (dto: AdjustIngredientStockDTO) =>
       httpClient
@@ -51,6 +54,7 @@ export const useAdjustIngredientStock = (locationId: string) => {
     // refetch() desde quien llama — invalidarlo aquí duplicaría la petición.
     invalidateKeys: [QUERY_KEYS.INGREDIENT_STOCK_ALERTS],
     successMessage: "Stock de insumo ajustado exitosamente",
+    onErrorCallback: options?.onErrorCallback,
   });
 
   return { ...handler };

@@ -9,8 +9,10 @@ import { IngredientListItem } from "../../../models/ingredient.model";
 import { INGREDIENT_COLUMNS } from "../IngredientColumns";
 import { IngredientModal } from "./IngredientModal";
 import { Ingredient } from "../../../models/ingredient.model";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 
 export const IngredientsTab = () => {
+  const { isManager } = useAuth();
   const { page, filters, handleApply, handlePageChange } = useTableState();
 
   const [openModal, setOpenModal] = useState(false);
@@ -63,10 +65,12 @@ export const IngredientsTab = () => {
         initialValues={filters}
         isLoading={queryStatus === "pending"}
         actions={
-          <Button size="sm" onClick={handleOpenCreateModal}>
-            <Plus size={13} />
-            Nuevo insumo
-          </Button>
+          isManager ? (
+            <Button size="sm" onClick={handleOpenCreateModal}>
+              <Plus size={13} />
+              Nuevo insumo
+            </Button>
+          ) : undefined
         }
       />
 

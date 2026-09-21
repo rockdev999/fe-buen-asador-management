@@ -17,8 +17,15 @@ import { PRODUCT_COLUMNS } from "./ProductColumns";
 import { useGetLocationSimple } from "@/features/locations/hooks/useLocation";
 import { useCategoriesSimpleHandler } from "../../categories/hooks/useCategories";
 import { ProductModal } from "./components/ProductModal";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 
 export const Products = () => {
+  const { isManager } = useAuth();
+  return isManager ? <ManagerProducts /> : <AdminProducts />;
+};
+
+// Vista global — Manager no opera en una sucursal fija, puede filtrar por cualquiera.
+function ManagerProducts() {
   const {
     page,
     sortKey,
@@ -101,6 +108,7 @@ export const Products = () => {
     <div className="flex flex-col h-full overflow-hidden">
       <PageHeader
         title="Productos"
+        subtitle="Vista global de productos de todas las sucursales"
         actions={
           <Button size="sm" onClick={handleOpenCreateModal}>
             <Plus size={13} />
@@ -166,4 +174,136 @@ export const Products = () => {
       )}
     </div>
   );
-};
+}
+
+// Vista operativa por sucursal (ADMIN) — el backend fuerza el locationId del token,
+// así que no se expone el filtro de sucursal para no sugerir que se puede cambiar.
+function AdminProducts() {
+  const {
+    page,
+    sortKey,
+    sortDir,
+    filters,
+    handleSort,
+    handleApply,
+    handlePageChange,
+  } = useTableState({
+    defaultSortKey: "default",
+    defaultSortDir: DATA_TABLE.PRODUCTS.defaultSorting.direction,
+  });
+  const { data: locations } = useGetLocationSimple();
+  const { data: categories, status: categoriesStatus } =
+    useCategoriesSimpleHandler();
+
+  const [categoryId, setCategoryId] = useState(filters.categoryId ?? "");
+  const [openProductModal, setOpenProductModal] = useState(false);
+  const [selectedProductId, setSelectedProductId] = useState<string | null>(
+    null,
+  );
+
+  const {
+    data,
+    meta,
+    status: queryStatus,
+    refetch,
+  } = useProductsPage({
+    page,
+    search: filters.search ?? "",
+    categoryId: filters.categoryId ?? "",
+    available: filters.available ?? "",
+    sortKey,
+    sortDir,
+  });
+
+  const categoryOptions: AsyncDropdownOption<{ id: string; name: string }>[] = (
+    categories ?? []
+  ).map((cat) => ({
+    id: cat.id,
+    data: cat,
+    searchText: cat.name,
+    render: (item) => <span>{item.name}</span>,
+  }));
+
+  const handleOpenCreateModal = () => {
+    setSelectedProductId(null);
+    setOpenProductModal(true);
+  };
+
+  const handleCloseProductModal = () => {
+    setSelectedProductId(null);
+    setOpenProductModal(false);
+    refetch();
+  };
+
+  function handleApplyFilters(newFilters: Record<string, string>) {
+    const isSame = JSON.stringify(newFilters) === JSON.stringify(filters);
+    handleApply(newFilters);
+    if (isSame) refetch();
+  }
+
+  const handleRowClick = (data: ProductPageItem) => {
+    setSelectedProductId(data.id);
+    setOpenProductModal(true);
+  };
+
+  return (
+    <div className="flex flex-col h-full overflow-hidden">
+      <PageHeader
+        title="Productos"
+        actions={
+          <Button size="sm" onClick={handleOpenCreateModal}>
+            <Plus size={13} />
+            Nuevo producto
+          </Button>
+        }
+      />
+
+      <TableFilters
+        searchPlaceholder="Buscar por nombre o correo..."
+        onApply={handleApplyFilters}
+        dropdowns={PRODUCT_DROPDOWNS}
+        initialValues={filters}
+        isLoading={queryStatus === "pending"}
+        extraValues={{ categoryId }}
+        onClearExtra={() => {
+          setCategoryId("");
+        }}
+      >
+        <AsyncDropdown
+          placeholder="Categoría"
+          value={categoryId ?? filters.categoryId ?? ""}
+          onChange={(id) => setCategoryId(id)}
+          options={categoryOptions}
+          isLoading={categoriesStatus === "pending"}
+          emptyText="Sin categorías"
+        />
+      </TableFilters>
+
+      <DataTable
+        columns={PRODUCT_COLUMNS}
+        data={data}
+        meta={meta}
+        isLoading={queryStatus === "pending"}
+        onPageChange={handlePageChange}
+        onSort={handleSort}
+        sortKey={sortKey}
+        sortDir={sortDir}
+        onRowClick={(data) => handleRowClick(data)}
+        rowKey={(row) => row.id}
+        emptyMessage="No hay productos"
+        emptySubMessage="Crea el primer producto con el botón de arriba"
+      />
+
+      {openProductModal && (
+        <ProductModal
+          productId={selectedProductId}
+          categories={categories}
+          locations={locations}
+          onClose={handleCloseProductModal}
+          onSuccess={handleCloseProductModal}
+          key={selectedProductId ?? "default"}
+        />
+      )}
+    </div>
+  );
+}
