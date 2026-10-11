@@ -29,6 +29,7 @@ export const KARDEX_TYPE_LABELS: Record<KardexTypeEnum, string> = {
 export const KARDEX_REASON_LABELS: Record<KardexReasonTypeEnum, string> = {
   [KardexReasonTypeEnum.SALE]: "Venta",
   [KardexReasonTypeEnum.MANUAL_ENTRY]: "Ajuste manual",
+  [KardexReasonTypeEnum.SALE_ANNULMENT]: "Anulación de venta",
 };
 
 export const STOCK_DROPDOWNS: FilterDropdown[] = [

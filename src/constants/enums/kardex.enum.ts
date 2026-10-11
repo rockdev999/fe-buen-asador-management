@@ -6,4 +6,5 @@ export enum KardexTypeEnum {
 export enum KardexReasonTypeEnum {
   SALE = 'SALE',
   MANUAL_ENTRY = 'MANUAL_ENTRY',
+  SALE_ANNULMENT = 'SALE_ANNULMENT',
 }

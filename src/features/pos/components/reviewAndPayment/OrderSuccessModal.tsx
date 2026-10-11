@@ -1,7 +1,16 @@
 import { formatMoney } from "@/lib/utils";
-import { CheckCircle, Plus, Receipt, TicketCheck, X } from "lucide-react";
+import {
+  Ban,
+  CheckCircle,
+  Plus,
+  Receipt,
+  TicketCheck,
+  X,
+  XCircle,
+} from "lucide-react";
 import { Sale } from "../../../sales/models/sale";
 import { t } from "@/locales/es";
+import { SaleStatusEnum, ShiftStatusEnum } from "@/constants";
 
 const trans = t.finances;
 
@@ -11,6 +20,8 @@ interface OrderSuccessModalProps {
   showDetails?: boolean;
   onEmitInvoice: () => void;
   onClose: () => void;
+  /** Si se define, muestra el botón "Anular venta" (solo en vista de detalle). */
+  onAnnul?: () => void;
 }
 
 export function OrderSuccessModal({
@@ -19,8 +30,20 @@ export function OrderSuccessModal({
   showDetails = false,
   onEmitInvoice,
   onClose,
+  onAnnul,
 }: OrderSuccessModalProps) {
   const change = sale.receivedAmount - sale.total;
+  const isAnnulled = sale.status === SaleStatusEnum.ANNULLED;
+  // El backend rechaza anular ventas de turnos no abiertos (CLOSED/PENDING).
+  // El chequeo de existencia cubre un backend aún sin desplegar que no envíe
+  // shift.status: en ese caso se deja el botón activo y responde el backend.
+  const isShiftClosed =
+    !!sale.shift.status && sale.shift.status !== ShiftStatusEnum.OPEN;
+  const annulDisabledReason = isAnnulled
+    ? "La venta ya fue anulada"
+    : isShiftClosed
+      ? "No se puede anular una venta de un turno ya cerrado"
+      : null;
 
   return (
     <div className="absolute inset-0 bg-inkblack/50 backdrop-blur-[2px] flex items-center justify-center z-50">
@@ -32,22 +55,38 @@ export function OrderSuccessModal({
         >
           <X size={13} />
         </button>
-        {/* Success header */}
-        <div className="bg-green-50 px-6 pt-4 pb-2 flex flex-col items-center text-center">
-          <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center mb-3 shadow-sm">
-            <CheckCircle
-              size={28}
-              className="text-green-500"
-              strokeWidth={1.5}
-            />
+        {/* Header */}
+        {isAnnulled ? (
+          <div className="bg-red-50 px-6 pt-4 pb-2 flex flex-col items-center text-center">
+            <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center mb-3 shadow-sm">
+              <XCircle size={28} className="text-red-500" strokeWidth={1.5} />
+            </div>
+            <h2 className="text-[20px] font-semibold text-red-900 mb-0.5">
+              Venta anulada
+            </h2>
+            {sale.annulmentReason && (
+              <p className="text-[12px] text-red-700/80">
+                Motivo: {sale.annulmentReason}
+              </p>
+            )}
           </div>
-          <h2 className="text-[20px] font-semibold text-green-900 mb-0.5">
-            ¡Pago registrado!
-          </h2>
-          {customerName && (
-            <p className="text-[12px] text-green-700/70">{customerName}</p>
-          )}
-        </div>
+        ) : (
+          <div className="bg-green-50 px-6 pt-4 pb-2 flex flex-col items-center text-center">
+            <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center mb-3 shadow-sm">
+              <CheckCircle
+                size={28}
+                className="text-green-500"
+                strokeWidth={1.5}
+              />
+            </div>
+            <h2 className="text-[20px] font-semibold text-green-900 mb-0.5">
+              ¡Pago registrado!
+            </h2>
+            {customerName && (
+              <p className="text-[12px] text-green-700/70">{customerName}</p>
+            )}
+          </div>
+        )}
 
         {/* Montos */}
         <div className="px-5 py-2 flex flex-col gap-2.5">
@@ -145,6 +184,18 @@ export function OrderSuccessModal({
             <Receipt size={13} />
             Emitir factura
           </button>
+          {showDetails && onAnnul && (
+            <button
+              type="button"
+              disabled={!!annulDisabledReason}
+              title={annulDisabledReason ?? undefined}
+              onClick={onAnnul}
+              className="w-full h-9 rounded-xl border border-red-200 text-red-600 text-[14px] font-medium bg-white hover:bg-red-50 flex items-center justify-center gap-1.5 transition-colors disabled:border-gray-300 disabled:text-gray-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
+            >
+              <Ban size={13} />
+              Anular venta
+            </button>
+          )}
           {!showDetails && (
             <button
               type="button"

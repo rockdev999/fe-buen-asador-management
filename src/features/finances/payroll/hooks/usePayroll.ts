@@ -1,3 +1,4 @@
+import { toUtcDateRangeParams } from "@/lib/formatters";
 import { DATA_TABLE, QUERY_KEYS, RoleEnum } from "@/constants";
 import {
   useGetHandler,
@@ -107,8 +108,7 @@ export function usePayrollPage({
     ...(locationId && { locationId }),
     ...(search && { search }),
     ...(shiftId && { shiftId }),
-    ...(dateFrom && { dateFrom }),
-    ...(dateTo && { dateTo }),
+    ...toUtcDateRangeParams(dateFrom, dateTo),
   };
 
   return usePaginatedGetHandler<
@@ -208,8 +208,7 @@ export function usePayrollReport({
 }: UsePayrollReportParams) {
   const params = {
     ...(locationId && { locationId }),
-    dateFrom,
-    dateTo,
+    ...toUtcDateRangeParams(dateFrom, dateTo),
   };
 
   const handler = useGetHandler({

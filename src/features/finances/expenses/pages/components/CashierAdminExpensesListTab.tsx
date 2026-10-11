@@ -1,3 +1,4 @@
+import { getTodayLocalDateInput } from "@/lib/formatters";
 import { useState } from "react";
 import { Plus, Users } from "lucide-react";
 import { TableFilters } from "@/components/shared/DataTable/TableFilters";
@@ -136,7 +137,7 @@ export function CashierAdminExpensesListTab({
           toValue={dateTo}
           onFromChange={setDateFrom}
           onToChange={setDateTo}
-          max={new Date().toISOString().split("T")[0]}
+          max={getTodayLocalDateInput()}
         />
       </TableFilters>
 

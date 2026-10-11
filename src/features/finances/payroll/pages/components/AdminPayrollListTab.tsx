@@ -1,3 +1,4 @@
+import { getTodayLocalDateInput } from "@/lib/formatters";
 import { useState } from "react";
 import { TableFilters } from "@/components/shared/DataTable/TableFilters";
 import { DataTable } from "@/components/shared/DataTable/DataTable";
@@ -52,7 +53,7 @@ export function AdminPayrollListTab() {
           toValue={dateTo}
           onFromChange={setDateFrom}
           onToChange={setDateTo}
-          max={new Date().toISOString().split("T")[0]}
+          max={getTodayLocalDateInput()}
         />
       </TableFilters>
 

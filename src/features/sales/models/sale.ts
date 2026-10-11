@@ -1,4 +1,9 @@
-import { OrderTypeEnum, PaymentMethodEnum, SaleStatusEnum } from "@/constants";
+import {
+  OrderTypeEnum,
+  PaymentMethodEnum,
+  SaleStatusEnum,
+  ShiftStatusEnum,
+} from "@/constants";
 import { Location } from "@/features/locations/models/location.model";
 import { UserShort } from "@/features/users/models/user.model";
 import { UUID } from "@/types/common";
@@ -27,6 +32,10 @@ export interface Sale {
   status: SaleStatusEnum;
   location: Location;
   cashier: UserShort;
+  shift: {
+    id: UUID;
+    status: ShiftStatusEnum;
+  };
   subtotal: number;
   totalDiscount: number;
   total: number;

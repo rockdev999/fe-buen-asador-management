@@ -1,3 +1,4 @@
+import { getTodayLocalDateInput } from "@/lib/formatters";
 import { useState } from "react";
 import { FilterDateRange } from "@/components/shared/DataTable/components/FilterDateRange";
 import {
@@ -59,7 +60,7 @@ export function ManagerExpensesReportTab() {
           toValue={dateTo}
           onFromChange={setDateFrom}
           onToChange={setDateTo}
-          max={new Date().toISOString().split("T")[0]}
+          max={getTodayLocalDateInput()}
         />
         <Button
           type="button"

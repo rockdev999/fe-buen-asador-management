@@ -1,3 +1,4 @@
+import { getTodayLocalDateInput } from "@/lib/formatters";
 import { useState } from "react";
 import { useGetSaleById, useManagerSalesPage } from "../hooks/useSale";
 import { PageHeader } from "@/components/shared/DataTable/PageHeader";
@@ -11,6 +12,7 @@ import {
 } from "@/components/shared/Interactives/AsyncDropdown";
 import { useGetLocationSimple } from "@/features/locations/hooks/useLocation";
 import { OrderSuccessModal } from "@/features/pos/components/reviewAndPayment/OrderSuccessModal";
+import { AnnulSaleModal } from "./components/AnnulSaleModal";
 import { MANAGER_SALES_COLUMNS, SALES_TABLE_CONFIG } from "./SaleColumns";
 import { MANAGER_SALES_DROPDOWNS } from "../config/sales.table";
 
@@ -36,6 +38,7 @@ export function ManagerSales() {
 
   const [openModal, setOpenModal] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [openAnnulModal, setOpenAnnulModal] = useState(false);
 
   const { data: sale } = useGetSaleById(selectedId);
 
@@ -106,7 +109,7 @@ export function ManagerSales() {
           toValue={dateTo}
           onFromChange={setDateFrom}
           onToChange={setDateTo}
-          max={new Date().toISOString().split("T")[0]}
+          max={getTodayLocalDateInput()}
         />
       </TableFilters>
 
@@ -131,10 +134,18 @@ export function ManagerSales() {
           customerName={sale.customerName}
           onEmitInvoice={() => console.log("Emitir factura")}
           showDetails
+          onAnnul={() => setOpenAnnulModal(true)}
           onClose={() => {
             setOpenModal(false);
             setSelectedId(null);
           }}
+        />
+      )}
+      {openAnnulModal && sale && (
+        <AnnulSaleModal
+          sale={sale}
+          onClose={() => setOpenAnnulModal(false)}
+          onSuccess={() => setOpenAnnulModal(false)}
         />
       )}
     </div>

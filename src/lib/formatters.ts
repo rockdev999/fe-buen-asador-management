@@ -140,6 +140,25 @@ export function getLocalDayUtcRange(localDate: string | Date): {
 }
 
 /**
+ * Convierte un rango de días locales ("2026-10-11") a los params ISO UTC que
+ * espera el backend para dateFrom/dateTo. Si se enviara solo la fecha, el
+ * backend la interpretaría como día UTC (en Bolivia, de 20:00 a 20:00).
+ *
+ * Ejemplo en Bolivia (UTC−4), 11/10:
+ * dateFrom: "2026-10-11T04:00:00.000Z"
+ * dateTo:   "2026-10-12T03:59:59.999Z"
+ */
+export function toUtcDateRangeParams(
+  dateFrom?: string,
+  dateTo?: string,
+): { dateFrom?: string; dateTo?: string } {
+  return {
+    ...(dateFrom && { dateFrom: getLocalDayUtcRange(dateFrom).startUtc }),
+    ...(dateTo && { dateTo: getLocalDayUtcRange(dateTo).endUtc }),
+  };
+}
+
+/**
  * "Hace 5m" / "Hace 2h" / "Ayer"
  */
 export function formatLocalRelative(localDate: string | Date): string {

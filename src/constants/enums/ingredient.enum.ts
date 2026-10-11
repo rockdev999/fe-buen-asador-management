@@ -15,4 +15,5 @@ export enum IngredientKardexReasonEnum {
   SALE_CONSUMPTION = 'SALE_CONSUMPTION',
   ADJUSTMENT = 'ADJUSTMENT',
   WASTE = 'WASTE',
+  SALE_ANNULMENT = 'SALE_ANNULMENT',
 }

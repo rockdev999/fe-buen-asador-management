@@ -1,9 +1,12 @@
+import { toUtcDateRangeParams } from "@/lib/formatters";
 import {
   useGetHandler,
   usePaginatedGetHandler,
   usePostHandler,
+  usePutHandler,
 } from "@/hooks/api.handlers";
 import {
+  AnnulSaleDTO,
   CreateSaleDTO,
   ManagerSalePageItemDTO,
   SaleDTO,
@@ -49,8 +52,7 @@ export function useSalesPage({
     limit: DATA_TABLE.SALES.limit ?? 10,
     ...(search && { search }),
     ...(status && { status }),
-    ...(dateFrom && { dateFrom }),
-    ...(dateTo && { dateTo }),
+    ...toUtcDateRangeParams(dateFrom, dateTo),
     ...(shiftId && { shiftId }),
     ...(sortKey && { sortBy: sortKey }),
     ...(sortDir && { sortOrder: sortDir.toUpperCase() }),
@@ -112,8 +114,7 @@ export function useManagerSalesPage({
     ...(paymentMethod && { paymentMethod }),
     ...(cashierId && { cashierId }),
     ...(locationId && { locationId }),
-    ...(dateFrom && { dateFrom }),
-    ...(dateTo && { dateTo }),
+    ...toUtcDateRangeParams(dateFrom, dateTo),
     ...(shiftId && { shiftId }),
     ...(sortKey && { sortBy: sortKey }),
     ...(sortDir && { sortOrder: sortDir.toUpperCase() }),
@@ -164,6 +165,32 @@ export const useGetSaleById = (id: string | null) => {
         .then((r) => r.data.data!),
     enabled: !!id,
     staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  const data = useMemo(
+    () => (handler.data ? mapSaleDTOtoModel(handler.data) : null),
+    [handler.data],
+  );
+
+  return { ...handler, data };
+};
+
+// PUT /sales/:id/annul — devuelve el stock de productos e insumos y pasa el
+// pedido asociado a CANCELLED, por eso también se invalidan pedidos y stock.
+export const useAnnulSale = () => {
+  const handler = usePutHandler({
+    mutationFn: ({ id, ...dto }: AnnulSaleDTO & { id: string }) =>
+      httpClient
+        .put<ApiResponse<SaleDTO>>(`/sales/${id}/annul`, dto)
+        .then((r) => r.data.data!),
+
+    successMessage: "Venta anulada",
+    invalidateKeys: [
+      QUERY_KEYS.SALES,
+      QUERY_KEYS.ORDERS,
+      QUERY_KEYS.INVENTORY,
+      QUERY_KEYS.INGREDIENTS,
+    ],
   });
 
   const data = useMemo(

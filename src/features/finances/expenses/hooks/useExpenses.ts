@@ -1,3 +1,4 @@
+import { toUtcDateRangeParams } from "@/lib/formatters";
 import { DATA_TABLE, QUERY_KEYS, RoleEnum } from "@/constants";
 import {
   useDeleteHandler,
@@ -76,8 +77,7 @@ export function useExpensesPage({
     limit: DATA_TABLE.EXPENSES.limit ?? 10,
     ...(categoryId && { categoryId }),
     ...(shiftId && { shiftId }),
-    ...(dateFrom && { dateFrom }),
-    ...(dateTo && { dateTo }),
+    ...toUtcDateRangeParams(dateFrom, dateTo),
     ...(search && { search }),
   };
 
@@ -189,7 +189,10 @@ export function useExpensesReport({
   dateFrom,
   dateTo,
 }: UseExpensesReportParams) {
-  const params = { locationId, dateFrom, dateTo };
+  const params = {
+    locationId,
+    ...toUtcDateRangeParams(dateFrom, dateTo),
+  };
 
   const handler = useGetHandler({
     queryKey: QUERY_KEYS.EXPENSES_REPORT(params),

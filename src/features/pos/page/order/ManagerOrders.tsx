@@ -1,3 +1,4 @@
+import { getTodayLocalDateInput } from "@/lib/formatters";
 import { useState } from "react";
 import { useTableState } from "@/components/shared/DataTable/useTableState";
 import { PageHeader } from "@/components/shared/DataTable/PageHeader";
@@ -95,7 +96,7 @@ export function ManagerOrders() {
           value={updatedDate}
           onChange={setUpdatedDate}
           placeholder="Fecha"
-          max={new Date().toISOString().split("T")[0]}
+          max={getTodayLocalDateInput()}
         />
       </TableFilters>
 

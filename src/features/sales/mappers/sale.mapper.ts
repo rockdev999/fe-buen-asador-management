@@ -56,6 +56,10 @@ export const mapSaleDTOtoModel = (dto: SaleDTO): Sale => {
       id: dto.cashier.id,
       name: dto.cashier.name,
     },
+    shift: {
+      id: dto.shift.id,
+      status: dto.shift.status,
+    },
     subtotal: dto.subtotal,
     totalDiscount: dto.totalDiscount,
     total: dto.total,

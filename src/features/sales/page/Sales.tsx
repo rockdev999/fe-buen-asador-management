@@ -1,3 +1,4 @@
+import { getTodayLocalDateInput } from "@/lib/formatters";
 import { useState } from "react";
 import { useGetSaleById, useSalesPage } from "../hooks/useSale";
 import { PageHeader } from "@/components/shared/DataTable/PageHeader";
@@ -8,6 +9,7 @@ import { SALES_COLUMNS, SALES_TABLE_CONFIG } from "./SaleColumns";
 import { FilterDateRange } from "@/components/shared/DataTable/components/FilterDateRange";
 import { useTableState } from "@/components/shared/DataTable/useTableState";
 import { OrderSuccessModal } from "@/features/pos/components/reviewAndPayment/OrderSuccessModal";
+import { AnnulSaleModal } from "./components/AnnulSaleModal";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { ManagerSales } from "./ManagerSales";
 
@@ -39,6 +41,7 @@ function CashierAdminSales() {
 
   const [openModal, setOpenModal] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [openAnnulModal, setOpenAnnulModal] = useState(false);
 
   const { data: sale } = useGetSaleById(selectedId);
 
@@ -87,7 +90,7 @@ function CashierAdminSales() {
           toValue={dateTo}
           onFromChange={setDateFrom}
           onToChange={setDateTo}
-          max={new Date().toISOString().split("T")[0]}
+          max={getTodayLocalDateInput()}
         />
       </TableFilters>
 
@@ -113,10 +116,18 @@ function CashierAdminSales() {
           customerName={sale.customerName}
           onEmitInvoice={() => console.log("Emitir factura")}
           showDetails
+          onAnnul={() => setOpenAnnulModal(true)}
           onClose={() => {
             setOpenModal(false);
             setSelectedId(null);
           }}
+        />
+      )}
+      {openAnnulModal && sale && (
+        <AnnulSaleModal
+          sale={sale}
+          onClose={() => setOpenAnnulModal(false)}
+          onSuccess={() => setOpenAnnulModal(false)}
         />
       )}
     </div>

@@ -35,6 +35,7 @@ export const INGREDIENT_KARDEX_REASON_LABELS: Record<
   [IngredientKardexReasonEnum.SALE_CONSUMPTION]: "Consumo por venta",
   [IngredientKardexReasonEnum.ADJUSTMENT]: "Ajuste manual",
   [IngredientKardexReasonEnum.WASTE]: "Merma",
+  [IngredientKardexReasonEnum.SALE_ANNULMENT]: "Anulación de venta",
 };
 
 export const INGREDIENT_STOCK_DROPDOWNS: FilterDropdown[] = [

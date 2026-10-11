@@ -8,8 +8,8 @@
 
 **Fe Buen Asador Management** es una aplicación web (SPA) de gestión integral para un restaurante con **múltiples sucursales**, operado en Bolivia (moneda `BOB`/"Bs.", zona horaria `America/La_Paz`). Cubre dos grandes frentes:
 
-1. **Back-office administrativo**: gestión de usuarios, sucursales, catálogo de productos (categorías, modificadores, productos), inventario de productos terminados, insumos/ingredientes y recetas, y consulta de ventas/pedidos.
-2. **Punto de venta (POS)**: pantalla operativa para cajeros que permite abrir turno de caja, armar pedidos desde un menú visual, revisar el pedido, cobrar y emitir/imprimir el ticket.
+1. **Back-office administrativo**: gestión de usuarios, sucursales, catálogo de productos (categorías, modificadores, productos), inventario de productos terminados, insumos/ingredientes y recetas, consulta de ventas/pedidos, y **finanzas** (egresos y nómina, con reportes por período).
+2. **Punto de venta (POS)**: pantalla operativa para cajeros que permite abrir turno de caja, armar pedidos desde un menú visual, revisar el pedido, cobrar y emitir/imprimir el ticket. Desde el turno abierto, el cajero también registra **egresos de caja** y **pagos de sueldos** del día.
 
 El sistema está diseñado para **múltiples roles** (Gerente, Administrador, Cajero, Empleado) con acceso diferenciado por pantalla, y para **múltiples sucursales**, donde un mismo usuario puede tener distintos roles según la sucursal en la que trabaje.
 
@@ -64,6 +64,9 @@ src/features/
   supplies/      # ingredientes, stock de ingredientes, recetas
   pos/           # punto de venta (carrito, pago, turno de caja, impresión)
   sales/         # consulta de ventas (histórico, filtros)
+  finances/      # finanzas
+    expenses/    #   egresos (gastos de caja) y su reporte por categoría
+    payroll/     #   nómina: pagos de sueldo, pago masivo, sueldos diarios, reporte
   public/        # página 404
 ```
 
@@ -113,28 +116,28 @@ El árbol de rutas se define con `createBrowserRouter` y tiene tres niveles de p
 
 ```
 /login                          → Login (pública)
-&lt;ProtectedRoute&gt;                 → exige sesión activa
-  &lt;AppLayout&gt;                    → sidebar + topbar + <Outlet/>
+<ProtectedRoute>                 → exige sesión activa
+  <AppLayout>                    → sidebar + topbar + <Outlet/>
     /                            → RoleBasedRedirect (decide destino según rol)
-    &lt;RoleRoute roles=[MANAGER,ADMIN]&gt;
+    <RoleRoute roles=[MANAGER,ADMIN]>
       /dashboard                 → placeholder
-    &lt;RoleRoute roles=[MANAGER]&gt;
+    <RoleRoute roles=[MANAGER]>
       /users                     → Users
       /locations                 → Locations
-    &lt;RoleRoute roles=[MANAGER,ADMIN]&gt;
+    <RoleRoute roles=[MANAGER,ADMIN]>
       /catalog/products           → Products
       /catalog/categories         → Categories
       /catalog/modifiers          → Modifiers
       /inventory                  → Inventory
       /ingredients                → Supplies
       /reports                    → placeholder
-    &lt;RoleRoute roles=[MANAGER,ADMIN,CASHIER]&gt;
+    <RoleRoute roles=[MANAGER,ADMIN,CASHIER]>
       /orders                     → Orders
       /sales                      → Sales
       /shifts                     → placeholder ("Caja")
-      /expenses                   → placeholder
-      /payroll                    → placeholder
-    &lt;RoleRoute roles=[CASHIER]&gt;
+      /expenses                   → Expenses (vista según rol)
+      /payroll                    → Payroll (vista según rol)
+    <RoleRoute roles=[CASHIER]>
       /pos                        → Pos
     *                             → NotFound
 * (fuera del layout)              → redirige a /login
@@ -152,6 +155,12 @@ Todas las rutas (incluidas las de negocio ya implementadas) están centralizadas
 
 El sidebar se genera dinámicamente a partir de una configuración declarativa `NAV_SECTIONS`, agrupada en secciones (**General, Administración, Finanzas, Operaciones, POS**), donde cada ítem puede tener `roles` (visibilidad condicionada) e hijos anidados (p. ej. "Catálogo" agrupa Productos/Categorías/Modificadores). El componente `Sidebar.tsx` filtra recursivamente qué mostrar según el rol del usuario autenticado, resalta la ruta activa, soporta grupos colapsables y puede replegarse a solo íconos.
 
+La visibilidad del menú no coincide exactamente con los permisos de ruta: por ejemplo, "Caja" aparece para Cajero y Administrador pero la ruta también admite al Gerente, y Egresos/Nómina aparecen en la sección "Finanzas" para Gerente/Administrador y en la sección "POS" para el Cajero (misma ruta, distinta ubicación en el menú). La autorización real la define siempre `Router.tsx` (y, en última instancia, el backend).
+
+### 3.4 Páginas que se adaptan al rol
+
+Varias rutas no tienen una página por rol, sino un **componente "despachador"** que elige la vista según la sesión: `Orders`, `Sales`, `Expenses` y `Payroll` renderizan una vista de Gerente (`Manager*`, alcance global con filtro de sucursal) o una vista de Cajero/Administrador (alcance fijo a la sucursal activa). Dentro de esta última, las acciones disponibles se habilitan por rol (`canCreate` para Cajero, `canManage` para Administrador) y las pestañas de reporte solo se muestran al Administrador.
+
 ---
 
 ## 4. Autenticación y autorización
@@ -162,9 +171,9 @@ El sidebar se genera dinámicamente a partir de una configuración declarativa `
 enum RoleEnum { MANAGER, ADMIN, CASHIER, EMPLOYEE }
 ```
 
-- **MANAGER (Gerente)**: control total — usuarios, sucursales, catálogo, inventario, insumos, y visión consolidada de pedidos/ventas de **todas** las sucursales. No opera en una sucursal fija.
-- **ADMIN (Administrador)**: gestiona catálogo/inventario/insumos/pedidos/ventas pero **acotado a su propia sucursal** (el backend fuerza el `locationId` del token; el frontend oculta selectores de sucursal para este rol).
-- **CASHIER (Cajero)**: acceso solo al POS, pedidos y ventas de su sucursal; requiere turno de caja abierto para operar.
+- **MANAGER (Gerente)**: control total — usuarios, sucursales, catálogo, inventario, insumos, y visión consolidada de pedidos/ventas/egresos/nómina de **todas** las sucursales. No opera en una sucursal fija.
+- **ADMIN (Administrador)**: gestiona catálogo/inventario/insumos/pedidos/ventas y consulta/edita egresos y nómina (incluido el sueldo diario de sus trabajadores), pero **acotado a su propia sucursal** (el backend fuerza el `locationId` del token; el frontend oculta selectores de sucursal para este rol). No registra pagos ni egresos: eso lo hace el cajero desde su turno.
+- **CASHIER (Cajero)**: acceso al POS, pedidos y ventas de su sucursal, y **registro** de egresos y pagos de nómina; requiere turno de caja abierto para operar (los egresos y pagos quedan vinculados al turno).
 - **EMPLOYEE (Empleado)**: definido en el enum pero sin rutas específicas asignadas actualmente (rol reservado para uso futuro).
 
 Nota: existe además un concepto independiente de **cargo de trabajo** (`JobPositionEnum`: parrillero, cocinero, ayudante de cocina, cajero, mesero, repartidor, administrador, otro) que es puramente descriptivo/operativo y no otorga permisos — no debe confundirse con el rol.
@@ -243,7 +252,7 @@ Las *query keys* están centralizadas en `src/constants/queryKeys/query-keys.ts`
 
 ### 7.2 Design system propio (`src/components/shared/`, sobre primitivas `src/components/ui/` estilo shadcn/ui)
 
-- **`DataTable/`**: sistema de tablas paginadas reutilizado en casi todos los listados (Usuarios, Sucursales, Productos, Ingredientes, Pedidos, Ventas, Inventario). Incluye ordenamiento por columna, paginación numerada, estados de carga (skeleton) y vacío, y un hook `useTableState` que centraliza página/orden/filtros para cualquier página de listado.
+- **`DataTable/`**: sistema de tablas paginadas reutilizado en casi todos los listados (Usuarios, Sucursales, Productos, Ingredientes, Pedidos, Ventas, Inventario, Egresos, Nómina). Incluye ordenamiento por columna, paginación numerada, estados de carga (skeleton) y vacío, y un hook `useTableState` que centraliza página/orden/filtros para cualquier página de listado.
 - **`Form/`**: inputs conectados a Formik (`FormInput`, `FormPassword`, `FormTextarea` con contador de caracteres, `FormSection` para agrupar campos).
 - **`Basics/`**: átomos base — `Button` (múltiples variantes/tamaños/formas, con estado de carga), `Label`, `ErrorMessage`, `FormSwitch` (toggle), `Image`.
 - **`Overlay/`**: sistema propio de modales (`AppModal`, tamaños xs–full) y paneles laterales (`AppOffcanvas`), con cabeceras/pies estandarizados (`PanelHeader`/`PanelFooter`).
@@ -305,9 +314,40 @@ El módulo también expone la gestión de **pedidos históricos** (`/orders`): p
 
 Consulta del histórico de ventas (una venta se genera al cobrarse un pedido). Vista para Cajero/Administrador acotada a su propia sucursal; vista de Gerente con alcance global (todas las sucursales, con filtro de sucursal, método de pago y cajero). Cada venta registra subtotal, descuento, total, monto recibido, cambio, método de pago y estado (abierta/cobrada/anulada), con detalle de ítems agrupados por producto para reimpresión o auditoría.
 
-### 8.8 Módulos definidos pero aún no implementados
+### 8.8 Egresos (`features/finances/expenses`) — ruta `/expenses`, Gerente + Administrador + Cajero
 
-Las rutas y el menú de navegación ya contemplan los siguientes módulos, actualmente como *placeholders* (`<div>...</div>`) a la espera de implementación: **Dashboard** (indicadores generales), **Reportes**, **Caja** (cierre/arqueo de turno — la apertura de turno sí está implementada dentro del POS), **Egresos** y **Nómina**. Existen además enums ya definidos para algunos de estos (`ExpenseCategoryEnum`, `ShiftStatusEnum`, `InvoiceStatusEnum`), lo que indica que su modelo de datos ya fue anticipado en el diseño aunque la interfaz todavía no se construyó.
+Registro de los **gastos pagados desde la caja** de una sucursal. Cada egreso tiene categoría, descripción (máx. 500 caracteres), monto, URL de comprobante opcional, quién lo registró, y queda **vinculado al turno de caja** en el que se registró. Las categorías son fijas en el backend (`ExpenseCategoryEnum`: servicios, personal, insumos, mantenimiento, otros), pero se consultan por API porque cada una tiene un `id` (UUID) propio en base de datos.
+
+Reparto de responsabilidades por rol:
+
+| Acción | Cajero | Administrador | Gerente |
+|---|---|---|---|
+| Registrar egreso | Sí (solo con turno abierto) | No | No |
+| Ver listado | Su sucursal | Su sucursal | Elige sucursal |
+| Ver detalle / editar / eliminar | No (el backend responde 403) | Sí | Sí |
+| Reporte por período | No | Su sucursal | Elige sucursal |
+
+- **Registro**: el cajero no envía sucursal ni turno; el backend los resuelve a partir del token y del turno abierto. Sin turno abierto, el botón "Registrar" queda deshabilitado (y el backend respondería `shifts.NOT_OPEN`).
+- **Edición**: se hace con `PUT` completo — el backend no acepta actualización parcial, así que siempre se envían los cuatro campos. La eliminación es definitiva (*hard delete*).
+- **Listado**: tabla paginada con filtros de categoría, rango de fechas y búsqueda; el orden lo fija el backend (más reciente primero). Solo existe un endpoint por sucursal, por lo que el Gerente debe elegir una sucursal antes de ver datos.
+- **Reporte** (`ExpenseReportView`): total de egresos, cantidad y desglose por categoría para un rango de fechas. Requiere sucursal + fechas; el backend responde `LOCATION_ID_REQUIRED` si falta la sucursal.
+
+### 8.9 Nómina (`features/finances/payroll`) — ruta `/payroll`, Gerente + Administrador + Cajero
+
+Registro de los **pagos de sueldo** a trabajadores, que en este negocio se pagan **por día** desde la caja. Cada pago guarda nombre del empleado (y su `id` si es un usuario del sistema), descripción del cargo, monto, notas, sucursal, turno y quién lo registró. Además, cada pago **genera automáticamente un egreso** de categoría "Personal" (el DTO devuelve el `expense` asociado), de modo que la nómina se refleja también en el reporte de egresos.
+
+Componentes principales:
+
+- **Hoja de pago** (`pay-sheet`): lista de trabajadores activos de la sucursal con su **sueldo diario** configurado, sus cargos y si ya se les pagó hoy (informativo, no bloquea un segundo pago).
+- **Pago masivo** (`BatchPayrollModal`, Cajero): parte de la hoja de pago, con todos los trabajadores marcados y el monto sugerido igual al sueldo diario; el cajero desmarca a quien no trabajó y ajusta montos. Se envía en una sola transacción (hasta 200 pagos): si un pago falla, se revierte todo el lote.
+- **Pago individual** (`CreatePayrollModal`, Cajero): para pagos sueltos, incluso a personas que no son usuarios del sistema (solo nombre).
+- **Sueldos** (`PayrollWagesView`, Administrador/Gerente): edición del sueldo diario de cada trabajador en una sucursal (`PATCH /users/:id/locations/:locationId/wage`). El sueldo es por sucursal: un mismo usuario puede tener sueldos distintos en distintas sucursales.
+- **Listado**: el Cajero ve los pagos del **turno activo**; Administrador y Gerente ven una tabla paginada con búsqueda y rango de fechas (el Gerente puede filtrar por sucursal o ver todas, con la sucursal en cada fila).
+- **Reporte** (Administrador/Gerente): total pagado y desglose por empleado en un período. A diferencia de egresos, el Gerente puede omitir la sucursal y obtener el consolidado de todas.
+
+### 8.10 Módulos definidos pero aún no implementados
+
+Las rutas y el menú ya contemplan los siguientes módulos, actualmente como *placeholders* (`<div>...</div>`): **Dashboard** (indicadores generales), **Reportes** y **Caja** (cierre/arqueo de turno — la apertura de turno sí está implementada dentro del POS, y hoy no existe un hook para cerrar el turno). Existen enums ya definidos (`ShiftStatusEnum`, `InvoiceStatusEnum`), lo que indica que su modelo de datos ya fue anticipado aunque la interfaz todavía no se construyó. La facturación del POS (sección 8.6) también está pendiente.
 
 ---
 
@@ -321,7 +361,40 @@ Las rutas y el menú de navegación ya contemplan los siguientes módulos, actua
 
 ---
 
-## 10. Resumen de valor para la memoria del proyecto
+## 10. Estado actual y observaciones técnicas
+
+### 10.1 Resumen de avance por módulo
+
+| Módulo | Ruta | Estado |
+|---|---|---|
+| Login + selección/cambio de sucursal | `/login` | Implementado |
+| Usuarios | `/users` | Implementado |
+| Sucursales | `/locations` | Implementado |
+| Catálogo (productos, categorías, modificadores) | `/catalog/*` | Implementado |
+| Inventario | `/inventory` | Implementado |
+| Insumos y recetas | `/ingredients` | Implementado |
+| POS (turno, carrito, pago, ticket) | `/pos` | Implementado (factura pendiente) |
+| Pedidos | `/orders` | Implementado |
+| Ventas | `/sales` | Implementado |
+| Egresos | `/expenses` | Implementado |
+| Nómina | `/payroll` | Implementado |
+| Dashboard | `/dashboard` | Placeholder |
+| Reportes | `/reports` | Placeholder |
+| Caja (cierre/arqueo) | `/shifts` | Placeholder |
+
+### 10.2 Observaciones detectadas en el código
+
+- **Bucle de redirección posible para el Cajero**: `RoleRoute` redirige a `/dashboard` cuando el rol no está permitido, pero `/dashboard` tampoco admite al Cajero, así que un Cajero que entre a una ruta no autorizada (p. ej. `/users`) queda redirigiendo a `/dashboard` indefinidamente. Convendría redirigir a una ruta segura según el rol (como hace `RoleBasedRedirect`).
+- **Destino inicial inconsistente para el Cajero**: tras el login se le envía a `/pos`, pero al entrar a la raíz `/` `RoleBasedRedirect` lo envía a `/shifts`, que hoy es un placeholder.
+- **Sin cierre de turno**: el turno de caja se abre desde el POS pero no hay hook ni pantalla para cerrarlo; como cambiar de sucursal exige cerrar el turno, hoy el Cajero no puede cambiar de sucursal desde la interfaz una vez abierto un turno.
+- **Restos de la plantilla de Vite**: `src/App.tsx`, `src/App.css` y el `README.md` son los de la plantilla inicial y no se usan (la entrada real es `main.tsx` → `AppRouter`).
+- **Dependencias sin uso**: `react-hook-form` y `@hookform/resolvers` siguen en `package.json` aunque el proyecto usa Formik + Zod. Conviven además dos librerías de fechas (`react-datepicker` y `react-day-picker`).
+- **Archivo con errata**: `features/catalog/categories/dto/cateogory.dto.ts` y `forms/category.fom.ts` tienen el nombre mal escrito.
+- **Sin tests**: el proyecto no tiene pruebas automatizadas ni script `test`.
+
+---
+
+## 11. Resumen de valor para la memoria del proyecto
 
 Este frontend ejemplifica varios principios de arquitectura de software aplicables a la documentación de un proyecto de grado:
 
@@ -333,4 +406,4 @@ Este frontend ejemplifica varios principios de arquitectura de software aplicabl
 
 ---
 
-*Documento generado a partir del análisis del código fuente del repositorio (rama `develop`) en septiembre de 2026.*
+*Documento generado a partir del análisis del código fuente del repositorio (rama `develop`, commit `056eadd`), actualizado en octubre de 2026.*
