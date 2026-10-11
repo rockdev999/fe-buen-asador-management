@@ -31,6 +31,7 @@ export const mapPayrollPageItemDTOToModel = (
   employeeName: dto.employeeName,
   roleDescription: dto.roleDescription,
   amount: dto.amount,
+  location: dto.location,
   registeredBy: dto.registeredBy,
   createdAt: new Date(dto.createdAt),
 });
@@ -39,6 +40,7 @@ export const mapPayrollPaymentDTOToModel = (
   dto: PayrollPaymentDTO,
 ): PayrollPayment => ({
   id: dto.id,
+  employeeId: dto.employee?.id ?? null,
   employeeName: dto.employeeName,
   roleDescription: dto.roleDescription,
   amount: dto.amount,

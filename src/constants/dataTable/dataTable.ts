@@ -129,6 +129,6 @@ export const DATA_TABLE: DataTableConfig = {
     limit: 10,
     showPagination: true,
     showResults: true,
-    url: "/finances/payroll",
+    url: "/finances/payroll/page",
   },
 };

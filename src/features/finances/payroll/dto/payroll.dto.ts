@@ -16,12 +16,14 @@ export interface PayrollPageItemDTO {
   employeeName: string;
   roleDescription: string | null;
   amount: number;
+  location: { id: UUID; name: string };
   registeredBy: { id: UUID; name: string };
   createdAt: ISODateTimeString;
 }
 
 export interface PayrollPaymentDTO {
   id: UUID;
+  employee: { id: UUID } | null;
   employeeName: string;
   roleDescription: string | null;
   amount: number;

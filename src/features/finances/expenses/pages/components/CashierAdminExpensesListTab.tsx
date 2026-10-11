@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus } from "lucide-react";
+import { Plus, Users } from "lucide-react";
 import { TableFilters } from "@/components/shared/DataTable/TableFilters";
 import { DataTable } from "@/components/shared/DataTable/DataTable";
 import { FilterDateRange } from "@/components/shared/DataTable/components/FilterDateRange";
@@ -8,6 +8,7 @@ import { useTableState } from "@/components/shared/DataTable/useTableState";
 import { Button } from "@/components/shared/Basics/Button";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useActiveShift } from "@/features/pos/hooks/useShift";
+import { BatchPayrollModal } from "@/features/finances/payroll/pages/components/BatchPayrollModal";
 import { useExpenseCategories, useExpensesPage } from "../../hooks/useExpenses";
 import { ExpensePageItem } from "../../models/expense.model";
 import {
@@ -43,6 +44,7 @@ export function CashierAdminExpensesListTab({
   const [openModal, setOpenModal] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [openCreateModal, setOpenCreateModal] = useState(false);
+  const [openBatchModal, setOpenBatchModal] = useState(false);
 
   const {
     data,
@@ -97,19 +99,35 @@ export function CashierAdminExpensesListTab({
         isLoading={queryStatus === "pending"}
         actions={
           canCreate ? (
-            <Button
-              size="sm"
-              onClick={() => setOpenCreateModal(true)}
-              disabled={!hasActiveShift}
-              title={
-                hasActiveShift
-                  ? undefined
-                  : "Necesitas un turno abierto para registrar un egreso"
-              }
-            >
-              <Plus size={13} />
-              Registrar egreso
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setOpenBatchModal(true)}
+                disabled={!hasActiveShift}
+                title={
+                  hasActiveShift
+                    ? undefined
+                    : "Necesitas un turno abierto para pagar sueldos"
+                }
+              >
+                <Users size={13} />
+                Pagar sueldos
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => setOpenCreateModal(true)}
+                disabled={!hasActiveShift}
+                title={
+                  hasActiveShift
+                    ? undefined
+                    : "Necesitas un turno abierto para registrar un egreso"
+                }
+              >
+                <Plus size={13} />
+                Registrar egreso
+              </Button>
+            </div>
           ) : undefined
         }
       >
@@ -153,6 +171,17 @@ export function CashierAdminExpensesListTab({
           onClose={() => setOpenCreateModal(false)}
           onSuccess={() => {
             setOpenCreateModal(false);
+            refetch();
+          }}
+        />
+      )}
+
+      {openBatchModal && (
+        <BatchPayrollModal
+          locationId={locationId}
+          onClose={() => setOpenBatchModal(false)}
+          onSuccess={() => {
+            setOpenBatchModal(false);
             refetch();
           }}
         />

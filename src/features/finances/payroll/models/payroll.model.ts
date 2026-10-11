@@ -16,12 +16,14 @@ export interface PayrollPageItem {
   employeeName: string;
   roleDescription: string | null;
   amount: number;
+  location: { id: UUID; name: string };
   registeredBy: { id: UUID; name: string };
   createdAt: Date;
 }
 
 export interface PayrollPayment {
   id: UUID;
+  employeeId: UUID | null;
   employeeName: string;
   roleDescription: string | null;
   amount: number;

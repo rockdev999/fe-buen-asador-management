@@ -8,7 +8,10 @@ import { MoneyInput } from "@/components/shared/Interactives/MoneyInput";
 import { cn, formatMoney } from "@/lib/utils";
 import { JOB_POSITION_LABELS } from "@/utils/generalStatus/job-display";
 import { JobPositionEnum } from "@/constants/enums/job-position.enum";
-import { usePayrollPaySheet, useCreatePayrollBatch } from "../../hooks/usePayroll";
+import {
+  usePayrollPaySheet,
+  useCreatePayrollBatch,
+} from "../../hooks/usePayroll";
 import { CreatePayrollDTO } from "../../dto/payroll.dto";
 
 interface BatchPayrollModalProps {
@@ -33,8 +36,7 @@ export const BatchPayrollModal = ({
   const [selected, setSelected] = useState<Record<string, boolean>>({});
   const [amounts, setAmounts] = useState<Record<string, number>>({});
 
-  const { mutate: createBatch, status: createStatus } =
-    useCreatePayrollBatch();
+  const { mutate: createBatch, status: createStatus } = useCreatePayrollBatch();
 
   const payments: CreatePayrollDTO[] = (paySheet ?? [])
     .filter((employee) => selected[employee.employeeId] ?? true)
@@ -63,7 +65,7 @@ export const BatchPayrollModal = ({
   const isLoading = paySheetStatus === "pending";
 
   return (
-    <AppModal size="lg" maxHeightClassName="max-h-[88vh]">
+    <AppModal size="md" maxHeightClassName="max-h-[88vh]">
       <PanelHeader
         icon={Users}
         title="Pagar sueldos"
@@ -94,7 +96,7 @@ export const BatchPayrollModal = ({
                 <div
                   key={employee.employeeId}
                   className={cn(
-                    "flex items-center gap-3 rounded-xl border border-surface bg-white px-3.5 py-2.5 transition-opacity",
+                    "grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-xl border border-surface bg-white px-3.5 py-2.5 transition-opacity",
                     !isChecked && "opacity-50",
                   )}
                 >
@@ -107,14 +109,15 @@ export const BatchPayrollModal = ({
                     className="h-4 w-4 shrink-0 rounded border-surface accent-brand"
                   />
 
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-1.5">
-                      <p className="text-[12.5px] font-medium text-inkblack truncate">
-                        {employee.employeeName}
-                      </p>
+                  <div className="min-w-0">
+                    <p className="truncate text-[12.5px] font-medium text-inkblack">
+                      {employee.employeeName}
+                    </p>
+                    <p className="truncate text-[11px] text-muted-foreground">
+                      {positionsLabel(employee.positions) || "Sin cargo"}
                       {employee.paidToday && (
                         <span
-                          className="shrink-0 rounded-full bg-amber-50 px-1.5 py-0.5 text-[9.5px] font-medium text-amber-600"
+                          className="ml-1.5 rounded-full bg-amber-50 px-1.5 py-0.5 text-[9.5px] font-medium text-amber-600"
                           title={
                             employee.paidTodayAmount
                               ? `Ya se le pagó ${formatMoney(employee.paidTodayAmount)} hoy`
@@ -124,14 +127,11 @@ export const BatchPayrollModal = ({
                           Ya pagado hoy
                         </span>
                       )}
-                    </div>
-                    <p className="text-[11px] text-muted-foreground truncate">
-                      {positionsLabel(employee.positions) || "Sin cargo"}
                     </p>
                   </div>
 
                   <MoneyInput
-                    className="h-9 w-32 rounded-xl bg-white text-[13px]"
+                    className="h-9 w-28 rounded-xl bg-white text-[13px]"
                     disabled={!isChecked}
                     defaultValue={employee.dailyWage ?? undefined}
                     onChange={(value) =>
@@ -153,9 +153,9 @@ export const BatchPayrollModal = ({
         <p className="text-[12px] text-muted-foreground">
           {payments.length > 0
             ? `${payments.length} trabajador${payments.length === 1 ? "" : "es"} · ${formatMoney(total)}`
-            : "Marca al menos un trabajador con monto mayor a 0"}
+            : "Ningún trabajador con monto a pagar."}
         </p>
-        <div>
+        <div className="flex items-center gap-2">
           <Button type="button" variant="outline" onClick={onClose}>
             Cancelar
           </Button>

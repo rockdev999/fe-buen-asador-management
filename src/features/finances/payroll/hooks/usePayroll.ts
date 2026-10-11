@@ -80,7 +80,7 @@ export function usePayrollList({ locationId, shiftId }: UsePayrollListParams) {
 }
 
 interface UsePayrollPageParams {
-  locationId: string;
+  locationId?: string;
   page: number;
   search?: string;
   shiftId?: string;
@@ -88,9 +88,11 @@ interface UsePayrollPageParams {
   dateTo?: string;
 }
 
-// GET /finances/payroll/:locationId/page-by-location — tabla con búsqueda,
-// filtro de fechas y paginación, para ADMIN/MANAGER. locationId siempre
-// requerido (va en la URL); si es de otra sucursal el backend responde 403.
+// GET /finances/payroll/page — tabla con búsqueda, filtro de fechas y
+// paginación. CASHIER/ADMIN: locationId se ignora, el backend siempre
+// devuelve su propia sucursal. MANAGER: sin locationId ve todas las
+// sucursales (la respuesta trae `location` por fila), con locationId filtra
+// una sola.
 export function usePayrollPage({
   locationId,
   page,
@@ -102,6 +104,7 @@ export function usePayrollPage({
   const params = {
     page,
     limit: DATA_TABLE.PAYROLL.limit ?? 10,
+    ...(locationId && { locationId }),
     ...(search && { search }),
     ...(shiftId && { shiftId }),
     ...(dateFrom && { dateFrom }),
@@ -112,16 +115,15 @@ export function usePayrollPage({
     PayrollPageItemDTO,
     ReturnType<typeof mapPayrollPageItemDTOToModel>
   >({
-    queryKey: QUERY_KEYS.PAGINATION_PAYROLL({ locationId, ...params }),
+    queryKey: QUERY_KEYS.PAGINATION_PAYROLL(params),
     queryFn: () =>
       httpClient
-        .get<
-          ApiResponse<PayrollPageItemDTO[]>
-        >(`/finances/payroll/${locationId}/page-by-location`, { params })
+        .get<ApiResponse<PayrollPageItemDTO[]>>("/finances/payroll/page", {
+          params,
+        })
         .then((r) => r.data),
     select: mapPayrollPageItemDTOToModel,
     params,
-    enabled: !!locationId,
     staleTime: 0,
     roles: [RoleEnum.CASHIER, RoleEnum.ADMIN, RoleEnum.MANAGER],
   });

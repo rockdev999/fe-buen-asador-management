@@ -9,7 +9,7 @@ import {
 } from "@/components/shared/Interactives/AsyncDropdown";
 import { useGetLocationSimple } from "@/features/locations/hooks/useLocation";
 import { usePayrollPage } from "../../hooks/usePayroll";
-import { PAYROLL_COLUMNS } from "../PayrollColumns";
+import { getPayrollColumns } from "../PayrollColumns";
 import { PayrollDetailModal } from "./PayrollDetailModal";
 
 export function ManagerPayrollListTab() {
@@ -70,7 +70,8 @@ export function ManagerPayrollListTab() {
         isLoading={queryStatus === "pending"}
       >
         <AsyncDropdown
-          placeholder="Sucursal"
+          placeholder="Todas las sucursales"
+          clearLabel="Todas las sucursales"
           value={locationId ?? filters.locationId ?? ""}
           onChange={(id) => setLocationId(id)}
           options={locationOptions}
@@ -86,25 +87,17 @@ export function ManagerPayrollListTab() {
         />
       </TableFilters>
 
-      {!activeLocationId ? (
-        <div className="flex-1 flex items-center justify-center">
-          <p className="text-[13px] text-inkblack/40">
-            Selecciona una sucursal para ver su nómina.
-          </p>
-        </div>
-      ) : (
-        <DataTable
-          columns={PAYROLL_COLUMNS}
-          data={data}
-          meta={meta}
-          isLoading={queryStatus === "pending"}
-          onPageChange={handlePageChange}
-          onRowClick={(row) => setSelectedId(row.id)}
-          rowKey={(row) => row.id}
-          emptyMessage="No hay pagos de nómina"
-          emptySubMessage="Intenta cambiar los filtros"
-        />
-      )}
+      <DataTable
+        columns={getPayrollColumns(!activeLocationId)}
+        data={data}
+        meta={meta}
+        isLoading={queryStatus === "pending"}
+        onPageChange={handlePageChange}
+        onRowClick={(row) => setSelectedId(row.id)}
+        rowKey={(row) => row.id}
+        emptyMessage="No hay pagos de nómina"
+        emptySubMessage="Intenta cambiar los filtros"
+      />
 
       {selectedId && (
         <PayrollDetailModal

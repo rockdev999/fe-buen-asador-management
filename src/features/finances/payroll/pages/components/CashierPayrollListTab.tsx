@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, UserCheck, Users } from "lucide-react";
+import { Plus, UserCheck } from "lucide-react";
 import { Button } from "@/components/shared/Basics/Button";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useActiveShift } from "@/features/pos/hooks/useShift";
@@ -7,7 +7,6 @@ import { formatMoney } from "@/lib/utils";
 import { formatLocalDateTime } from "@/lib/formatters";
 import { usePayrollList } from "../../hooks/usePayroll";
 import { CreatePayrollModal } from "./CreatePayrollModal";
-import { BatchPayrollModal } from "./BatchPayrollModal";
 
 export function CashierPayrollListTab() {
   const { user } = useAuth();
@@ -16,7 +15,6 @@ export function CashierPayrollListTab() {
   const { data: shift, isOpen: hasActiveShift } = useActiveShift();
 
   const [openCreateModal, setOpenCreateModal] = useState(false);
-  const [openBatchModal, setOpenBatchModal] = useState(false);
 
   const {
     data: payments,
@@ -33,35 +31,19 @@ export function CashierPayrollListTab() {
         <p className="text-[12px] text-muted-foreground">
           Pagos registrados en tu turno actual
         </p>
-        <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setOpenBatchModal(true)}
-            disabled={!hasActiveShift}
-            title={
-              hasActiveShift
-                ? undefined
-                : "Necesitas un turno abierto para pagar sueldos"
-            }
-          >
-            <Users size={13} />
-            Pagar sueldos
-          </Button>
-          <Button
-            size="sm"
-            onClick={() => setOpenCreateModal(true)}
-            disabled={!hasActiveShift}
-            title={
-              hasActiveShift
-                ? undefined
-                : "Necesitas un turno abierto para registrar un pago"
-            }
-          >
-            <Plus size={13} />
-            Registrar pago
-          </Button>
-        </div>
+        <Button
+          size="sm"
+          onClick={() => setOpenCreateModal(true)}
+          disabled={!hasActiveShift}
+          title={
+            hasActiveShift
+              ? undefined
+              : "Necesitas un turno abierto para registrar un pago"
+          }
+        >
+          <Plus size={13} />
+          Registrar pago
+        </Button>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4">
@@ -116,17 +98,6 @@ export function CashierPayrollListTab() {
           onClose={() => setOpenCreateModal(false)}
           onSuccess={() => {
             setOpenCreateModal(false);
-            refetch();
-          }}
-        />
-      )}
-
-      {openBatchModal && (
-        <BatchPayrollModal
-          locationId={locationId}
-          onClose={() => setOpenBatchModal(false)}
-          onSuccess={() => {
-            setOpenBatchModal(false);
             refetch();
           }}
         />

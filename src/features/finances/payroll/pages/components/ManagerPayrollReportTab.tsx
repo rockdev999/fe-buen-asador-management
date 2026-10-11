@@ -48,6 +48,7 @@ export function ManagerPayrollReportTab() {
       <div className="flex items-center gap-2 px-4 py-2.5 border-b border-surface bg-white flex-shrink-0 flex-wrap">
         <AsyncDropdown
           placeholder="Todas las sucursales"
+          clearLabel="Todas las sucursales"
           value={locationId}
           onChange={(id) => setLocationId(id)}
           options={locationOptions}

@@ -3,15 +3,13 @@ import { TableFilters } from "@/components/shared/DataTable/TableFilters";
 import { DataTable } from "@/components/shared/DataTable/DataTable";
 import { FilterDateRange } from "@/components/shared/DataTable/components/FilterDateRange";
 import { useTableState } from "@/components/shared/DataTable/useTableState";
-import { useAuth } from "@/features/auth/hooks/useAuth";
 import { usePayrollPage } from "../../hooks/usePayroll";
 import { PAYROLL_COLUMNS } from "../PayrollColumns";
 import { PayrollDetailModal } from "./PayrollDetailModal";
 
+// El backend ignora cualquier locationId para ADMIN/CASHIER y siempre
+// devuelve los pagos de su propia sucursal, así que no hace falta pasarlo.
 export function AdminPayrollListTab() {
-  const { user } = useAuth();
-  const locationId = user?.locationId ?? "";
-
   const { page, filters, handleApply: applyFilters, handlePageChange } =
     useTableState();
 
@@ -26,7 +24,6 @@ export function AdminPayrollListTab() {
     status: queryStatus,
     refetch,
   } = usePayrollPage({
-    locationId,
     page,
     dateFrom: filters.dateFrom ?? "",
     dateTo: filters.dateTo ?? "",

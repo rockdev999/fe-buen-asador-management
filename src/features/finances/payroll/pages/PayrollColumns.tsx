@@ -53,3 +53,30 @@ export const PAYROLL_COLUMNS: ColumnDef<PayrollPageItem>[] = [
     ),
   },
 ];
+
+const PAYROLL_LOCATION_COLUMN: ColumnDef<PayrollPageItem> = {
+  key: "location",
+  label: "Sucursal",
+  render: (row) => (
+    <span className="text-xs text-muted-foreground">
+      {row.location.name}
+    </span>
+  ),
+};
+
+// MANAGER viendo "todas las sucursales" necesita la columna de sucursal
+// para distinguir las filas; ADMIN/CASHIER, que solo ven la suya, no.
+export function getPayrollColumns(
+  showLocation: boolean,
+): ColumnDef<PayrollPageItem>[] {
+  if (!showLocation) return PAYROLL_COLUMNS;
+
+  const withoutCreatedAt = PAYROLL_COLUMNS.filter(
+    (col) => col.key !== "createdAt",
+  );
+  const createdAtColumn = PAYROLL_COLUMNS.find(
+    (col) => col.key === "createdAt",
+  )!;
+
+  return [...withoutCreatedAt, PAYROLL_LOCATION_COLUMN, createdAtColumn];
+}
