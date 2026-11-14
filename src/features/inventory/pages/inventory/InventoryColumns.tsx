@@ -5,15 +5,18 @@ import { formatLocalDateTimeShort } from "@/lib/formatters";
 import { Button } from "@/components/shared/Basics/Button";
 import { STOCK_UNIT_LABELS } from "../../config/inventory.table";
 import { cn } from "@/lib/utils";
+import { InlineNumberEdit } from "@/components/shared/DataTable/InlineNumberEdit";
 
 interface InventoryColumnsHandlers {
   onAdjust: (item: StockProduct) => void;
   onKardex: (item: StockProduct) => void;
+  onSaveMinimum: (item: StockProduct, minimumStock: number) => Promise<unknown>;
 }
 
 export const getInventoryColumns = ({
   onAdjust,
   onKardex,
+  onSaveMinimum,
 }: InventoryColumnsHandlers): ColumnDef<StockProduct>[] => [
   {
     key: "product",
@@ -39,7 +42,7 @@ export const getInventoryColumns = ({
     label: "Cantidad actual",
     sortable: true,
     render: (row) => {
-      const isLow = row.currentQuantity < row.minimumStock;
+      const isLow = row.currentQuantity <= row.minimumStock;
       return (
         <div className="flex items-center gap-1.5">
           <span
@@ -63,12 +66,17 @@ export const getInventoryColumns = ({
   },
   {
     key: "minimumStock",
-    label: "Stock mínimo",
+    label: "Mínimo",
     sortable: true,
     render: (row) => (
-      <span className="text-[12px] text-muted-foreground tabular-nums">
-        {row.minimumStock}
-      </span>
+      <InlineNumberEdit
+        value={row.minimumStock}
+        decimals={2}
+        max={99999999.99}
+        emptyLabel="Sin mínimo configurado"
+        title="Editar stock mínimo"
+        onSave={(value) => onSaveMinimum(row, value)}
+      />
     ),
   },
   {

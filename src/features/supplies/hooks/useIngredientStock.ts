@@ -1,7 +1,13 @@
 import { QUERY_KEYS } from "@/constants";
-import { useGetHandler, usePostHandler, usePutHandler } from "@/hooks/api.handlers";
+import {
+  useGetHandler,
+  usePatchHandler,
+  usePostHandler,
+  usePutHandler,
+} from "@/hooks/api.handlers";
 import { httpClient } from "@/services/http.client";
 import { ApiErrorResponse, ApiResponse } from "@/types/api.types";
+import { useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
 import {
   mapIngredientKardexDTOToModel,
@@ -60,6 +66,33 @@ export const useAdjustIngredientStock = (
   return { ...handler };
 };
 
+export const useUpdateIngredientMinimumStock = () => {
+  const queryClient = useQueryClient();
+
+  const handler = usePatchHandler({
+    mutationFn: ({ id, minimumStock }: { id: string; minimumStock: number }) =>
+      httpClient
+        .patch<ApiResponse<IngredientStockDTO>>(
+          `/ingredients/stock/${id}/minimum`,
+          { minimumStock },
+        )
+        .then((r) => r.data.data!),
+    // Si el nuevo mínimo dispara una alerta, el listado de alertas debe reflejarla.
+    invalidateKeys: [QUERY_KEYS.INGREDIENT_STOCK_ALERTS],
+    successMessage: "Stock mínimo actualizado exitosamente",
+    // La respuesta es la fila actualizada: se reemplaza en todos los listados
+    // de stock en caché (cualquier locationId) sin volver a pedirlos.
+    onSuccessCallback: (updated) => {
+      queryClient.setQueriesData<IngredientStockDTO[]>(
+        { queryKey: ["ingredients", "stock"] },
+        (old) => old?.map((row) => (row.id === updated.id ? updated : row)),
+      );
+    },
+  });
+
+  return { ...handler };
+};
+
 export const useIngredientKardexHandler = (
   ingredientId: string | null,
   locationId: string,
@@ -77,6 +110,12 @@ export const useIngredientKardexHandler = (
         .then((r) => r.data.data!),
     enabled: !!ingredientId && (options?.enabled ?? true),
     staleTime: 0, // no caching, always fetch fresh movements
+    // 404 = el producto/insumo no existe; reintentar solo duplicaría el error.
+    // Ojo: el error.interceptor rechaza con { message, fields, status, errorCode },
+    // no con ApiErrorResponse, así que el código HTTP viene en `status`.
+    retry: (failureCount, error) =>
+      (error as unknown as { status?: number } | null)?.status !== 404 &&
+      failureCount < 1,
   });
 
   const data = useMemo(

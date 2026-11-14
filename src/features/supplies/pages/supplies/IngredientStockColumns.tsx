@@ -4,16 +4,22 @@ import { AlertTriangle, History, PackagePlus } from "lucide-react";
 import { formatLocalDateTimeShort } from "@/lib/formatters";
 import { cn, formatMoney } from "@/lib/utils";
 import { Button } from "@/components/shared/Basics/Button";
-import { INGREDIENT_UNIT_LABELS } from "../../config/ingredient.table";
+import {
+  INGREDIENT_UNIT_LABELS,
+  INGREDIENT_UNIT_SHORT_LABELS,
+} from "../../config/ingredient.table";
+import { InlineNumberEdit } from "@/components/shared/DataTable/InlineNumberEdit";
 
 interface IngredientStockColumnsHandlers {
   onAdjust: (item: IngredientStock) => void;
   onKardex: (item: IngredientStock) => void;
+  onSaveMinimum: (item: IngredientStock, minimumStock: number) => Promise<unknown>;
 }
 
 export const getIngredientStockColumns = ({
   onAdjust,
   onKardex,
+  onSaveMinimum,
 }: IngredientStockColumnsHandlers): ColumnDef<IngredientStock>[] => [
   {
     key: "ingredient",
@@ -39,7 +45,7 @@ export const getIngredientStockColumns = ({
     label: "Cantidad actual",
     sortable: true,
     render: (row) => {
-      const isLow = row.currentQuantity < row.minimumStock;
+      const isLow = row.currentQuantity <= row.minimumStock;
       return (
         <div className="flex items-center gap-1.5">
           <span
@@ -63,12 +69,18 @@ export const getIngredientStockColumns = ({
   },
   {
     key: "minimumStock",
-    label: "Stock mínimo",
+    label: "Mínimo",
     sortable: true,
     render: (row) => (
-      <span className="text-[12px] text-muted-foreground tabular-nums">
-        {row.minimumStock}
-      </span>
+      <InlineNumberEdit
+        value={row.minimumStock}
+        decimals={3}
+        max={9999999.999}
+        unitLabel={INGREDIENT_UNIT_SHORT_LABELS[row.ingredient.unitOfMeasure]}
+        emptyLabel="Sin mínimo configurado"
+        title="Editar stock mínimo"
+        onSave={(value) => onSaveMinimum(row, value)}
+      />
     ),
   },
   {

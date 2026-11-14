@@ -14,8 +14,16 @@ export const API_ERROR_CODES = {
   // Auth
   UNAUTHORIZED: "UNAUTHORIZED",
   FORBIDDEN: "FORBIDDEN",
-  TOKEN_EXPIRED: "TOKEN_EXPIRED", // ← reemplaza cuando confirmes
-  INVALID_TOKEN: "INVALID_TOKEN", // ← reemplaza cuando confirmes
+  /** Access token vencido: renovar con el refresh token y reintentar. */
+  TOKEN_EXPIRED: "TOKEN_EXPIRED",
+  /** Access token inválido (firma, formato): cerrar sesión. */
+  TOKEN_INVALID: "TOKEN_INVALID",
+  // Errores de POST /auth/refresh: todos implican cerrar sesión.
+  REFRESH_TOKEN_INVALID: "REFRESH_TOKEN_INVALID",
+  REFRESH_TOKEN_EXPIRED: "REFRESH_TOKEN_EXPIRED",
+  REFRESH_TOKEN_REVOKED: "REFRESH_TOKEN_REVOKED",
+  REFRESH_TOKEN_REUSED: "REFRESH_TOKEN_REUSED",
+  SESSION_NO_LONGER_VALID: "SESSION_NO_LONGER_VALID",
 
   // Recursos
   NOT_FOUND: "NOT_FOUND",

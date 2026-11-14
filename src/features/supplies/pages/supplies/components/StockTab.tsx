@@ -11,7 +11,10 @@ import {
 import { useGetLocationSimple } from "@/features/locations/hooks/useLocation";
 import { SortDirectionEnum } from "@/constants/enums/sort.enum";
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import { useIngredientStockHandler } from "../../../hooks/useIngredientStock";
+import {
+  useIngredientStockHandler,
+  useUpdateIngredientMinimumStock,
+} from "../../../hooks/useIngredientStock";
 import { IngredientStock } from "../../../models/ingredient.model";
 import { INGREDIENT_STOCK_DROPDOWNS } from "../../../config/ingredient.table";
 import { getIngredientStockColumns } from "../IngredientStockColumns";
@@ -56,6 +59,7 @@ function ManagerStockTab() {
     status: stockStatus,
     refetch,
   } = useIngredientStockHandler(locationId);
+  const { mutateAsync: updateMinimum } = useUpdateIngredientMinimumStock();
 
   const locationOptions: AsyncDropdownOption<{ id: string; name: string }>[] =
     (locations ?? []).map((loc) => ({
@@ -72,7 +76,7 @@ function ManagerStockTab() {
     const filtered = (stock ?? []).filter((item) => {
       const matchesSearch =
         !search || item.ingredient.name.toLowerCase().includes(search);
-      const isLow = item.currentQuantity < item.minimumStock;
+      const isLow = item.currentQuantity <= item.minimumStock;
       const matchesLevel =
         !stockLevel || (stockLevel === "low" ? isLow : !isLow);
       return matchesSearch && matchesLevel;
@@ -161,6 +165,8 @@ function ManagerStockTab() {
         columns={getIngredientStockColumns({
           onAdjust: setAdjustStockItem,
           onKardex: setKardexItem,
+          onSaveMinimum: (item, minimumStock) =>
+            updateMinimum({ id: item.id, minimumStock }),
         })}
         data={paginatedStock}
         meta={{ total, page: currentPage, limit: PAGE_LIMIT, totalPages }}
@@ -241,6 +247,7 @@ function AdminStockTab() {
     status: stockStatus,
     refetch,
   } = useIngredientStockHandler(locationId);
+  const { mutateAsync: updateMinimum } = useUpdateIngredientMinimumStock();
 
   const filteredStock = useMemo(() => {
     const search = (filters.search ?? "").trim().toLowerCase();
@@ -249,7 +256,7 @@ function AdminStockTab() {
     const filtered = (stock ?? []).filter((item) => {
       const matchesSearch =
         !search || item.ingredient.name.toLowerCase().includes(search);
-      const isLow = item.currentQuantity < item.minimumStock;
+      const isLow = item.currentQuantity <= item.minimumStock;
       const matchesLevel =
         !stockLevel || (stockLevel === "low" ? isLow : !isLow);
       return matchesSearch && matchesLevel;
@@ -327,6 +334,8 @@ function AdminStockTab() {
         columns={getIngredientStockColumns({
           onAdjust: setAdjustStockItem,
           onKardex: setKardexItem,
+          onSaveMinimum: (item, minimumStock) =>
+            updateMinimum({ id: item.id, minimumStock }),
         })}
         data={paginatedStock}
         meta={{ total, page: currentPage, limit: PAGE_LIMIT, totalPages }}

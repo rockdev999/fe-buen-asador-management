@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocation } from "react-router-dom";
 import { ChefHat, Package, Wheat } from "lucide-react";
 import { PageHeader } from "@/components/shared/DataTable/PageHeader";
 import { cn } from "@/lib/utils";
@@ -15,7 +16,20 @@ const TABS: { key: SuppliesTab; label: string; icon: typeof Wheat }[] = [
 ];
 
 export const Supplies = () => {
-  const [activeTab, setActiveTab] = useState<SuppliesTab>("ingredients");
+  const location = useLocation();
+  const requestedTab = (location.state as { tab?: SuppliesTab } | null)?.tab;
+  const [activeTab, setActiveTab] = useState<SuppliesTab>(
+    requestedTab ?? "ingredients",
+  );
+
+  // Permite abrir una pestaña concreta vía navigate(path, { state: { tab } }),
+  // p. ej. desde el toast de alerta de insumo, aunque ya se esté en esta página.
+  // Cada navegación genera un location.key nuevo; se ajusta el estado en render.
+  const [lastLocationKey, setLastLocationKey] = useState(location.key);
+  if (location.key !== lastLocationKey) {
+    setLastLocationKey(location.key);
+    if (requestedTab) setActiveTab(requestedTab);
+  }
 
   return (
     <div className="flex flex-col h-full overflow-hidden">

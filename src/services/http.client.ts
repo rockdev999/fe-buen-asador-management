@@ -15,5 +15,7 @@ export const httpClient = axios.create({
 });
 
 httpClient.interceptors.request.use(authInterceptor);
-httpClient.interceptors.response.use(undefined, errorInterceptor);
+httpClient.interceptors.response.use(undefined, (error) =>
+  errorInterceptor(error, httpClient),
+);
 setupRetryInterceptor(httpClient);

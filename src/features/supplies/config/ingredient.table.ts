@@ -13,6 +13,13 @@ export const INGREDIENT_UNIT_LABELS: Record<IngredientUnitEnum, string> = {
   [IngredientUnitEnum.UNIT]: "Unidad",
 };
 
+export const INGREDIENT_UNIT_SHORT_LABELS: Record<IngredientUnitEnum, string> = {
+  [IngredientUnitEnum.KG]: "KG",
+  [IngredientUnitEnum.LB]: "LB",
+  [IngredientUnitEnum.ARROBA]: "@",
+  [IngredientUnitEnum.UNIT]: "UND",
+};
+
 export const ADJUSTMENT_TYPE_LABELS: Record<AdjustmentType, string> = {
   [AdjustmentType.ADD]: "Agregar",
   [AdjustmentType.SUBTRACT]: "Restar",

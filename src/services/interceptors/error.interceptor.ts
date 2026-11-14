@@ -5,10 +5,27 @@ import {
   MESSAGES,
 } from "@/constants";
 import { KnownErrorCode } from "@/constants/httpCodes/error-codes";
+import {
+  logoutSession,
+  refreshSession,
+  SessionEndedError,
+} from "@/services/auth/session.service";
 import { useAuthStore } from "@/stores/auth.store";
 import { ApiErrorResponse } from "@/types/api.types";
-import axios, { AxiosError } from "axios";
+import axios, {
+  AxiosError,
+  AxiosInstance,
+  InternalAxiosRequestConfig,
+} from "axios";
 import { toast } from "sonner";
+
+interface RetriableConfig extends InternalAxiosRequestConfig {
+  /** Ya se renovó el token y se reintentó una vez esta petición. */
+  _retry?: boolean;
+}
+
+/** Endpoints donde un 401 nunca debe disparar un refresh. */
+const AUTH_PATHS = ["/auth/login", "/auth/refresh", "/auth/logout"];
 
 function isKnownErrorCode(code: string | undefined): code is KnownErrorCode {
   return !!code && code in KNOWN_ERROR_MESSAGES;
@@ -53,21 +70,63 @@ function isPublicPath(): boolean {
   return PUBLIC_PATHS.some((path) => window.location.pathname.startsWith(path));
 }
 
-export function errorInterceptor(error: AxiosError<ApiErrorResponse>) {
+function toRejection(
+  message: string,
+  status?: number,
+  errorCode?: string,
+  fields: ApiErrorResponse["errors"] = [],
+) {
+  return Promise.reject({ message, fields, status, errorCode });
+}
+
+export async function errorInterceptor(
+  error: AxiosError<ApiErrorResponse>,
+  instance: AxiosInstance,
+) {
   const status = error.response?.status;
   const errorCode = error.response?.data?.errorCode;
   const fields = error.response?.data?.errors ?? [];
+  const config = error.config as RetriableConfig | undefined;
+
+  // ── Access token vencido: renovar y reintentar en silencio ──────────────
+  if (
+    config &&
+    status === HTTP_STATUS.UNAUTHORIZED &&
+    errorCode === API_ERROR_CODES.TOKEN_EXPIRED &&
+    !config._retry &&
+    useAuthStore.getState().refreshToken &&
+    !AUTH_PATHS.some((p) => config.url?.includes(p))
+  ) {
+    config._retry = true;
+    const staleToken = String(config.headers.Authorization ?? "").replace(
+      /^Bearer\s+/i,
+      "",
+    );
+    try {
+      const newToken = await refreshSession(staleToken);
+      config.headers.Authorization = `Bearer ${newToken}`;
+      return instance(config);
+    } catch (refreshError) {
+      // Refresh rechazado: refreshSession ya cerró sesión y mostró el motivo.
+      if (refreshError instanceof SessionEndedError) {
+        return toRejection(refreshError.message, status, errorCode);
+      }
+      // Error de red al renovar: no se cierra sesión, solo falla esta petición.
+      toast.error(MESSAGES.ERROR.OFFLINE, { id: "refresh-offline" });
+      return toRejection(MESSAGES.ERROR.OFFLINE, status, errorCode);
+    }
+  }
+
   const message = getErrorMessage(error);
 
   const isUnauthorized =
     status === HTTP_STATUS.UNAUTHORIZED ||
     errorCode === API_ERROR_CODES.UNAUTHORIZED;
 
+  // 401 que no se resuelve renovando: TOKEN_INVALID, sin refresh token
+  // guardado, o el reintento tras renovar volvió a fallar.
   if (isUnauthorized && !isPublicPath()) {
-    useAuthStore.getState().logout();
-    setTimeout(() => {
-      window.location.href = "/login";
-    }, 1500);
+    logoutSession();
   }
 
   const hasFieldErrors = fields.length > 0;
@@ -84,10 +143,5 @@ export function errorInterceptor(error: AxiosError<ApiErrorResponse>) {
     else toast.error(message);
   }
 
-  return Promise.reject({
-    message,
-    fields,
-    status,
-    errorCode,
-  });
+  return toRejection(message, status, errorCode, fields);
 }

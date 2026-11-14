@@ -4,7 +4,7 @@ import { useAuth } from "../../hooks/useAuth";
 import { useSelectLocation } from "../../hooks/useSelectLocation";
 import { useState } from "react";
 import { LocationWithRoleDTO } from "@/features/locations/dto/location.dto";
-import { useAuthStore } from "@/stores/auth.store";
+import { logoutSession } from "@/services/auth/session.service";
 import { Building2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/shared/Basics/Button";
@@ -26,7 +26,7 @@ export function SelectLocationCard() {
   }
 
   function handleBack() {
-    useAuthStore.getState().logout();
+    logoutSession();
   }
 
   const subtitle =

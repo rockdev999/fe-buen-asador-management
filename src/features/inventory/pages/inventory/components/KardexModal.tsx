@@ -22,7 +22,8 @@ export const KardexModal = ({ stockItem, onClose }: KardexModalProps) => {
   );
 
   const isLoading = status === "pending";
-  const isEmpty = !isLoading && (!movements || movements.length === 0);
+  const isError = status === "error";
+  const isEmpty = !isLoading && !isError && (!movements || movements.length === 0);
 
   return (
     <AppModal size="lg" maxHeightClassName="max-h-[85vh]" contentClassName="max-w-lg">
@@ -39,6 +40,20 @@ export const KardexModal = ({ stockItem, onClose }: KardexModalProps) => {
             {Array.from({ length: 5 }).map((_, i) => (
               <div key={i} className="h-14 rounded-xl bg-surface" />
             ))}
+          </div>
+        ) : isError ? (
+          <div className="flex flex-col items-center gap-3 py-10 text-center">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-red-50 text-red-500">
+              <History size={20} />
+            </div>
+            <div>
+              <p className="text-[13px] font-medium text-inkblack/70">
+                No se pudo cargar el kardex
+              </p>
+              <p className="mt-0.5 text-[11px] text-muted-foreground">
+                Es posible que el producto ya no exista. Actualiza el listado e inténtalo de nuevo.
+              </p>
+            </div>
           </div>
         ) : isEmpty ? (
           <div className="flex flex-col items-center gap-3 py-10 text-center">

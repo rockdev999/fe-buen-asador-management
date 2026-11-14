@@ -11,7 +11,10 @@ import {
 } from "@/components/shared/Interactives/AsyncDropdown";
 import { useGetLocationSimple } from "@/features/locations/hooks/useLocation";
 import { SortDirectionEnum } from "@/constants/enums/sort.enum";
-import { useStockHandler } from "../../hooks/useInventory";
+import {
+  useStockHandler,
+  useUpdateMinimumStock,
+} from "../../hooks/useInventory";
 import { StockProduct } from "../../models/inventory.model";
 import { STOCK_DROPDOWNS } from "../../config/inventory.table";
 import { getInventoryColumns } from "./InventoryColumns";
@@ -58,6 +61,7 @@ function ManagerInventory() {
     status: stockStatus,
     refetch,
   } = useStockHandler(locationId);
+  const { mutateAsync: updateMinimum } = useUpdateMinimumStock();
 
   const locationOptions: AsyncDropdownOption<{ id: string; name: string }>[] =
     (locations ?? []).map((loc) => ({
@@ -74,7 +78,7 @@ function ManagerInventory() {
     const filtered = (stock ?? []).filter((item) => {
       const matchesSearch =
         !search || item.product.name.toLowerCase().includes(search);
-      const isLow = item.currentQuantity < item.minimumStock;
+      const isLow = item.currentQuantity <= item.minimumStock;
       const matchesLevel =
         !stockLevel || (stockLevel === "low" ? isLow : !isLow);
       return matchesSearch && matchesLevel;
@@ -168,6 +172,8 @@ function ManagerInventory() {
         columns={getInventoryColumns({
           onAdjust: setAdjustStockItem,
           onKardex: setKardexItem,
+          onSaveMinimum: (item, minimumStock) =>
+            updateMinimum({ id: item.id, minimumStock }),
         })}
         data={paginatedStock}
         meta={{ total, page: currentPage, limit: PAGE_LIMIT, totalPages }}
@@ -249,6 +255,7 @@ function AdminInventory() {
     status: stockStatus,
     refetch,
   } = useStockHandler(locationId);
+  const { mutateAsync: updateMinimum } = useUpdateMinimumStock();
 
   const filteredStock = useMemo(() => {
     const search = (filters.search ?? "").trim().toLowerCase();
@@ -257,7 +264,7 @@ function AdminInventory() {
     const filtered = (stock ?? []).filter((item) => {
       const matchesSearch =
         !search || item.product.name.toLowerCase().includes(search);
-      const isLow = item.currentQuantity < item.minimumStock;
+      const isLow = item.currentQuantity <= item.minimumStock;
       const matchesLevel =
         !stockLevel || (stockLevel === "low" ? isLow : !isLow);
       return matchesSearch && matchesLevel;
@@ -340,6 +347,8 @@ function AdminInventory() {
         columns={getInventoryColumns({
           onAdjust: setAdjustStockItem,
           onKardex: setKardexItem,
+          onSaveMinimum: (item, minimumStock) =>
+            updateMinimum({ id: item.id, minimumStock }),
         })}
         data={paginatedStock}
         meta={{ total, page: currentPage, limit: PAGE_LIMIT, totalPages }}

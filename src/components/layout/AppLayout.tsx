@@ -5,9 +5,13 @@ import { Topbar } from "./Topbar";
 import { Outlet } from "react-router-dom";
 import { GlobalErrorToast } from "../shared/GlobalErrorToast";
 import { Toaster } from "../ui/sonner";
+import { useStockAlertsStream } from "@/features/notifications/hooks/useStockAlertsStream";
+import { useSessionKeepAlive } from "@/features/auth/hooks/useSessionKeepAlive";
 
 export function AppLayout() {
   //   const { sidebarOpen } = useUiStore();
+  useSessionKeepAlive();
+  useStockAlertsStream();
 
   return (
     <div className="flex h-screen bg-surface overflow-hidden">

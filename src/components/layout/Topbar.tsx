@@ -1,8 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import { PATHS } from "@/routes";
 import { Building2, LogOut, Repeat, User } from "lucide-react";
-import { useNavigate } from "react-router-dom";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,20 +13,20 @@ import { getInitials } from "@/lib/utils";
 import { RoleEnum } from "@/constants";
 import { t } from "@/locales/es";
 import { SwitchLocationModal } from "@/features/auth/components/SwitchLocationModal";
+import { logoutSession } from "@/services/auth/session.service";
+import { StockAlertsBell } from "@/features/notifications/components/StockAlertsBell";
 
 const trans = t.auth.switchLocation;
 
 export function Topbar() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const [isSwitchLocationOpen, setIsSwitchLocationOpen] = useState(false);
 
   const canSwitchLocation =
     user?.role === RoleEnum.ADMIN || user?.role === RoleEnum.CASHIER;
 
   function handleLogout() {
-    logout();
-    navigate(PATHS.LOGIN);
+    logoutSession();
   }
 
   return (
@@ -58,6 +56,7 @@ export function Topbar() {
             </span>
           )}
         </div>
+        <StockAlertsBell />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="w-8 h-8 bg-brand rounded-full flex items-center justify-center text-white text-xs font-medium hover:bg-brand-dark transition-colors">

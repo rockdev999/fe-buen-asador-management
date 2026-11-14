@@ -10,7 +10,7 @@ import { cn, getInitials } from "@/lib/utils";
 import { Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AuthLayout } from "./components/AuthLayout";
-import { useAuthStore } from "@/stores/auth.store";
+import { logoutSession } from "@/services/auth/session.service";
 
 const trans = t.auth.selectLocation;
 
@@ -118,10 +118,7 @@ export const SelectLocation = () => {
           {/* Back — logout limpio */}
           <button
             type="button"
-            onClick={() => {
-              useAuthStore.getState().logout();
-              navigate(PATHS.LOGIN);
-            }}
+            onClick={() => logoutSession()}
             className="w-full mt-4 text-xs text-brand hover:text-brand-dark transition-colors text-center block"
           >
             {trans.back}
