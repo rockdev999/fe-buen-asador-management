@@ -115,7 +115,7 @@ export const NAV_SECTIONS: NavSection[] = [
         label: "Reportes",
         path: PATHS.REPORTS,
         icon: BarChart3,
-        roles: [RoleEnum.MANAGER, RoleEnum.ADMIN],
+        roles: [RoleEnum.MANAGER],
       },
     ],
   },

@@ -25,6 +25,7 @@ import { Inventory } from "@/features/inventory/pages/inventory/Inventory";
 import { Supplies } from "@/features/supplies/pages/supplies/Supplies";
 import { Expenses } from "@/features/finances/expenses/pages/Expenses";
 import { Payroll } from "@/features/finances/payroll/pages/Payroll";
+import { Reports } from "@/features/finances/reports/pages/Reports";
 
 export const router = createBrowserRouter([
   { path: PATHS.LOGIN, element: <Login /> },
@@ -61,6 +62,7 @@ export const router = createBrowserRouter([
                 children: [
                   { path: PATHS.USERS, element: <Users /> },
                   { path: PATHS.LOCATIONS, element: <Locations /> },
+                  { path: PATHS.REPORTS, element: <Reports /> },
                 ],
               },
 
@@ -73,7 +75,6 @@ export const router = createBrowserRouter([
                   { path: PATHS.MODIFIERS, element: <Modifiers /> },
                   { path: PATHS.INVENTORY, element: <Inventory /> },
                   { path: PATHS.INGREDIENTS, element: <Supplies /> },
-                  { path: PATHS.REPORTS, element: <div>Reportes</div> },
                 ],
               },
 

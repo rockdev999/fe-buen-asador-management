@@ -137,6 +137,11 @@ export const QUERY_KEYS = {
   ],
   INVOICES: ["finances", "invoices"],
   REPORTS: ["finances", "reports"],
+  // Reportes del gerente (pantalla Reportes): ["reports", "sales", params]
+  REPORT: (
+    kind: "sales" | "expenses" | "payroll" | "ingredients",
+    params: Record<string, any>,
+  ) => ["reports", kind, params],
 
   // POS — Órdenes
   ORDERS: ["orders"],
