@@ -15,8 +15,12 @@ export function ReportLoading() {
 }
 
 // El interceptor rechaza con { message, status, errorCode }.
-function getReportErrorMessage(error: unknown): string {
+function getReportErrorMessage(
+  error: unknown,
+  overrides?: Record<number, string>,
+): string {
   const status = (error as { status?: number } | null)?.status;
+  if (status && overrides?.[status]) return overrides[status];
   switch (status) {
     case 400:
       return "Faltan las fechas del período. Vuelve a elegir un período.";
@@ -32,7 +36,14 @@ function getReportErrorMessage(error: unknown): string {
   }
 }
 
-export function ReportError({ error }: { error: unknown }) {
+export function ReportError({
+  error,
+  messages,
+}: {
+  error: unknown;
+  /** Mensajes por código HTTP que reemplazan a los de reportes. */
+  messages?: Record<number, string>;
+}) {
   return (
     <div className="flex-1 flex items-center justify-center py-16">
       <div className="flex flex-col items-center gap-2 text-center max-w-xs">
@@ -40,7 +51,7 @@ export function ReportError({ error }: { error: unknown }) {
           <AlertTriangle size={20} />
         </div>
         <p className="text-[13px] text-inkblack/60">
-          {getReportErrorMessage(error)}
+          {getReportErrorMessage(error, messages)}
         </p>
       </div>
     </div>
@@ -64,9 +75,11 @@ interface StatCardProps {
   label: string;
   value: React.ReactNode;
   icon: React.ElementType;
+  /** Texto pequeño debajo del valor. */
+  hint?: React.ReactNode;
 }
 
-export function StatCard({ label, value, icon: Icon }: StatCardProps) {
+export function StatCard({ label, value, icon: Icon, hint }: StatCardProps) {
   return (
     <div className="rounded-2xl border border-surface bg-white p-4 flex items-center gap-3 min-w-0">
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand/10 text-brand">
@@ -79,6 +92,9 @@ export function StatCard({ label, value, icon: Icon }: StatCardProps) {
         <p className="text-lg font-semibold text-inkblack tabular-nums truncate">
           {value}
         </p>
+        {hint && (
+          <p className="text-[11px] text-muted-foreground truncate">{hint}</p>
+        )}
       </div>
     </div>
   );

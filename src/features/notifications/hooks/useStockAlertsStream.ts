@@ -57,6 +57,8 @@ export function useStockAlertsStream() {
       queryClient.invalidateQueries({
         queryKey: isProduct ? ["inventory", "stock"] : ["ingredients", "stock"],
       });
+      // La tarjeta de alertas del dashboard se actualiza al instante
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.DASHBOARD });
 
       const label = isProduct ? "Stock bajo" : "Insumo bajo";
       toast.warning(`${label}: ${alert.name}`, {
@@ -91,6 +93,7 @@ export function useStockAlertsStream() {
           QUERY_KEYS.INGREDIENT_STOCK_ALERTS,
           ["inventory", "stock"],
           ["ingredients", "stock"],
+          QUERY_KEYS.DASHBOARD,
         ].forEach((queryKey) => queryClient.invalidateQueries({ queryKey }));
       },
       onMessage: ({ event, data }) => {

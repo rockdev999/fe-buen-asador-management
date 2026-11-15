@@ -126,7 +126,7 @@ export const NAV_SECTIONS: NavSection[] = [
         label: "Caja",
         path: PATHS.SHIFTS,
         icon: Archive,
-        roles: [RoleEnum.CASHIER, RoleEnum.ADMIN],
+        roles: [RoleEnum.CASHIER],
       },
       {
         label: "Pedidos",

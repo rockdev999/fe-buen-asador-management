@@ -26,6 +26,7 @@ import { Supplies } from "@/features/supplies/pages/supplies/Supplies";
 import { Expenses } from "@/features/finances/expenses/pages/Expenses";
 import { Payroll } from "@/features/finances/payroll/pages/Payroll";
 import { Reports } from "@/features/finances/reports/pages/Reports";
+import { Dashboard } from "@/features/dashboard/pages/Dashboard";
 
 export const router = createBrowserRouter([
   { path: PATHS.LOGIN, element: <Login /> },
@@ -52,7 +53,7 @@ export const router = createBrowserRouter([
               {
                 element: <RoleRoute roles={[RoleEnum.MANAGER, RoleEnum.ADMIN]} />,
                 children: [
-                  { path: PATHS.DASHBOARD, element: <div>Dashboard</div> },
+                  { path: PATHS.DASHBOARD, element: <Dashboard /> },
                 ],
               },
 
@@ -88,7 +89,6 @@ export const router = createBrowserRouter([
                 children: [
                   { path: PATHS.ORDERS, element: <Orders /> },
                   { path: PATHS.SALES, element: <Sales /> },
-                  { path: PATHS.SHIFTS, element: <div>Caja</div> },
                   { path: PATHS.EXPENSES, element: <Expenses /> },
                   { path: PATHS.PAYROLL, element: <Payroll /> },
                 ],
@@ -97,7 +97,11 @@ export const router = createBrowserRouter([
               // Cashier únicamente
               {
                 element: <RoleRoute roles={[RoleEnum.CASHIER]} />,
-                children: [{ path: PATHS.POS, element: <Pos /> }],
+                children: [
+                  { path: PATHS.POS, element: <Pos /> },
+                  // Caja: operación de dinero, solo el cajero
+                  { path: PATHS.SHIFTS, element: <div>Caja</div> },
+                ],
               },
 
               { path: "*", element: <NotFound /> },

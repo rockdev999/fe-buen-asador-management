@@ -159,8 +159,12 @@ export const QUERY_KEYS = {
   SHIFT_ACTIVE: ["shifts", "active"],
 
   // Dashboard
+  // Prefijo ["dashboard"]: invalidar DASHBOARD refresca todas las sucursales.
   DASHBOARD: ["dashboard"],
-  DASHBOARD_SALES: ["dashboard", "sales"],
+  DASHBOARD_BY_LOCATION: (locationId: string | null) => [
+    "dashboard",
+    locationId ?? "all",
+  ],
 
   // Menú
   MENU: ["menu"],
