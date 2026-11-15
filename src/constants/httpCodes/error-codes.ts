@@ -24,6 +24,8 @@ export const API_ERROR_CODES = {
   REFRESH_TOKEN_REVOKED: "REFRESH_TOKEN_REVOKED",
   REFRESH_TOKEN_REUSED: "REFRESH_TOKEN_REUSED",
   SESSION_NO_LONGER_VALID: "SESSION_NO_LONGER_VALID",
+  /** 403: el usuario debe cambiar su contraseña temporal antes de continuar. */
+  MUST_CHANGE_PASSWORD: "MUST_CHANGE_PASSWORD",
 
   // Recursos
   NOT_FOUND: "NOT_FOUND",

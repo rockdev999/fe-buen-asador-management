@@ -4,6 +4,7 @@ import { ISODateTimeString, UUID } from "@/types/common";
 import { RoleDTO } from "./role.dto";
 import { Audit } from "@/types/audit.types";
 import { JobPositionEnum } from "@/constants/enums/job-position.enum";
+import { CredentialsEmailStatusEnum } from "@/constants/enums/user.enum";
 
 export interface UserDTO {
   id: string;
@@ -17,6 +18,8 @@ export interface UserDetailsDTO {
   email: string;
   role: RoleEnum;
   location: LocationDTO | null;
+  /** Solo en respuestas de sesión (select-location / refresh). */
+  mustChangePassword?: boolean;
 }
 
 export interface UserShortDTO {
@@ -40,6 +43,7 @@ export interface UserPageItemDTO {
   positions?: JobPositionEnum[] | [];
   locations: UserLocationItemDTO[] | null;
   createdAt: ISODateTimeString;
+  credentialsEmailStatus?: CredentialsEmailStatusEnum | null;
 }
 
 export interface UserLocationDTO {
@@ -61,6 +65,7 @@ export interface UserLocationsDTO {
   positions?: JobPositionEnum[] | [];
   locations: UserLocationDTO[];
   audit: Audit;
+  credentialsEmailStatus?: CredentialsEmailStatusEnum | null;
 }
 
 export interface CreateUserDTO {
@@ -89,4 +94,11 @@ export interface UserSimpleDTO {
   username: string;
   positions?: JobPositionEnum[] | [];
   locations: UserLocationItemDTO[] | [];
+}
+
+/** Respuesta de POST /users/:id/reset-password. */
+export interface ResetPasswordResponseDTO {
+  userId: UUID;
+  email: string;
+  credentialsEmailStatus: CredentialsEmailStatusEnum;
 }

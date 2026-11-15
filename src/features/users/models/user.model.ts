@@ -4,6 +4,7 @@ import { Role } from "./role.model";
 import { Audit } from "@/types/audit.types";
 import { Location } from "@/features/locations/models/location.model";
 import { JobPositionEnum } from "@/constants/enums/job-position.enum";
+import { CredentialsEmailStatusEnum } from "@/constants/enums/user.enum";
 
 export interface User {
   id: UUID;
@@ -18,6 +19,8 @@ export interface UserDetails {
   role: RoleEnum;
   locationId: UUID | null;
   locationName: string | null;
+  /** Debe cambiar la contraseña temporal antes de usar el sistema. */
+  mustChangePassword: boolean;
 }
 
 export interface UserShort {
@@ -41,6 +44,7 @@ export interface UserPageItem {
   active: boolean;
   createdAt: ISODateTimeString;
   locations: UserLocationItem[] | null;
+  credentialsEmailStatus: CredentialsEmailStatusEnum | null;
 }
 
 export interface UserLocation {

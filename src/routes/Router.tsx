@@ -6,6 +6,8 @@ import {
 import { PATHS } from "./paths";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { RoleRoute } from "./RoleRoute";
+import { PasswordChangeGuard } from "./PasswordChangeGuard";
+import { ChangePassword } from "@/features/auth/pages/ChangePassword";
 import { RoleEnum } from "@/constants";
 import { AppLayout } from "@/components/layout/AppLayout";
 import { Login } from "@/features/auth/pages/Login";
@@ -30,67 +32,76 @@ export const router = createBrowserRouter([
   {
     element: <ProtectedRoute />,
     children: [
+      // Cambio obligatorio de contraseña: fuera de AppLayout, porque mientras
+      // esté pendiente el backend responde 403 a todo lo demás.
+      { path: PATHS.CHANGE_PASSWORD, element: <ChangePassword /> },
+
       {
-        element: <AppLayout />,
+        element: <PasswordChangeGuard />,
         children: [
           {
-            index: true,
-            element: <RoleBasedRedirect />,
-          },
-
-          // Dashboard — solo Manager y Admin
-          {
-            element: <RoleRoute roles={[RoleEnum.MANAGER, RoleEnum.ADMIN]} />,
+            element: <AppLayout />,
             children: [
-              { path: PATHS.DASHBOARD, element: <div>Dashboard</div> },
+              {
+                index: true,
+                element: <RoleBasedRedirect />,
+              },
+
+              // Dashboard — solo Manager y Admin
+              {
+                element: <RoleRoute roles={[RoleEnum.MANAGER, RoleEnum.ADMIN]} />,
+                children: [
+                  { path: PATHS.DASHBOARD, element: <div>Dashboard</div> },
+                ],
+              },
+
+              // Manager únicamente
+              {
+                element: <RoleRoute roles={[RoleEnum.MANAGER]} />,
+                children: [
+                  { path: PATHS.USERS, element: <Users /> },
+                  { path: PATHS.LOCATIONS, element: <Locations /> },
+                ],
+              },
+
+              // Manager + Admin
+              {
+                element: <RoleRoute roles={[RoleEnum.MANAGER, RoleEnum.ADMIN]} />,
+                children: [
+                  { path: PATHS.PRODUCTS, element: <Products /> },
+                  { path: PATHS.CATEGORIES, element: <Categories /> },
+                  { path: PATHS.MODIFIERS, element: <Modifiers /> },
+                  { path: PATHS.INVENTORY, element: <Inventory /> },
+                  { path: PATHS.INGREDIENTS, element: <Supplies /> },
+                  { path: PATHS.REPORTS, element: <div>Reportes</div> },
+                ],
+              },
+
+              // Manager + Admin + Cashier
+              {
+                element: (
+                  <RoleRoute
+                    roles={[RoleEnum.MANAGER, RoleEnum.ADMIN, RoleEnum.CASHIER]}
+                  />
+                ),
+                children: [
+                  { path: PATHS.ORDERS, element: <Orders /> },
+                  { path: PATHS.SALES, element: <Sales /> },
+                  { path: PATHS.SHIFTS, element: <div>Caja</div> },
+                  { path: PATHS.EXPENSES, element: <Expenses /> },
+                  { path: PATHS.PAYROLL, element: <Payroll /> },
+                ],
+              },
+
+              // Cashier únicamente
+              {
+                element: <RoleRoute roles={[RoleEnum.CASHIER]} />,
+                children: [{ path: PATHS.POS, element: <Pos /> }],
+              },
+
+              { path: "*", element: <NotFound /> },
             ],
           },
-
-          // Manager únicamente
-          {
-            element: <RoleRoute roles={[RoleEnum.MANAGER]} />,
-            children: [
-              { path: PATHS.USERS, element: <Users /> },
-              { path: PATHS.LOCATIONS, element: <Locations /> },
-            ],
-          },
-
-          // Manager + Admin
-          {
-            element: <RoleRoute roles={[RoleEnum.MANAGER, RoleEnum.ADMIN]} />,
-            children: [
-              { path: PATHS.PRODUCTS, element: <Products /> },
-              { path: PATHS.CATEGORIES, element: <Categories /> },
-              { path: PATHS.MODIFIERS, element: <Modifiers /> },
-              { path: PATHS.INVENTORY, element: <Inventory /> },
-              { path: PATHS.INGREDIENTS, element: <Supplies /> },
-              { path: PATHS.REPORTS, element: <div>Reportes</div> },
-            ],
-          },
-
-          // Manager + Admin + Cashier
-          {
-            element: (
-              <RoleRoute
-                roles={[RoleEnum.MANAGER, RoleEnum.ADMIN, RoleEnum.CASHIER]}
-              />
-            ),
-            children: [
-              { path: PATHS.ORDERS, element: <Orders /> },
-              { path: PATHS.SALES, element: <Sales /> },
-              { path: PATHS.SHIFTS, element: <div>Caja</div> },
-              { path: PATHS.EXPENSES, element: <Expenses /> },
-              { path: PATHS.PAYROLL, element: <Payroll /> },
-            ],
-          },
-
-          // Cashier únicamente
-          {
-            element: <RoleRoute roles={[RoleEnum.CASHIER]} />,
-            children: [{ path: PATHS.POS, element: <Pos /> }],
-          },
-
-          { path: "*", element: <NotFound /> },
         ],
       },
     ],

@@ -1,7 +1,10 @@
 import { useTableState } from "@/components/shared/DataTable/useTableState";
 import { DATA_TABLE } from "@/constants";
 import { useState } from "react";
-import { useProductsPage } from "../hooks/useProducts";
+import {
+  useProductsPage,
+  useUpdateProductAvailability,
+} from "../hooks/useProducts";
 import { ProductPageItem } from "../models/product.model";
 import { PageHeader } from "@/components/shared/DataTable/PageHeader";
 import { Button } from "@/components/shared/Basics/Button";
@@ -13,7 +16,7 @@ import {
   AsyncDropdown,
   AsyncDropdownOption,
 } from "@/components/shared/Interactives/AsyncDropdown";
-import { PRODUCT_COLUMNS } from "./ProductColumns";
+import { getProductColumns } from "./ProductColumns";
 import { useGetLocationSimple } from "@/features/locations/hooks/useLocation";
 import { useCategoriesSimpleHandler } from "../../categories/hooks/useCategories";
 import { ProductModal } from "./components/ProductModal";
@@ -148,7 +151,7 @@ function ManagerProducts() {
       </TableFilters>
 
       <DataTable
-        columns={PRODUCT_COLUMNS}
+        columns={getProductColumns()}
         data={data}
         meta={meta}
         isLoading={queryStatus === "pending"}
@@ -200,6 +203,11 @@ function AdminProducts() {
   const [selectedProductId, setSelectedProductId] = useState<string | null>(
     null,
   );
+  // Evita que un doble clic mande dos cambios contradictorios del mismo producto.
+  const [pendingAvailabilityIds, setPendingAvailabilityIds] = useState<
+    ReadonlySet<string>
+  >(new Set());
+  const { mutateAsync: updateAvailability } = useUpdateProductAvailability();
 
   const {
     data,
@@ -246,6 +254,28 @@ function AdminProducts() {
     setOpenProductModal(true);
   };
 
+  async function handleToggleAvailability(
+    row: ProductPageItem,
+    available: boolean,
+  ) {
+    if (pendingAvailabilityIds.has(row.id)) return;
+    setPendingAvailabilityIds((prev) => new Set(prev).add(row.id));
+    try {
+      await updateAvailability({ id: row.id, available });
+      // Con el filtro "Disponibilidad" activo la fila debe salir del listado.
+      if (filters.available) await refetch();
+    } catch {
+      // El interceptor ya mostró el error; el switch sigue mostrando el valor
+      // del servidor (row.available).
+    } finally {
+      setPendingAvailabilityIds((prev) => {
+        const next = new Set(prev);
+        next.delete(row.id);
+        return next;
+      });
+    }
+  }
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <PageHeader
@@ -280,7 +310,10 @@ function AdminProducts() {
       </TableFilters>
 
       <DataTable
-        columns={PRODUCT_COLUMNS}
+        columns={getProductColumns({
+          onToggleAvailability: handleToggleAvailability,
+          pendingAvailabilityIds,
+        })}
         data={data}
         meta={meta}
         isLoading={queryStatus === "pending"}

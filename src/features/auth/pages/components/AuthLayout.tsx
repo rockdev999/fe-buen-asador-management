@@ -5,7 +5,8 @@ interface AuthLayoutProps {
   card: ReactNode;
   title: string;
   description: string;
-  step: 1 | 2;
+  /** 1 login · 2 sucursal · 3 cambio de contraseña. */
+  step: 1 | 2 | 3;
   userName?: string;
   userEmail?: string;
   userInitials?: string;
@@ -52,7 +53,7 @@ export function AuthLayout({
 
         {/* Footer — user chip en paso 2, dots siempre */}
         <div className="flex flex-col gap-3">
-          {step === 2 && userName && (
+          {step >= 2 && userName && (
             <div className="flex items-center gap-3 bg-white/10 rounded-xl px-4 py-3">
               <div className="w-8 h-8 bg-brand rounded-full flex items-center justify-center flex-shrink-0">
                 <span className="text-white text-xs font-medium">
@@ -82,7 +83,13 @@ export function AuthLayout({
                   : "w-1.5 h-1.5 bg-white/20 rounded-full"
               }
             />
-            <div className="w-1.5 h-1.5 bg-white/20 rounded-full" />
+            <div
+              className={
+                step === 3
+                  ? "w-5 h-1.5 bg-brand rounded-full"
+                  : "w-1.5 h-1.5 bg-white/20 rounded-full"
+              }
+            />
           </div>
         </div>
       </div>

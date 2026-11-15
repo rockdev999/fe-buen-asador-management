@@ -33,6 +33,8 @@ interface AuthState {
    * ambos tokens y el user, porque el rol/sucursal pudo cambiar en el backend.
    */
   setSession: (session: AuthSession) => void;
+  /** Marca/desmarca el cambio obligatorio de contraseña del usuario actual. */
+  setMustChangePassword: (value: boolean) => void;
   logout: () => void;
 }
 
@@ -62,6 +64,13 @@ export const useAuthStore = create<AuthState>()(
           tempToken: null,
           locations: [],
         }),
+
+      setMustChangePassword: (value) =>
+        set((state) =>
+          state.user
+            ? { user: { ...state.user, mustChangePassword: value } }
+            : state,
+        ),
 
       logout: () => set({ tempToken: null, locations: [], ...EMPTY_SESSION }),
     }),

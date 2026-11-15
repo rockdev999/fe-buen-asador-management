@@ -1,5 +1,6 @@
 export const PATHS = {
   LOGIN: "/login",
+  CHANGE_PASSWORD: "/change-password",
   DASHBOARD: "/dashboard",
 
   // Manager

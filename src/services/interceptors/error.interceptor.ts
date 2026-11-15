@@ -8,6 +8,7 @@ import { KnownErrorCode } from "@/constants/httpCodes/error-codes";
 import {
   logoutSession,
   refreshSession,
+  requirePasswordChange,
   SessionEndedError,
 } from "@/services/auth/session.service";
 import { useAuthStore } from "@/stores/auth.store";
@@ -118,6 +119,15 @@ export async function errorInterceptor(
   }
 
   const message = getErrorMessage(error);
+
+  // ── Contraseña temporal pendiente: redirigir sin toast ──────────────────
+  if (
+    status === HTTP_STATUS.FORBIDDEN &&
+    errorCode === API_ERROR_CODES.MUST_CHANGE_PASSWORD
+  ) {
+    requirePasswordChange();
+    return toRejection(message, status, errorCode);
+  }
 
   const isUnauthorized =
     status === HTTP_STATUS.UNAUTHORIZED ||

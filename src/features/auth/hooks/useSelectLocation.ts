@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { SessionResponseDTO } from "../dto/login.dto";
 import { mapSessionDTOToModel } from "../mappers/login.mapper";
-import { RoleEnum } from "@/constants";
+import { getHomePath } from "@/routes/home-path";
 import { PATHS } from "@/routes";
 import { usePostHandler } from "@/hooks/api.handlers";
 import { httpClient } from "@/services/http.client";
@@ -32,16 +32,11 @@ export function useSelectLocation() {
       useCashierStore.getState().clearShift();
       queryClient.clear();
 
-      switch (user.role) {
-        case RoleEnum.CASHIER:
-          navigate(PATHS.POS, { replace: true });
-          break;
-        case RoleEnum.MANAGER:
-        case RoleEnum.ADMIN:
-        default:
-          navigate(PATHS.DASHBOARD, { replace: true });
-          break;
-      }
+      // Con contraseña temporal pendiente, el resto del sistema responde 403.
+      navigate(
+        user.mustChangePassword ? PATHS.CHANGE_PASSWORD : getHomePath(user.role),
+        { replace: true },
+      );
     },
   });
 }

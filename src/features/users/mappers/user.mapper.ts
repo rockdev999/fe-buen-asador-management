@@ -36,6 +36,7 @@ export const mapUserDetailsDTOToModel = (dto: UserDetailsDTO): UserDetails => ({
   role: dto.role,
   locationId: dto.location?.id ?? null,
   locationName: dto.location?.name ?? null,
+  mustChangePassword: dto.mustChangePassword ?? false,
 });
 
 export const mapUserLocationItemDTOToModel = (
@@ -60,6 +61,7 @@ export const mapUserPageItemDTOToModel = (
   locations: dto.locations
     ? dto.locations.map(mapUserLocationItemDTOToModel)
     : null,
+  credentialsEmailStatus: dto.credentialsEmailStatus ?? null,
 });
 
 export const mapUserLocationDTOToModel = (

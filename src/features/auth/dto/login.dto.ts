@@ -42,3 +42,8 @@ export interface RefreshSessionRequestDTO {
 export interface LogoutRequestDTO {
   refreshToken: string;
 }
+
+export interface ChangePasswordRequestDTO {
+  currentPassword: string;
+  newPassword: string;
+}

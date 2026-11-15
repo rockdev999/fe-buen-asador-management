@@ -2,8 +2,28 @@ import { ColumnDef } from "@/components/shared/DataTable/types";
 import { ProductPageItem } from "../models/product.model";
 import { CheckCircle, Package, XCircle } from "lucide-react";
 import { formatMoney } from "@/lib/utils";
+import { Switch } from "@/components/shared/Basics/Switch";
 
-export const PRODUCT_COLUMNS: ColumnDef<ProductPageItem>[] = [
+interface ProductColumnsHandlers {
+  /**
+   * Si se define, la columna "Disponible" es un switch editable; si no, se
+   * muestra "Sí/No" de solo lectura.
+   */
+  onToggleAvailability?: (
+    row: ProductPageItem,
+    available: boolean,
+  ) => Promise<unknown>;
+  /** Ids con un cambio de disponibilidad en curso (switch deshabilitado). */
+  pendingAvailabilityIds?: ReadonlySet<string>;
+}
+
+const AVAILABILITY_HELP =
+  "Oculta el producto del punto de venta en todas las sucursales";
+
+export const getProductColumns = ({
+  onToggleAvailability,
+  pendingAvailabilityIds,
+}: ProductColumnsHandlers = {}): ColumnDef<ProductPageItem>[] => [
   {
     key: "name",
     label: "Producto",
@@ -106,20 +126,47 @@ export const PRODUCT_COLUMNS: ColumnDef<ProductPageItem>[] = [
     key: "available",
     label: "Disponible",
     sortable: true,
-    render: (row) => (
-      <div className="flex items-center gap-1.5">
-        {row.available ? (
-          <>
-            <CheckCircle size={13} className="text-green-500" />
-            <span className="text-[12px] text-green-600">Sí</span>
-          </>
-        ) : (
-          <>
-            <XCircle size={13} className="text-red-400" />
-            <span className="text-[12px] text-red-500">No</span>
-          </>
-        )}
-      </div>
-    ),
+    render: (row) =>
+      onToggleAvailability ? (
+        // Siempre refleja row.available (dato del servidor): si la petición
+        // falla, el switch queda en su valor anterior sin lógica extra.
+        // Toda la celda es zona del switch: no abrir el modal de la fila.
+        <div
+          className="flex items-center gap-2"
+          title={AVAILABILITY_HELP}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <Switch
+            checked={row.available}
+            onChange={(next) => void onToggleAvailability(row, next)}
+            disabled={pendingAvailabilityIds?.has(row.id)}
+            ariaLabel={`Disponible: ${row.name}`}
+            title={AVAILABILITY_HELP}
+          />
+          <span
+            className={
+              row.available
+                ? "text-[12px] text-green-600"
+                : "text-[12px] text-red-500"
+            }
+          >
+            {row.available ? "Sí" : "No"}
+          </span>
+        </div>
+      ) : (
+        <div className="flex items-center gap-1.5">
+          {row.available ? (
+            <>
+              <CheckCircle size={13} className="text-green-500" />
+              <span className="text-[12px] text-green-600">Sí</span>
+            </>
+          ) : (
+            <>
+              <XCircle size={13} className="text-red-400" />
+              <span className="text-[12px] text-red-500">No</span>
+            </>
+          )}
+        </div>
+      ),
   },
 ];

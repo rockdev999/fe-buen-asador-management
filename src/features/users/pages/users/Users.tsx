@@ -8,7 +8,10 @@ import { Plus } from "lucide-react";
 import { TableFilters } from "@/components/shared/DataTable/TableFilters";
 import { USER_DROPDOWNS } from "../../config/user.table";
 import { DataTable } from "@/components/shared/DataTable/DataTable";
-import { USER_COLUMNS } from "./UserColumns";
+import { getUserColumns } from "./UserColumns";
+import { useAuth } from "@/features/auth/hooks/useAuth";
+import { usePasswordReset } from "../../hooks/usePasswordReset";
+import { ResetPasswordModal } from "../components/ResetPasswordModal";
 import { useGetLocationSimple } from "@/features/locations/hooks/useLocation";
 import {
   AsyncDropdown,
@@ -37,6 +40,10 @@ export const Users = () => {
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [locationId, setLocationId] = useState(filters.locationId ?? "");
   const { data: locations, status: locationsStatus } = useGetLocationSimple();
+  const { user: currentUser, isManager } = useAuth();
+  const { resetPassword, resettingUserId, statusOverrides } = usePasswordReset();
+  const [resetPasswordUser, setResetPasswordUser] =
+    useState<UserPageItem | null>(null);
 
   const {
     data,
@@ -119,7 +126,14 @@ export const Users = () => {
       </TableFilters>
 
       <DataTable
-        columns={USER_COLUMNS}
+        columns={getUserColumns({
+          currentUserId: currentUser?.id ?? null,
+          canResetPassword: isManager,
+          statusOverrides,
+          resettingUserId,
+          onResetPassword: setResetPasswordUser,
+          onRetryResetPassword: (user) => resetPassword(user.id),
+        })}
         data={data}
         meta={meta}
         isLoading={queryStatus === "pending"}
@@ -139,6 +153,19 @@ export const Users = () => {
           onClose={handleCloseUserModal}
           onSuccess={handleCloseUserModal}
           key={selectedUserId ?? "default"}
+        />
+      )}
+
+      {resetPasswordUser && (
+        <ResetPasswordModal
+          user={resetPasswordUser}
+          isPending={resettingUserId === resetPasswordUser.id}
+          onClose={() => setResetPasswordUser(null)}
+          onConfirm={() =>
+            resetPassword(resetPasswordUser.id, {
+              onSuccess: () => setResetPasswordUser(null),
+            })
+          }
         />
       )}
     </div>

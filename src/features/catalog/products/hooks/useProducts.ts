@@ -3,12 +3,14 @@ import {
   useDeleteHandler,
   useGetHandler,
   usePaginatedGetHandler,
+  usePatchHandler,
   usePostHandler,
   usePutHandler,
 } from "@/hooks/api.handlers";
 import { httpClient } from "@/services/http.client";
 import { ApiErrorResponse, ApiResponse } from "@/types/api.types";
 import { useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   mapProductDTOToModel,
   mapProductPageItemDTOToModel,
@@ -159,4 +161,45 @@ export const useDeleteProduct = (id: string) => {
   });
 
   return { ...handler };
+};
+
+/**
+ * PATCH /products/:id/availability — prende/apaga el producto en TODAS las
+ * sucursales (es un dato del producto). Apagado, desaparece del menú del POS.
+ * No toca stock, recetas, imagen ni sucursales.
+ */
+export const useUpdateProductAvailability = () => {
+  const queryClient = useQueryClient();
+
+  return usePatchHandler({
+    mutationFn: ({ id, available }: { id: string; available: boolean }) =>
+      httpClient
+        .patch<
+          ApiResponse<ProductDTO>
+        >(`/products/${id}/availability`, { available })
+        .then((r) => r.data.data!),
+    retry: false,
+    successMessage: "Disponibilidad actualizada exitosamente",
+    // Menú del POS
+    invalidateKeys: [QUERY_KEYS.MENU],
+    onSuccessCallback: (updated) => {
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.PRODUCT(updated.id) });
+      // Listados paginados en caché: solo se cambia `available` en la fila
+      // (el ítem paginado no tiene necesariamente la forma del detalle).
+      queryClient.setQueriesData<ApiResponse<ProductPageItemDTO[]>>(
+        { queryKey: ["products", "pagination"] },
+        (old) =>
+          old?.data
+            ? {
+                ...old,
+                data: old.data.map((row) =>
+                  row.id === updated.id
+                    ? { ...row, available: updated.available }
+                    : row,
+                ),
+              }
+            : old,
+      );
+    },
+  });
 };

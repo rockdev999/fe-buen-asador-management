@@ -115,6 +115,24 @@ export function logoutSession(options: LogoutOptions = {}) {
   endSession({ notifyBackend: true, ...options });
 }
 
+/**
+ * El backend exige cambiar la contraseña temporal (403 MUST_CHANGE_PASSWORD):
+ * se marca en el store y se lleva a la pantalla de cambio. Las rutas del
+ * layout también redirigen ahí mientras `mustChangePassword` siga en true.
+ */
+export function requirePasswordChange() {
+  useAuthStore.getState().setMustChangePassword(true);
+  navigateTo(PATHS.CHANGE_PASSWORD);
+}
+
+// Import dinámico para no crear un ciclo services → routes → páginas → services.
+function navigateTo(path: string) {
+  if (window.location.pathname.startsWith(path)) return;
+  void import("@/routes/Router").then(({ router }) =>
+    router.navigate(path, { replace: true }),
+  );
+}
+
 function endSession({ message, notifyBackend = true }: LogoutOptions) {
   const { refreshToken } = useAuthStore.getState();
 
@@ -130,10 +148,5 @@ function endSession({ message, notifyBackend = true }: LogoutOptions) {
 
   if (message) toast.error(message, { id: "session-ended" });
 
-  // Import dinámico para no crear un ciclo services → routes → páginas → services.
-  if (!window.location.pathname.startsWith(PATHS.LOGIN)) {
-    void import("@/routes/Router").then(({ router }) =>
-      router.navigate(PATHS.LOGIN, { replace: true }),
-    );
-  }
+  navigateTo(PATHS.LOGIN);
 }

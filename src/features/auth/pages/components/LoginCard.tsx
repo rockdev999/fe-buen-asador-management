@@ -6,11 +6,15 @@ import { loginFormConfig } from "../../forms/login.form-config";
 import { FormInput } from "@/components/shared/Form/FormInput";
 import { FormPassword } from "@/components/shared/Form/FormPassword";
 import { Button } from "@/components/shared/Basics/Button";
+import { Info } from "lucide-react";
+import { useState } from "react";
 
 const trans = t.auth.login;
 
 export function LoginCard() {
   const { mutate: login, status } = useLogin();
+  // No hay autoservicio: el gerente restablece la contraseña desde Usuarios.
+  const [showForgotHelp, setShowForgotHelp] = useState(false);
 
   const {
     values: formValues,
@@ -67,9 +71,26 @@ export function LoginCard() {
       />
 
       <div className="text-right -mt-1 mb-4">
-        <Button type="button" variant="link" size="xs">
+        <Button
+          type="button"
+          variant="link"
+          size="xs"
+          aria-expanded={showForgotHelp}
+          aria-controls="forgot-password-help"
+          onClick={() => setShowForgotHelp((open) => !open)}
+        >
           {trans.forgotPassword}
         </Button>
+        {showForgotHelp && (
+          <p
+            id="forgot-password-help"
+            role="status"
+            className="mt-2 flex items-start gap-2 rounded-xl bg-surface px-3 py-2 text-left text-[12px] text-muted-foreground"
+          >
+            <Info size={14} className="mt-0.5 shrink-0 text-brand" />
+            {trans.forgotPasswordHelp}
+          </p>
+        )}
       </div>
       <Button type="submit" isLoading={status === "pending"} className="w-full">
         {trans.submit}
