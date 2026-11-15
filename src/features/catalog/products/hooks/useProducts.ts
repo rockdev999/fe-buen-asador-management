@@ -11,6 +11,7 @@ import { httpClient } from "@/services/http.client";
 import { ApiErrorResponse, ApiResponse } from "@/types/api.types";
 import { useMemo } from "react";
 import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import {
   mapProductDTOToModel,
   mapProductPageItemDTOToModel,
@@ -164,28 +165,44 @@ export const useDeleteProduct = (id: string) => {
 };
 
 /**
- * PATCH /products/:id/availability — prende/apaga el producto en TODAS las
- * sucursales (es un dato del producto). Apagado, desaparece del menú del POS.
- * No toca stock, recetas, imagen ni sucursales.
+ * PATCH /products/:id/availability[?locationId] — disponibilidad POR SUCURSAL.
+ *
+ * - Con `locationId`: solo en esa sucursal.
+ * - Sin `locationId` (MANAGER en "todas"): en todas las sucursales del producto.
+ *
+ * No toca el interruptor global (`available`), que solo se cambia desde el
+ * formulario. ADMIN/CASHIER no envían locationId: el backend usa el del token.
  */
 export const useUpdateProductAvailability = () => {
   const queryClient = useQueryClient();
 
   return usePatchHandler({
-    mutationFn: ({ id, available }: { id: string; available: boolean }) =>
+    mutationFn: ({
+      id,
+      available,
+      locationId,
+    }: {
+      id: string;
+      available: boolean;
+      locationId?: string | null;
+    }) =>
       httpClient
-        .patch<
-          ApiResponse<ProductDTO>
-        >(`/products/${id}/availability`, { available })
-        .then((r) => r.data.data!),
+        .patch<ApiResponse<ProductDTO>>(
+          `/products/${id}/availability`,
+          { available },
+          { params: locationId ? { locationId } : {} },
+        )
+        .then((r) => r.data),
     retry: false,
-    successMessage: "Disponibilidad actualizada exitosamente",
-    // Menú del POS
-    invalidateKeys: [QUERY_KEYS.MENU],
-    onSuccessCallback: (updated) => {
+    // Menú del POS y conteos de categorías
+    invalidateKeys: [QUERY_KEYS.MENU, QUERY_KEYS.CATEGORIES],
+    onSuccessCallback: (response) => {
+      const updated = response.data!;
+      // "Producto no disponible en Casa Matriz" / "... en todas las sucursales"
+      toast.success(response.message ?? "Disponibilidad actualizada");
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.PRODUCT(updated.id) });
-      // Listados paginados en caché: solo se cambia `available` en la fila
-      // (el ítem paginado no tiene necesariamente la forma del detalle).
+      // Listados paginados en caché: solo cambian `available` y la
+      // disponibilidad por sucursal de esa fila, sin volver a pedir la página.
       queryClient.setQueriesData<ApiResponse<ProductPageItemDTO[]>>(
         { queryKey: ["products", "pagination"] },
         (old) =>
@@ -194,7 +211,11 @@ export const useUpdateProductAvailability = () => {
                 ...old,
                 data: old.data.map((row) =>
                   row.id === updated.id
-                    ? { ...row, available: updated.available }
+                    ? {
+                        ...row,
+                        available: updated.available,
+                        locations: updated.locations,
+                      }
                     : row,
                 ),
               }

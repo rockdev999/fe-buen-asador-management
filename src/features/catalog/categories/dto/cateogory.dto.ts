@@ -7,7 +7,21 @@ export interface CategoryDTO {
   name: string;
   sortOrder: number;
   locations: LocationDTO[];
+  /** Productos en el alcance del ?locationId con que se pidió el listado. */
+  productsCount: number;
+  /** Disponibles (global Y en la sucursal; sin sucursal: en todas). */
+  availableProductsCount: number;
   audit: Audit;
+}
+
+/** Respuesta de PATCH /categories/:id/availability. */
+export interface CategoryAvailabilityResponseDTO {
+  category: CategoryDTO;
+  available: boolean;
+  /** Productos que efectivamente cambiaron. */
+  affectedProducts: number;
+  /** Sucursal afectada; null = todas. */
+  location: LocationDTO | null;
 }
 
 export interface CategoryShortDTO {

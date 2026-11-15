@@ -3,6 +3,8 @@ import { ProductPageItem } from "../models/product.model";
 import { CheckCircle, Package, XCircle } from "lucide-react";
 import { formatMoney } from "@/lib/utils";
 import { Switch } from "@/components/shared/Basics/Switch";
+import { cn } from "@/lib/utils";
+import { getProductAvailability } from "../utils/product-availability";
 
 interface ProductColumnsHandlers {
   /**
@@ -15,14 +17,26 @@ interface ProductColumnsHandlers {
   ) => Promise<unknown>;
   /** Ids con un cambio de disponibilidad en curso (switch deshabilitado). */
   pendingAvailabilityIds?: ReadonlySet<string>;
+  /**
+   * Sucursal de la pantalla (ADMIN: la suya; MANAGER: la del filtro) o null
+   * si el MANAGER ve "todas". Define qué disponibilidad muestra el switch.
+   */
+  scopeLocationId?: string | null;
+  /** Nombre de la sucursal del alcance, para el texto de ayuda. */
+  scopeLocationName?: string | null;
 }
 
-const AVAILABILITY_HELP =
-  "Oculta el producto del punto de venta en todas las sucursales";
+const AVAILABILITY_LABELS = {
+  on: { text: "Sí", className: "text-green-600" },
+  off: { text: "No", className: "text-red-500" },
+  partial: { text: "Parcial", className: "text-amber-600" },
+} as const;
 
 export const getProductColumns = ({
   onToggleAvailability,
   pendingAvailabilityIds,
+  scopeLocationId = null,
+  scopeLocationName = null,
 }: ProductColumnsHandlers = {}): ColumnDef<ProductPageItem>[] => [
   {
     key: "name",
@@ -126,34 +140,53 @@ export const getProductColumns = ({
     key: "available",
     label: "Disponible",
     sortable: true,
-    render: (row) =>
-      onToggleAvailability ? (
-        // Siempre refleja row.available (dato del servidor): si la petición
-        // falla, el switch queda en su valor anterior sin lógica extra.
-        // Toda la celda es zona del switch: no abrir el modal de la fila.
-        <div
-          className="flex items-center gap-2"
-          title={AVAILABILITY_HELP}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <Switch
-            checked={row.available}
-            onChange={(next) => void onToggleAvailability(row, next)}
-            disabled={pendingAvailabilityIds?.has(row.id)}
-            ariaLabel={`Disponible: ${row.name}`}
-            title={AVAILABILITY_HELP}
-          />
-          <span
-            className={
-              row.available
-                ? "text-[12px] text-green-600"
-                : "text-[12px] text-red-500"
-            }
+    render: (row) => {
+      if (onToggleAvailability) {
+        const { state, disabledReason } = getProductAvailability(
+          row,
+          scopeLocationId,
+        );
+        const scopeText = scopeLocationId
+          ? `en ${scopeLocationName ?? "esta sucursal"}`
+          : "en todas sus sucursales";
+        const help =
+          disabledReason ??
+          (state === "partial"
+            ? `Disponible solo en algunas sucursales. Actívalo para ofrecerlo ${scopeText}.`
+            : `Muestra u oculta el producto en el punto de venta ${scopeText}.`);
+        const label = AVAILABILITY_LABELS[state];
+
+        return (
+          // Toda la celda es zona del switch: no abrir el modal de la fila.
+          // El switch siempre refleja el dato del servidor: si la petición
+          // falla, queda en su valor anterior sin lógica extra.
+          <div
+            className="flex items-center gap-2"
+            title={help}
+            onClick={(e) => e.stopPropagation()}
           >
-            {row.available ? "Sí" : "No"}
-          </span>
-        </div>
-      ) : (
+            <Switch
+              checked={state === "on"}
+              indeterminate={state === "partial"}
+              onChange={(next) => void onToggleAvailability(row, next)}
+              disabled={!!disabledReason || pendingAvailabilityIds?.has(row.id)}
+              ariaLabel={`Disponible: ${row.name}${state === "partial" ? " (parcial)" : ""}`}
+              title={help}
+            />
+            {disabledReason ? (
+              <span className="max-w-[140px] text-[10px] leading-tight text-muted-foreground">
+                {disabledReason}
+              </span>
+            ) : (
+              <span className={cn("text-[12px]", label.className)}>
+                {label.text}
+              </span>
+            )}
+          </div>
+        );
+      }
+
+      return (
         <div className="flex items-center gap-1.5">
           {row.available ? (
             <>
@@ -167,6 +200,7 @@ export const getProductColumns = ({
             </>
           )}
         </div>
-      ),
+      );
+    },
   },
 ];

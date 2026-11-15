@@ -1,10 +1,8 @@
 import { useTableState } from "@/components/shared/DataTable/useTableState";
 import { DATA_TABLE } from "@/constants";
 import { useState } from "react";
-import {
-  useProductsPage,
-  useUpdateProductAvailability,
-} from "../hooks/useProducts";
+import { useProductsPage } from "../hooks/useProducts";
+import { useProductAvailabilityToggle } from "../hooks/useProductAvailabilityToggle";
 import { ProductPageItem } from "../models/product.model";
 import { PageHeader } from "@/components/shared/DataTable/PageHeader";
 import { Button } from "@/components/shared/Basics/Button";
@@ -65,6 +63,17 @@ function ManagerProducts() {
     available: filters.available ?? "",
     sortKey,
     sortDir,
+  });
+
+  // Alcance = sucursal APLICADA en el filtro (la misma con que se pidió el
+  // listado), o null en "todas": así estado, conteos y PATCH coinciden.
+  const scopeLocationId = filters.locationId || null;
+  const scopeLocationName =
+    locations?.find((loc) => loc.id === scopeLocationId)?.name ?? null;
+  const availability = useProductAvailabilityToggle({
+    requestLocationId: scopeLocationId,
+    isAvailabilityFiltered: !!filters.available,
+    refetch,
   });
 
   const locationOptions: AsyncDropdownOption<{ id: string; name: string }>[] = (
@@ -151,7 +160,12 @@ function ManagerProducts() {
       </TableFilters>
 
       <DataTable
-        columns={getProductColumns()}
+        columns={getProductColumns({
+          onToggleAvailability: availability.toggle,
+          pendingAvailabilityIds: availability.pendingIds,
+          scopeLocationId,
+          scopeLocationName,
+        })}
         data={data}
         meta={meta}
         isLoading={queryStatus === "pending"}
@@ -203,11 +217,6 @@ function AdminProducts() {
   const [selectedProductId, setSelectedProductId] = useState<string | null>(
     null,
   );
-  // Evita que un doble clic mande dos cambios contradictorios del mismo producto.
-  const [pendingAvailabilityIds, setPendingAvailabilityIds] = useState<
-    ReadonlySet<string>
-  >(new Set());
-  const { mutateAsync: updateAvailability } = useUpdateProductAvailability();
 
   const {
     data,
@@ -221,6 +230,12 @@ function AdminProducts() {
     available: filters.available ?? "",
     sortKey,
     sortDir,
+  });
+
+  const { user } = useAuth();
+  const availability = useProductAvailabilityToggle({
+    isAvailabilityFiltered: !!filters.available,
+    refetch,
   });
 
   const categoryOptions: AsyncDropdownOption<{ id: string; name: string }>[] = (
@@ -253,28 +268,6 @@ function AdminProducts() {
     setSelectedProductId(data.id);
     setOpenProductModal(true);
   };
-
-  async function handleToggleAvailability(
-    row: ProductPageItem,
-    available: boolean,
-  ) {
-    if (pendingAvailabilityIds.has(row.id)) return;
-    setPendingAvailabilityIds((prev) => new Set(prev).add(row.id));
-    try {
-      await updateAvailability({ id: row.id, available });
-      // Con el filtro "Disponibilidad" activo la fila debe salir del listado.
-      if (filters.available) await refetch();
-    } catch {
-      // El interceptor ya mostró el error; el switch sigue mostrando el valor
-      // del servidor (row.available).
-    } finally {
-      setPendingAvailabilityIds((prev) => {
-        const next = new Set(prev);
-        next.delete(row.id);
-        return next;
-      });
-    }
-  }
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -311,8 +304,12 @@ function AdminProducts() {
 
       <DataTable
         columns={getProductColumns({
-          onToggleAvailability: handleToggleAvailability,
-          pendingAvailabilityIds,
+          onToggleAvailability: availability.toggle,
+          pendingAvailabilityIds: availability.pendingIds,
+          // El estado se calcula con su sucursal; el PATCH no manda
+          // locationId porque el backend usa el del token.
+          scopeLocationId: user?.locationId ?? null,
+          scopeLocationName: user?.locationName ?? null,
         })}
         data={data}
         meta={meta}

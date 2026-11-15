@@ -19,6 +19,8 @@ export const mapCategoryDTOToModel = (dto: CategoryDTO): Category => ({
   name: dto.name,
   sortOrder: String(dto.sortOrder),
   locations: (dto.locations ?? []).map(mapLocationDTOToModel),
+  productsCount: dto.productsCount ?? 0,
+  availableProductsCount: dto.availableProductsCount ?? 0,
   audit: dto.audit,
 });
 

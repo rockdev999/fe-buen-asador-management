@@ -1,3 +1,4 @@
+import { useQueryClient } from "@tanstack/react-query";
 import {
   useGetHandler,
   usePaginatedGetHandler,
@@ -153,6 +154,7 @@ export function useGetOrderById(id: string | null) {
 }
 
 export const useCreateOrder = () => {
+  const queryClient = useQueryClient();
   const handler = usePostHandler({
     mutationFn: (dto: CreateOrderDTO) =>
       httpClient
@@ -160,6 +162,15 @@ export const useCreateOrder = () => {
         .then((r) => r.data.data!),
 
     invalidateKeys: [QUERY_KEYS.ORDERS],
+    // 400 "El producto X no está disponible en esta sucursal": alguien lo
+    // apagó mientras se armaba el pedido. El interceptor ya mostró el mensaje;
+    // se refresca el menú para que desaparezca. (El backend no envía un
+    // errorCode específico, por eso se reconoce por el texto.)
+    onErrorCallback: (error) => {
+      if (/no está disponible en esta sucursal/i.test(error?.message ?? "")) {
+        queryClient.invalidateQueries({ queryKey: QUERY_KEYS.MENU });
+      }
+    },
   });
 
   const data = useMemo(

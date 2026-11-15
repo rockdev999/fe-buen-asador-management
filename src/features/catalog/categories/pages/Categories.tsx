@@ -3,10 +3,19 @@ import { FolderTree, Plus, Search, X } from "lucide-react";
 
 import { Button } from "@/components/shared/Basics/Button";
 import { CategoryCard } from "./components/CategoryCard";
-import { useCategoriesHandler } from "../hooks/useCategories";
+import {
+  useCategoriesHandler,
+  useUpdateCategoryAvailability,
+} from "../hooks/useCategories";
 import { Category } from "../models/category.model";
 import { CategoryModal } from "./components/CategoryModal";
+import { CategoryAvailabilityModal } from "./components/CategoryAvailabilityModal";
 import { useGetLocationSimple } from "@/features/locations/hooks/useLocation";
+import { useAuth } from "@/features/auth/hooks/useAuth";
+import {
+  AsyncDropdown,
+  AsyncDropdownOption,
+} from "@/components/shared/Interactives/AsyncDropdown";
 
 export function Categories() {
   const [search, setSearch] = useState("");
@@ -15,8 +24,60 @@ export function Categories() {
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const { data: categories, refetch } = useCategoriesHandler();
-  const { data: locations } = useGetLocationSimple();
+  const { user, isManager } = useAuth();
+  const { data: locations, status: locationsStatus } = useGetLocationSimple();
+
+  // Alcance de conteos y switch. ADMIN: su sucursal. MANAGER: la del filtro,
+  // o null = todas. El mismo valor se usa para pedir el listado y en el PATCH.
+  const [managerLocationId, setManagerLocationId] = useState("");
+  const scopeLocationId = isManager
+    ? managerLocationId || null
+    : (user?.locationId ?? null);
+  const scopeLocationName = isManager
+    ? (locations?.find((loc) => loc.id === scopeLocationId)?.name ?? null)
+    : (user?.locationName ?? null);
+  const scopeText = scopeLocationId
+    ? `en ${scopeLocationName ?? "esta sucursal"}`
+    : "en todas las sucursales";
+
+  const { data: categories, refetch } = useCategoriesHandler(scopeLocationId);
+  const { mutate: updateAvailability, isPending: isAvailabilityPending, variables } =
+    useUpdateCategoryAvailability();
+  const [categoryToDisable, setCategoryToDisable] = useState<Category | null>(
+    null,
+  );
+
+  const locationOptions: AsyncDropdownOption<{ id: string; name: string }>[] = (
+    locations ?? []
+  ).map((loc) => ({
+    id: loc.id,
+    data: loc,
+    searchText: loc.name,
+    render: (item) => <span>{item.name}</span>,
+  }));
+
+  const applyAvailability = (
+    category: Category,
+    available: boolean,
+    onSuccess?: () => void,
+  ) => {
+    if (!category.id) return;
+    updateAvailability(
+      // ADMIN no envía locationId: el backend usa el de su token.
+      {
+        id: category.id,
+        available,
+        locationId: isManager ? scopeLocationId : undefined,
+      },
+      { onSuccess },
+    );
+  };
+
+  // Prender no pide confirmación; apagar sí, nombrando el alcance.
+  const handleToggleAvailability = (category: Category, available: boolean) => {
+    if (available) applyAvailability(category, true);
+    else setCategoryToDisable(category);
+  };
 
   const categoryList = categories ?? [];
 
@@ -76,6 +137,18 @@ export function Categories() {
 
       {/* Search */}
       <div className="flex flex-col gap-3 rounded-2xl border border-surface bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+        {isManager && (
+          <div className="w-full sm:order-2 sm:w-56">
+            <AsyncDropdown
+              placeholder="Todas las sucursales"
+              value={managerLocationId}
+              onChange={(id) => setManagerLocationId(id)}
+              options={locationOptions}
+              isLoading={locationsStatus === "pending"}
+              emptyText="Sin sucursales"
+            />
+          </div>
+        )}
         <div className="relative w-full sm:max-w-xs">
           <Search
             size={14}
@@ -112,9 +185,30 @@ export function Categories() {
               key={category.id}
               category={category}
               onEdit={handleEdit}
+              onToggleAvailability={handleToggleAvailability}
+              isTogglePending={
+                isAvailabilityPending && variables?.id === category.id
+              }
+              scopeText={scopeText}
             />
           ))}
         </div>
+      )}
+
+      {categoryToDisable && (
+        <CategoryAvailabilityModal
+          category={categoryToDisable}
+          scopeLocationName={scopeLocationId ? scopeLocationName : null}
+          isPending={
+            isAvailabilityPending && variables?.id === categoryToDisable.id
+          }
+          onClose={() => setCategoryToDisable(null)}
+          onConfirm={() =>
+            applyAvailability(categoryToDisable, false, () =>
+              setCategoryToDisable(null),
+            )
+          }
+        />
       )}
 
       {isModalOpen && (

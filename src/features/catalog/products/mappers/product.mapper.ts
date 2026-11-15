@@ -1,11 +1,24 @@
-import { mapLocationDTOToModel } from "@/features/locations/mappers/location.mapper";
 import { mapCategoryShortDTOToModel } from "../../categories/mappers/category.mapper";
 import {
   CreateProductDTO,
   ProductDTO,
+  ProductLocationDTO,
   ProductPageItemDTO,
 } from "../dto/product.dto";
-import { Product, ProductPageItem } from "../models/product.model";
+import {
+  Product,
+  ProductLocation,
+  ProductPageItem,
+} from "../models/product.model";
+
+export const mapProductLocationDTOToModel = (
+  dto: ProductLocationDTO,
+): ProductLocation => ({
+  id: dto.id,
+  name: dto.name,
+  // Respuestas anteriores al campo: se asume disponible.
+  available: dto.available ?? true,
+});
 import { CreateProductForm } from "../validators/product.schema";
 
 export const mapProductDTOToModel = (dto: ProductDTO): Product => ({
@@ -24,7 +37,7 @@ export const mapProductDTOToModel = (dto: ProductDTO): Product => ({
     name: dto.category.name,
     sortOrder: dto.category.sortOrder,
   },
-  locations: dto.locations.map(mapLocationDTOToModel),
+  locations: dto.locations.map(mapProductLocationDTOToModel),
   audit: dto.audit,
 });
 
@@ -43,7 +56,9 @@ export const mapProductPageItemDTOToModel = (
   sortOrder: dto.sortOrder,
   category: mapCategoryShortDTOToModel(dto.category),
   locations:
-    dto.locations.length > 0 ? dto.locations.map(mapLocationDTOToModel) : [],
+    dto.locations.length > 0
+      ? dto.locations.map(mapProductLocationDTOToModel)
+      : [],
 });
 
 export const mapProductFormToDTO = (

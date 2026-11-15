@@ -1,4 +1,9 @@
 import { LocationDTO } from "@/features/locations/dto/location.dto";
+
+/** Sucursal del producto con su disponibilidad en ella. */
+export interface ProductLocationDTO extends LocationDTO {
+  available: boolean;
+}
 import { CategoryShortDTO } from "@/features/catalog/categories/dto/cateogory.dto";
 import { UUID } from "@/types/common";
 import { Audit } from "@/types/audit.types";
@@ -15,7 +20,7 @@ export interface ProductDTO {
   sortOrder: number;
   haveModifiers: boolean;
   category: CategoryShortDTO;
-  locations: LocationDTO[];
+  locations: ProductLocationDTO[];
   audit: Audit;
 }
 
@@ -31,7 +36,7 @@ export interface ProductPageItemDTO {
   haveModifiers: boolean;
   sortOrder: number;
   category: CategoryShortDTO;
-  locations: LocationDTO[] | [];
+  locations: ProductLocationDTO[] | [];
 }
 
 export interface CreateProductDTO {

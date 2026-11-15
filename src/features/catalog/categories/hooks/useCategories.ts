@@ -2,12 +2,15 @@ import { QUERY_KEYS } from "@/constants";
 import {
   useDeleteHandler,
   useGetHandler,
+  usePatchHandler,
   usePostHandler,
   usePutHandler,
 } from "@/hooks/api.handlers";
+import { toast } from "sonner";
 import { httpClient } from "@/services/http.client";
 import { ApiErrorResponse, ApiResponse } from "@/types/api.types";
 import {
+  CategoryAvailabilityResponseDTO,
   CategoryDTO,
   CategoryShortDTO,
   CreateCategoryDTO,
@@ -20,12 +23,22 @@ import {
   mapMenuCategoryDTOToModel,
 } from "../mappers/category.mapper";
 
-export const useCategoriesHandler = (enabled: boolean = true) => {
+/**
+ * @param locationId alcance de los conteos (productsCount /
+ *   availableProductsCount). MANAGER: la sucursal del filtro o null (todas).
+ *   ADMIN/CASHIER: el backend usa siempre la del token.
+ */
+export const useCategoriesHandler = (
+  locationId: string | null = null,
+  enabled: boolean = true,
+) => {
   const handler = useGetHandler({
-    queryKey: QUERY_KEYS.CATEGORIES,
+    queryKey: QUERY_KEYS.CATEGORIES_LIST(locationId),
     queryFn: () =>
       httpClient
-        .get<ApiResponse<CategoryDTO[]>>("/categories")
+        .get<ApiResponse<CategoryDTO[]>>("/categories", {
+          params: locationId ? { locationId } : {},
+        })
         .then((r) => r.data.data!),
     enabled,
     staleTime: 5 * 60 * 1000, // 5 minutes
@@ -60,7 +73,7 @@ export const useGetMenuHandler = (enabled: boolean = true) => {
 
 export const useCategoriesSimpleHandler = (enabled: boolean = true) => {
   const handler = useGetHandler({
-    queryKey: QUERY_KEYS.CATEGORIES,
+    queryKey: QUERY_KEYS.CATEGORIES_SIMPLE,
     queryFn: () =>
       httpClient
         .get<
@@ -129,3 +142,35 @@ export const useDeleteCategory = (categoryId: string) => {
 
   return { ...handler };
 };
+
+/**
+ * PATCH /categories/:id/availability[?locationId] — prende/apaga todos los
+ * productos de la categoría en la sucursal indicada (o en todas, sin
+ * locationId). ADMIN no envía locationId: el backend usa el del token.
+ */
+export const useUpdateCategoryAvailability = () =>
+  usePatchHandler({
+    mutationFn: ({
+      id,
+      available,
+      locationId,
+    }: {
+      id: string;
+      available: boolean;
+      locationId?: string | null;
+    }) =>
+      httpClient
+        .patch<ApiResponse<CategoryAvailabilityResponseDTO>>(
+          `/categories/${id}/availability`,
+          { available },
+          { params: locationId ? { locationId } : {} },
+        )
+        .then((r) => r.data),
+    retry: false,
+    // Conteos de categorías, disponibilidad en la tabla de productos y menú POS.
+    invalidateKeys: [QUERY_KEYS.CATEGORIES, QUERY_KEYS.PRODUCTS, QUERY_KEYS.MENU],
+    onSuccessCallback: (response) => {
+      // "Se desactivaron 5 productos en Casa Matriz", etc.
+      toast.success(response.message ?? "Disponibilidad actualizada");
+    },
+  });

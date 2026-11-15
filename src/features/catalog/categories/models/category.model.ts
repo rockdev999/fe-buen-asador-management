@@ -7,6 +7,8 @@ export interface Category {
   name: string;
   sortOrder: string;
   locations: Location[];
+  productsCount: number;
+  availableProductsCount: number;
   audit: Audit | null;
 }
 

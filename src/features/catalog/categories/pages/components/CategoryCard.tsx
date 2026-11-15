@@ -1,13 +1,28 @@
 import { Building2, FolderTree, ListOrdered } from "lucide-react";
 import { Category } from "../../models/category.model";
 import { formatLocalDate } from "@/lib/formatters";
+import { cn } from "@/lib/utils";
+import { Switch } from "@/components/shared/Basics/Switch";
+import { getCategoryAvailability } from "@/features/catalog/products/utils/product-availability";
 
 interface CategoryCardProps {
   category: Category;
   onEdit: (category: Category) => void;
+  /** Si se define, muestra el switch de disponibilidad. */
+  onToggleAvailability?: (category: Category, available: boolean) => void;
+  isTogglePending?: boolean;
+  /** "en Casa Matriz" / "en todas las sucursales", para el texto de ayuda. */
+  scopeText?: string;
 }
 
-export function CategoryCard({ category, onEdit }: CategoryCardProps) {
+export function CategoryCard({
+  category,
+  onEdit,
+  onToggleAvailability,
+  isTogglePending = false,
+  scopeText = "",
+}: CategoryCardProps) {
+  const state = getCategoryAvailability(category);
   return (
     <div
       className="group rounded-2xl border border-surface bg-white p-4 shadow-sm transition-all hover:border-brand/30 hover:shadow-md"
@@ -50,6 +65,44 @@ export function CategoryCard({ category, onEdit }: CategoryCardProps) {
             </div>
           </div>
         </div>
+
+        {onToggleAvailability && (
+          // Zona del switch: no abrir el modal de edición de la tarjeta.
+          <div
+            className="flex shrink-0 flex-col items-end gap-1"
+            onClick={(e) => e.stopPropagation()}
+            title={
+              state === "empty"
+                ? "La categoría no tiene productos " + scopeText
+                : "Activa o desactiva todos sus productos " + scopeText
+            }
+          >
+            <Switch
+              checked={state === "on"}
+              indeterminate={state === "partial"}
+              disabled={state === "empty" || isTogglePending}
+              onChange={(next) => onToggleAvailability(category, next)}
+              ariaLabel={
+                "Disponible: " +
+                category.name +
+                (state === "partial" ? " (parcial)" : "")
+              }
+            />
+            <span
+              className={cn(
+                "text-[10px] tabular-nums whitespace-nowrap",
+                state === "on" && "text-green-600",
+                state === "off" && "text-red-500",
+                state === "partial" && "text-amber-600",
+                state === "empty" && "text-muted-foreground",
+              )}
+            >
+              {state === "empty"
+                ? "Sin productos"
+                : `${category.availableProductsCount}/${category.productsCount} disponibles`}
+            </span>
+          </div>
+        )}
       </div>
 
       <div className="flex items-center mt-2 rounded-xl bg-surface/40 px-3 py-2">

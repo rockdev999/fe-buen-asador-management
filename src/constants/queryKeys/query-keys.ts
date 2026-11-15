@@ -32,6 +32,14 @@ export const QUERY_KEYS = {
   PRODUCTS: ["products"],
   PRODUCT: (id: string) => ["products", id],
   CATEGORIES: ["categories"],
+  // Prefijo común ["categories"]: invalidar CATEGORIES refresca ambas.
+  // Antes compartían la misma key con formas distintas y se pisaban la caché.
+  CATEGORIES_LIST: (locationId: string | null) => [
+    "categories",
+    "list",
+    locationId ?? "all",
+  ],
+  CATEGORIES_SIMPLE: ["categories", "simple"],
   CATEGORY: (id: string) => ["categories", id],
   MODIFIERS: ["modifiers"],
   MODIFIER: (id: string) => ["modifiers", id],
