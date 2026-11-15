@@ -1,11 +1,16 @@
-import { ShiftStatusEnum } from "@/constants";
-import { Location } from "@/features/locations/models/location.model";
+import { PaymentMethodEnum, ShiftStatusEnum } from "@/constants";
 import { UserShort } from "@/features/users/models/user.model";
 import { ISODateTimeString, UUID } from "@/types/common";
 
+export interface ShiftReview {
+  reviewedBy: UserShort;
+  reviewedAt: ISODateTimeString;
+  notes: string | null;
+}
+
 export interface Shift {
   id: UUID;
-  location: Location;
+  location: { id: UUID; name: string };
   cashier: UserShort;
   openedAt: ISODateTimeString;
   closedAt: ISODateTimeString | null;
@@ -13,7 +18,28 @@ export interface Shift {
   declaredAmount: number | null;
   systemAmount: number | null;
   difference: number | null;
+  notes: string | null;
   status: ShiftStatusEnum;
+  review: ShiftReview | null;
   createdAt: ISODateTimeString;
   updatedAt: ISODateTimeString;
+}
+
+export interface ShiftSummaryCount {
+  count: number;
+  total: number;
+}
+
+export interface ShiftSummary {
+  shiftId: UUID;
+  openedAt: ISODateTimeString;
+  initialAmount: number;
+  sales: ShiftSummaryCount & {
+    byPaymentMethod: ({ method: PaymentMethodEnum } & ShiftSummaryCount)[];
+    annulled: ShiftSummaryCount;
+  };
+  expenses: ShiftSummaryCount;
+  payroll: ShiftSummaryCount;
+  pendingOrders: number;
+  expectedCash: number | null;
 }

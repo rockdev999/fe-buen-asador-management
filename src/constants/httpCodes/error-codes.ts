@@ -40,7 +40,7 @@ export const API_ERROR_CODES = {
 export type ApiErrorCode =
   (typeof API_ERROR_CODES)[keyof typeof API_ERROR_CODES];
 
-// errorCode específicos de dominio (Inventory/Ingredients) que el FE
+// errorCode específicos de dominio (Inventory/Ingredients/Turnos) que el FE
 // traduce a un mensaje curado en vez de mostrar el mensaje crudo del BE.
 export const KNOWN_ERROR_CODES = {
   LOCATION_ID_REQUIRED: "LOCATION_ID_REQUIRED",
@@ -49,6 +49,17 @@ export const KNOWN_ERROR_CODES = {
   INSUFFICIENT_STOCK: "INSUFFICIENT_STOCK",
   STOCK_NOT_FOUND: "STOCK_NOT_FOUND",
   ALERT_NOT_FOUND: "ALERT_NOT_FOUND",
+
+  // Turnos de caja
+  NO_ACTIVE_SHIFT: "NO_ACTIVE_SHIFT",
+  SHIFT_ALREADY_OPEN: "SHIFT_ALREADY_OPEN",
+  SHIFT_HAS_PENDING_ORDERS: "SHIFT_HAS_PENDING_ORDERS",
+  SHIFT_STILL_OPEN: "SHIFT_STILL_OPEN",
+  SHIFT_NOT_OWNED: "SHIFT_NOT_OWNED",
+  SHIFT_CLOSED: "SHIFT_CLOSED",
+  SHIFT_NOTES_REQUIRED: "SHIFT_NOTES_REQUIRED",
+  SHIFT_NOT_PENDING: "SHIFT_NOT_PENDING",
+  SHIFT_REVIEW_NOTES_REQUIRED: "SHIFT_REVIEW_NOTES_REQUIRED",
 } as const;
 
 export type KnownErrorCode =
@@ -63,4 +74,17 @@ export const KNOWN_ERROR_MESSAGES: Record<KnownErrorCode, string> = {
   INSUFFICIENT_STOCK: "No hay stock suficiente para realizar este ajuste.",
   STOCK_NOT_FOUND: "No se encontró el registro de stock.",
   ALERT_NOT_FOUND: "No se encontró la alerta.",
+
+  NO_ACTIVE_SHIFT: "No tienes un turno de caja abierto.",
+  SHIFT_ALREADY_OPEN: "Ya existe un turno abierto en esta sucursal.",
+  SHIFT_HAS_PENDING_ORDERS:
+    "Hay pedidos sin cobrar ni cancelar. Resuélvelos antes de cerrar el turno.",
+  SHIFT_STILL_OPEN: "Cierra tu turno de caja antes de cambiar de sucursal.",
+  SHIFT_NOT_OWNED: "Este turno lo abrió otro cajero.",
+  SHIFT_CLOSED: "No se puede anular: el turno de esta venta ya fue cerrado.",
+  SHIFT_NOTES_REQUIRED:
+    "El monto no coincide con el esperado. Explica la diferencia.",
+  SHIFT_NOT_PENDING: "Este cierre no está pendiente de aprobación.",
+  SHIFT_REVIEW_NOTES_REQUIRED:
+    "El cierre tiene diferencia. Deja un comentario para aprobarlo.",
 };

@@ -112,6 +112,12 @@ export const NAV_SECTIONS: NavSection[] = [
         roles: [RoleEnum.MANAGER, RoleEnum.ADMIN],
       },
       {
+        label: "Turnos de caja",
+        path: PATHS.SHIFTS,
+        icon: Archive,
+        roles: [RoleEnum.MANAGER, RoleEnum.ADMIN],
+      },
+      {
         label: "Reportes",
         path: PATHS.REPORTS,
         icon: BarChart3,

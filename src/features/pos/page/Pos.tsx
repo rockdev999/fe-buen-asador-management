@@ -141,7 +141,7 @@ export const Pos = () => {
   return (
     <div className="relative flex h-full overflow-hidden">
       {/* Modal turno — bloqueante */}
-      {!isOpen && <ShiftModal />}
+      {shiftStatus !== "pending" && !isOpen && <ShiftModal />}
 
       {sale && (
         <div style={{ position: "absolute", left: "-9999px", top: 0 }}>

@@ -15,12 +15,18 @@ import { t } from "@/locales/es";
 import { SwitchLocationModal } from "@/features/auth/components/SwitchLocationModal";
 import { logoutSession } from "@/services/auth/session.service";
 import { StockAlertsBell } from "@/features/notifications/components/StockAlertsBell";
+import { useActiveShift } from "@/features/pos/hooks/useShift";
+import { PATHS } from "@/routes/paths";
+import { useNavigate } from "react-router-dom";
 
 const trans = t.auth.switchLocation;
 
 export function Topbar() {
-  const { user } = useAuth();
+  const { user, isCashier } = useAuth();
+  const navigate = useNavigate();
   const [isSwitchLocationOpen, setIsSwitchLocationOpen] = useState(false);
+  const { isOpen: hasOpenShift, status: shiftStatus } =
+    useActiveShift(isCashier);
 
   const canSwitchLocation =
     user?.role === RoleEnum.ADMIN || user?.role === RoleEnum.CASHIER;
@@ -46,16 +52,19 @@ export function Topbar() {
 
       {/* Right side */}
       <div className="ml-auto flex items-center gap-3">
-        <div>
-          {user?.role === RoleEnum.CASHIER && (
-            <span
-              className="text-xs font-medium text-muted-foreground bg-inkblack px-2 py-1 rounded flex items-center gap-1"
-              style={{ color: "#4ade80" }}
-            >
-              Turno abierto
-            </span>
-          )}
-        </div>
+        {isCashier && shiftStatus !== "pending" && (
+          <button
+            type="button"
+            onClick={() => navigate(PATHS.SHIFTS)}
+            className={
+              hasOpenShift
+                ? "text-xs font-medium bg-inkblack text-green-400 px-2 py-1 rounded"
+                : "text-xs font-medium bg-surface text-muted-foreground px-2 py-1 rounded"
+            }
+          >
+            {hasOpenShift ? "Turno abierto" : "Sin turno"}
+          </button>
+        )}
         <StockAlertsBell />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

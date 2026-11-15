@@ -156,7 +156,15 @@ export const QUERY_KEYS = {
   // Turnos
   SHIFTS: ["shifts"],
   SHIFT: (id: string) => ["shifts", id],
+  // Prefijo de SHIFT_ACTIVE_SUMMARY: invalidar el turno activo refresca su resumen.
   SHIFT_ACTIVE: ["shifts", "active"],
+  SHIFT_ACTIVE_SUMMARY: ["shifts", "active", "summary"],
+  SHIFT_SUMMARY: (id: string) => ["shifts", id, "summary"],
+  PAGINATION_SHIFTS: (params: Record<string, any>) => [
+    "shifts",
+    "page",
+    params,
+  ],
 
   // Dashboard
   // Prefijo ["dashboard"]: invalidar DASHBOARD refresca todas las sucursales.

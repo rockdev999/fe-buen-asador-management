@@ -1,14 +1,12 @@
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../auth/hooks/useAuth";
-import { RoleEnum } from "@/constants";
-import { PATHS } from "@/routes";
+import { getHomePath } from "@/routes/home-path";
 
 export function NotFound() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  const homeRoute =
-    user?.role === RoleEnum.CASHIER ? PATHS.SHIFTS : PATHS.DASHBOARD;
+  const homeRoute = getHomePath(user?.role);
 
   return (
     <div className="flex flex-col items-center justify-center h-full gap-4 text-white">

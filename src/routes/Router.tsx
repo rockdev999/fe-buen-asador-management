@@ -27,6 +27,7 @@ import { Expenses } from "@/features/finances/expenses/pages/Expenses";
 import { Payroll } from "@/features/finances/payroll/pages/Payroll";
 import { Reports } from "@/features/finances/reports/pages/Reports";
 import { Dashboard } from "@/features/dashboard/pages/Dashboard";
+import { Shifts } from "@/features/shifts/pages/Shifts";
 
 export const router = createBrowserRouter([
   { path: PATHS.LOGIN, element: <Login /> },
@@ -91,6 +92,8 @@ export const router = createBrowserRouter([
                   { path: PATHS.SALES, element: <Sales /> },
                   { path: PATHS.EXPENSES, element: <Expenses /> },
                   { path: PATHS.PAYROLL, element: <Payroll /> },
+                  // Caja (cajero) / historial y aprobación de cierres (admin, gerente)
+                  { path: PATHS.SHIFTS, element: <Shifts /> },
                 ],
               },
 
@@ -99,8 +102,6 @@ export const router = createBrowserRouter([
                 element: <RoleRoute roles={[RoleEnum.CASHIER]} />,
                 children: [
                   { path: PATHS.POS, element: <Pos /> },
-                  // Caja: operación de dinero, solo el cajero
-                  { path: PATHS.SHIFTS, element: <div>Caja</div> },
                 ],
               },
 

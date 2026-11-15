@@ -1,53 +1,201 @@
-import { useGetHandler, usePostHandler } from "@/hooks/api.handlers";
-import { ShiftDTO, ShiftOpenDTO } from "../dto/shift.dto";
+import {
+  useGetHandler,
+  usePaginatedGetHandler,
+  usePostHandler,
+} from "@/hooks/api.handlers";
+import {
+  ShiftApproveDTO,
+  ShiftCloseDTO,
+  ShiftDTO,
+  ShiftOpenDTO,
+  ShiftSummaryDTO,
+} from "../dto/shift.dto";
 import { httpClient } from "@/services/http.client";
-import { mapShiftDTOToModel } from "../mappers/shift.mapper";
-import { QUERY_KEYS } from "@/constants";
+import {
+  mapShiftDTOToModel,
+  mapShiftSummaryDTOToModel,
+} from "../mappers/shift.mapper";
+import { DATA_TABLE, QUERY_KEYS, RoleEnum, ShiftStatusEnum } from "@/constants";
 import { ApiResponse } from "@/types/api.types";
-import { useEffect, useMemo } from "react";
-import { useCashierStore } from "../stores/cashier.store";
+import { useMemo } from "react";
+import { useQueryClient } from "@tanstack/react-query";
+import { toUtcDateRangeParams } from "@/lib/formatters";
 
+// ─── Cajero ───────────────────────────────────────────────────────────────────
+
+// POST /shifts/open — deja el turno OPEN y refresca GET /shifts/active.
 export const useOpenShiftHandler = () => {
-  const { setActiveShift } = useCashierStore();
+  const queryClient = useQueryClient();
 
   return usePostHandler({
     mutationFn: (dto: ShiftOpenDTO) =>
-      httpClient.post("/shifts/open", dto).then((r) => r.data),
-
-    onSuccessCallback: (data) => {
-      const shift = mapShiftDTOToModel(data);
-      setActiveShift(shift);
-      return shift;
+      httpClient
+        .post<ApiResponse<ShiftDTO>>("/shifts/open", dto)
+        .then((r) => r.data.data!),
+    onSuccessCallback: (shift) => {
+      queryClient.setQueryData<ShiftDTO | null>(QUERY_KEYS.SHIFT_ACTIVE, shift);
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.SHIFTS });
     },
   });
 };
 
+// GET /shifts/active — `data: null` si no hay turno abierto (ya no responde 404).
 export const useActiveShift = (enabled: boolean = true) => {
-  const { setActiveShift } = useCashierStore();
-
   const handler = useGetHandler({
     queryKey: QUERY_KEYS.SHIFT_ACTIVE,
     queryFn: () =>
       httpClient
-        .get<ApiResponse<ShiftDTO>>("/shifts/active")
-        .then((r) => r.data),
+        .get<ApiResponse<ShiftDTO | null>>("/shifts/active")
+        .then((r) => r.data.data ?? null),
     enabled,
-    staleTime: 2 * 60 * 1000, // 2 minutes
+    staleTime: 60 * 1000,
     retry: false,
+    roles: [RoleEnum.CASHIER, RoleEnum.ADMIN],
   });
 
   const data = useMemo(
-    () => (handler.data?.data ? mapShiftDTOToModel(handler.data.data) : null),
+    () => (handler.data ? mapShiftDTOToModel(handler.data) : null),
     [handler.data],
   );
 
-  const isOpen = !!data?.openedAt && !data?.closedAt;
-
-  useEffect(() => {
-    if (handler.status === "success") {
-      setActiveShift(data);
-    }
-  }, [handler.status, data]);
+  const isOpen = data?.status === ShiftStatusEnum.OPEN;
 
   return { ...handler, data, isOpen };
 };
+
+// GET /shifts/active/summary — cierre ciego: expectedCash siempre null.
+export const useActiveShiftSummary = (enabled: boolean = true) => {
+  const handler = useGetHandler({
+    queryKey: QUERY_KEYS.SHIFT_ACTIVE_SUMMARY,
+    queryFn: () =>
+      httpClient
+        .get<ApiResponse<ShiftSummaryDTO>>("/shifts/active/summary")
+        .then((r) => r.data.data!),
+    enabled,
+    staleTime: 0,
+    retry: false,
+    roles: [RoleEnum.CASHIER],
+  });
+
+  const data = useMemo(
+    () => (handler.data ? mapShiftSummaryDTOToModel(handler.data) : null),
+    [handler.data],
+  );
+
+  return { ...handler, data };
+};
+
+// POST /shifts/close — el turno queda PENDING (espera aprobación del admin).
+export const useCloseShift = () => {
+  const queryClient = useQueryClient();
+
+  return usePostHandler({
+    mutationFn: (dto: ShiftCloseDTO) =>
+      httpClient
+        .post<ApiResponse<ShiftDTO>>("/shifts/close", dto)
+        .then((r) => mapShiftDTOToModel(r.data.data!)),
+    successMessage: "Turno cerrado; queda pendiente de aprobación",
+    onSuccessCallback: () => {
+      queryClient.setQueryData(QUERY_KEYS.SHIFT_ACTIVE, null);
+      queryClient.removeQueries({ queryKey: QUERY_KEYS.SHIFT_ACTIVE_SUMMARY });
+      queryClient.invalidateQueries({ queryKey: QUERY_KEYS.SHIFTS });
+    },
+  });
+};
+
+// ─── Admin / Manager ──────────────────────────────────────────────────────────
+
+interface UseShiftsPageParams {
+  page: number;
+  status?: string;
+  cashierId?: string;
+  /** Solo MANAGER: al ADMIN el backend le fuerza su sucursal. */
+  locationId?: string;
+  dateFrom?: string;
+  dateTo?: string;
+}
+
+// GET /shifts/page — historial y bandeja de aprobación (status=PENDING).
+export function useShiftsPage({
+  page,
+  status,
+  cashierId,
+  locationId,
+  dateFrom,
+  dateTo,
+}: UseShiftsPageParams) {
+  const params = {
+    page,
+    limit: DATA_TABLE.SHIFTS.limit ?? 10,
+    ...(status && { status }),
+    ...(cashierId && { cashierId }),
+    ...(locationId && { locationId }),
+    ...toUtcDateRangeParams(dateFrom, dateTo),
+  };
+
+  return usePaginatedGetHandler<ShiftDTO, ReturnType<typeof mapShiftDTOToModel>>({
+    queryKey: QUERY_KEYS.PAGINATION_SHIFTS(params),
+    queryFn: () =>
+      httpClient
+        .get<ApiResponse<ShiftDTO[]>>("/shifts/page", { params })
+        .then((r) => r.data),
+    select: mapShiftDTOToModel,
+    params,
+    staleTime: 0,
+    roles: [RoleEnum.ADMIN, RoleEnum.MANAGER],
+  });
+}
+
+// GET /shifts/:id
+export function useShiftById(id: string | null) {
+  const handler = useGetHandler({
+    queryKey: QUERY_KEYS.SHIFT(id ?? ""),
+    queryFn: () =>
+      httpClient
+        .get<ApiResponse<ShiftDTO>>(`/shifts/${id}`)
+        .then((r) => r.data.data!),
+    enabled: !!id,
+    staleTime: 0,
+    roles: [RoleEnum.ADMIN, RoleEnum.MANAGER],
+  });
+
+  const data = useMemo(
+    () => (handler.data ? mapShiftDTOToModel(handler.data) : null),
+    [handler.data],
+  );
+
+  return { ...handler, data };
+}
+
+// GET /shifts/:id/summary — con expectedCash calculado.
+export function useShiftSummaryById(id: string | null) {
+  const handler = useGetHandler({
+    queryKey: QUERY_KEYS.SHIFT_SUMMARY(id ?? ""),
+    queryFn: () =>
+      httpClient
+        .get<ApiResponse<ShiftSummaryDTO>>(`/shifts/${id}/summary`)
+        .then((r) => r.data.data!),
+    enabled: !!id,
+    staleTime: 0,
+    roles: [RoleEnum.ADMIN, RoleEnum.MANAGER],
+  });
+
+  const data = useMemo(
+    () => (handler.data ? mapShiftSummaryDTOToModel(handler.data) : null),
+    [handler.data],
+  );
+
+  return { ...handler, data };
+}
+
+// POST /shifts/:id/approve — PENDING → CLOSED. Solo ADMIN.
+export function useApproveShift() {
+  return usePostHandler({
+    mutationFn: ({ id, dto }: { id: string; dto: ShiftApproveDTO }) =>
+      httpClient
+        .post<ApiResponse<ShiftDTO>>(`/shifts/${id}/approve`, dto)
+        .then((r) => mapShiftDTOToModel(r.data.data!)),
+    successMessage: "Cierre aprobado",
+    invalidateKeys: [QUERY_KEYS.SHIFTS],
+  });
+}

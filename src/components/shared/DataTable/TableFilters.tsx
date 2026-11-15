@@ -24,6 +24,8 @@ interface TableFiltersProps {
   extraValues?: Record<string, string>;
   onClearExtra?: () => void;
   isLoading?: boolean;
+  /** false oculta la búsqueda de texto (endpoints que no aceptan `search`). */
+  showSearch?: boolean;
 }
 
 export function TableFilters({
@@ -36,6 +38,7 @@ export function TableFilters({
   extraValues = {},
   isLoading = false,
   onClearExtra,
+  showSearch = true,
 }: TableFiltersProps) {
   const [search, setSearch] = useState(initialValues.search ?? "");
   const [values, setValues] = useState<Record<string, string>>(initialValues);
@@ -105,6 +108,7 @@ export function TableFilters({
       className="flex items-center gap-2 px-4 py-2.5 border-b border-surface bg-white flex-shrink-0 flex-wrap"
     >
       {/* Search */}
+      {showSearch && (
       <div className="relative">
         <Search
           size={13}
@@ -133,6 +137,7 @@ export function TableFilters({
           </button>
         )}
       </div>
+      )}
 
       {/* Dropdowns */}
       {dropdowns.map((dropdown) => {

@@ -31,7 +31,8 @@ type TableKey =
   | "PRODUCTS"
   | "INGREDIENTS"
   | "EXPENSES"
-  | "PAYROLL";
+  | "PAYROLL"
+  | "SHIFTS";
 
 type DataTableConfig = Record<TableKey, TableConfig>;
 
@@ -130,5 +131,17 @@ export const DATA_TABLE: DataTableConfig = {
     showPagination: true,
     showResults: true,
     url: "/finances/payroll/page",
+  },
+
+  SHIFTS: {
+    id: "dt-shifts",
+    defaultSorting: {
+      columnKey: "openedAt",
+      direction: SortDirectionEnum.DESC,
+    },
+    limit: 10,
+    showPagination: true,
+    showResults: true,
+    url: "/shifts/page",
   },
 };

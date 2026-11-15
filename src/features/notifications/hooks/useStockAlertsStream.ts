@@ -13,7 +13,8 @@ import {
   StockAlertEvent,
 } from "../models/stock-alert-event.model";
 
-const STREAM_ROLES = [RoleEnum.MANAGER, RoleEnum.ADMIN, RoleEnum.CASHIER];
+// El backend responde 403 al CASHIER en /notifications/stream.
+const STREAM_ROLES = [RoleEnum.MANAGER, RoleEnum.ADMIN];
 const ALERTS_PAGE_ROLES = [RoleEnum.MANAGER, RoleEnum.ADMIN];
 const TOAST_DURATION_MS = 10_000;
 

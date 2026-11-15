@@ -139,7 +139,9 @@ export async function errorInterceptor(
     logoutSession();
   }
 
-  const hasFieldErrors = fields.length > 0;
+  // Un errorCode conocido ya trae un mensaje curado: se muestra ese en vez de
+  // un toast por campo (p. ej. SHIFT_NOTES_REQUIRED llega con errors[notes]).
+  const hasFieldErrors = fields.length > 0 && !isKnownErrorCode(errorCode);
 
   if (hasFieldErrors) {
     fields.forEach(({ field, message: fieldMessage }) => {

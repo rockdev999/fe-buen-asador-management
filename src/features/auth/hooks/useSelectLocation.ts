@@ -8,7 +8,6 @@ import { PATHS } from "@/routes";
 import { usePostHandler } from "@/hooks/api.handlers";
 import { httpClient } from "@/services/http.client";
 import { UUID } from "@/types/common";
-import { useCashierStore } from "@/features/pos/stores/cashier.store";
 
 export function useSelectLocation() {
   const { setSession } = useAuthStore();
@@ -28,8 +27,7 @@ export function useSelectLocation() {
       setSession(session);
       const { user } = session;
 
-      // Los datos en cache/turno pertenecen a la sucursal anterior.
-      useCashierStore.getState().clearShift();
+      // Los datos en cache (incluido el turno activo) pertenecen a la sucursal anterior.
       queryClient.clear();
 
       // Con contraseña temporal pendiente, el resto del sistema responde 403.

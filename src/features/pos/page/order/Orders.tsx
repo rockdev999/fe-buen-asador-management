@@ -16,6 +16,8 @@ import { useNavigate } from "react-router-dom";
 import { PATHS } from "@/routes";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { ManagerOrders } from "./ManagerOrders";
+import { useActiveShift } from "../../hooks/useShift";
+import { toast } from "sonner";
 
 export function Orders() {
   const { isManager } = useAuth();
@@ -40,6 +42,10 @@ function CashierAdminOrders() {
   const [updateDiscount, setUpdateDiscount] = useState<number | null>(null);
 
   const navigate = useNavigate();
+  const { isCashier } = useAuth();
+  // El backend rechaza POST /sales sin turno OPEN (409 NO_ACTIVE_SHIFT);
+  // al cajero se le avisa antes de abrir el cobro.
+  const { isOpen: hasActiveShift } = useActiveShift(isCashier);
 
   const { data: selectedOrder } = useGetOrderById(selectedOrderId);
   const {
@@ -74,6 +80,10 @@ function CashierAdminOrders() {
   }
 
   function handleCreateOrder() {
+    if (isCashier && !hasActiveShift) {
+      toast.warning("Necesitas un turno de caja abierto para cobrar");
+      return;
+    }
     setView("payment");
   }
 
@@ -166,7 +176,9 @@ function CashierAdminOrders() {
           customerName={selectedOrder?.customerName ?? null}
           onEmitInvoice={handleEmitInvoice}
           onClose={() => {
-            navigate(PATHS.POS);
+            // Solo el cajero tiene POS; el admin se queda en Pedidos.
+            if (isCashier) navigate(PATHS.POS);
+            else setView("idle");
           }}
         />
       )}

@@ -120,21 +120,21 @@ El árbol de rutas se define con `createBrowserRouter` y tiene tres niveles de p
   <AppLayout>                    → sidebar + topbar + <Outlet/>
     /                            → RoleBasedRedirect (decide destino según rol)
     <RoleRoute roles=[MANAGER,ADMIN]>
-      /dashboard                 → placeholder
+      /dashboard                 → Dashboard
     <RoleRoute roles=[MANAGER]>
       /users                     → Users
       /locations                 → Locations
+      /reports                    → Reports
     <RoleRoute roles=[MANAGER,ADMIN]>
       /catalog/products           → Products
       /catalog/categories         → Categories
       /catalog/modifiers          → Modifiers
       /inventory                  → Inventory
       /ingredients                → Supplies
-      /reports                    → placeholder
     <RoleRoute roles=[MANAGER,ADMIN,CASHIER]>
       /orders                     → Orders
       /sales                      → Sales
-      /shifts                     → placeholder ("Caja")
+      /shifts                     → Shifts (Cajero: Caja · Admin/Gerente: turnos de caja)
       /expenses                   → Expenses (vista según rol)
       /payroll                    → Payroll (vista según rol)
     <RoleRoute roles=[CASHIER]>
@@ -148,14 +148,14 @@ Todas las rutas (incluidas las de negocio ya implementadas) están centralizadas
 ### 3.2 Guards de acceso
 
 - **`ProtectedRoute.tsx`**: exige `isAuthenticated` (derivado de `!!token && !!user` en el store de sesión); si no, redirige a `/login`.
-- **`RoleRoute.tsx`**: recibe una lista de roles permitidos y usa `hasRole(...roles)`; si el usuario no cumple, redirige a `/dashboard`.
-- **`RoleBasedRedirect.tsx`**: al entrar a la raíz `/`, redirige según el rol de la sesión: Gerente/Administrador → `/dashboard`, Cajero → `/shifts`.
+- **`RoleRoute.tsx`**: recibe una lista de roles permitidos y usa `hasRole(...roles)`; si el usuario no cumple, redirige a la pantalla de inicio de su rol (`getHomePath`). Si esa pantalla es justo la prohibida, muestra 404 para no entrar en bucle.
+- **`RoleBasedRedirect.tsx`**: al entrar a la raíz `/`, redirige con `getHomePath` (`src/routes/home-path.ts`): Cajero → `/pos`, resto → `/dashboard`. Es el mismo destino que se usa tras elegir sucursal, cambiar contraseña y en el botón "Volver al inicio" del 404.
 
 ### 3.3 Menú de navegación (`src/config/navigation/navSections.ts`)
 
 El sidebar se genera dinámicamente a partir de una configuración declarativa `NAV_SECTIONS`, agrupada en secciones (**General, Administración, Finanzas, Operaciones, POS**), donde cada ítem puede tener `roles` (visibilidad condicionada) e hijos anidados (p. ej. "Catálogo" agrupa Productos/Categorías/Modificadores). El componente `Sidebar.tsx` filtra recursivamente qué mostrar según el rol del usuario autenticado, resalta la ruta activa, soporta grupos colapsables y puede replegarse a solo íconos.
 
-La visibilidad del menú no coincide exactamente con los permisos de ruta: por ejemplo, "Caja" aparece para Cajero y Administrador pero la ruta también admite al Gerente, y Egresos/Nómina aparecen en la sección "Finanzas" para Gerente/Administrador y en la sección "POS" para el Cajero (misma ruta, distinta ubicación en el menú). La autorización real la define siempre `Router.tsx` (y, en última instancia, el backend).
+La misma ruta puede aparecer con distinto nombre o sección según el rol: `/shifts` es "Caja" (sección Operaciones) para el Cajero y "Turnos de caja" (sección Finanzas) para Gerente/Administrador, y Egresos/Nómina aparecen en la sección "Finanzas" para Gerente/Administrador y en la sección "POS" para el Cajero (misma ruta, distinta ubicación en el menú). La autorización real la define siempre `Router.tsx` (y, en última instancia, el backend).
 
 ### 3.4 Páginas que se adaptan al rol
 
@@ -173,7 +173,7 @@ enum RoleEnum { MANAGER, ADMIN, CASHIER, EMPLOYEE }
 
 - **MANAGER (Gerente)**: control total — usuarios, sucursales, catálogo, inventario, insumos, y visión consolidada de pedidos/ventas/egresos/nómina de **todas** las sucursales. No opera en una sucursal fija.
 - **ADMIN (Administrador)**: gestiona catálogo/inventario/insumos/pedidos/ventas y consulta/edita egresos y nómina (incluido el sueldo diario de sus trabajadores), pero **acotado a su propia sucursal** (el backend fuerza el `locationId` del token; el frontend oculta selectores de sucursal para este rol). No registra pagos ni egresos: eso lo hace el cajero desde su turno.
-- **CASHIER (Cajero)**: acceso al POS, pedidos y ventas de su sucursal, y **registro** de egresos y pagos de nómina; requiere turno de caja abierto para operar (los egresos y pagos quedan vinculados al turno).
+- **CASHIER (Cajero)**: acceso al POS, pedidos y ventas de su sucursal, **registro** de egresos y pagos de nómina, y apertura/cierre de su turno de caja; requiere turno abierto para operar (ventas, egresos y pagos quedan vinculados al turno). No recibe el stream de alertas de stock (el backend le responde 403).
 - **EMPLOYEE (Empleado)**: definido en el enum pero sin rutas específicas asignadas actualmente (rol reservado para uso futuro).
 
 Nota: existe además un concepto independiente de **cargo de trabajo** (`JobPositionEnum`: parrillero, cocinero, ayudante de cocina, cajero, mesero, repartidor, administrador, otro) que es puramente descriptivo/operativo y no otorga permisos — no debe confundirse con el rol.
@@ -186,10 +186,10 @@ El sistema **no autentica en un solo paso**. El flujo es:
 
 **Paso 2 — Selección de sucursal.**
 - Si **todas** las sucursales del usuario son con rol Gerente (`isManagerOnly`), se omite la pantalla y se selecciona automáticamente sin sucursal fija (`locationId: null`) — el Gerente opera de forma consolidada.
-- En caso contrario, se muestra una pantalla para elegir la sucursal. Al confirmar, el backend emite el **token de acceso completo** y los datos completos del usuario (`UserDetails`, con el rol y la sucursal ya fijados para esa sesión). Se limpia el turno de caja previo (pertenecía a otra sucursal) y se invalida **todo** el caché de React Query, porque prácticamente todos los datos operativos (inventario, ventas, turnos) son específicos de la sucursal activa.
+- En caso contrario, se muestra una pantalla para elegir la sucursal. Al confirmar, el backend emite el **token de acceso completo** y los datos completos del usuario (`UserDetails`, con el rol y la sucursal ya fijados para esa sesión). Se limpia **todo** el caché de React Query (incluido el turno activo, que pertenecía a otra sucursal), porque prácticamente todos los datos operativos (inventario, ventas, turnos) son específicos de la sucursal activa.
 - Navegación resultante: Cajero → `/pos`; Gerente/Administrador → `/dashboard`.
 
-**Cambio de sucursal en caliente** (`SwitchLocationModal`, disponible desde el menú de usuario en el Topbar, solo para Administrador y Cajero): reutiliza el mismo mecanismo de selección de sucursal; si el usuario es Cajero con un turno de caja abierto, se bloquea el cambio hasta que cierre el turno.
+**Cambio de sucursal en caliente** (`SwitchLocationModal`, disponible desde el menú de usuario en el Topbar, solo para Administrador y Cajero): reutiliza el mismo mecanismo de selección de sucursal; si el usuario es Cajero con un turno de caja abierto, se bloquea el cambio hasta que cierre el turno (el backend también lo rechaza con `SHIFT_STILL_OPEN`).
 
 ### 4.3 Gestión de sesión (sin cookies, sin refresh token)
 
@@ -204,14 +204,13 @@ La sesión se guarda en un store de Zustand persistido en `localStorage` (`useAu
 El sistema separa claramente dos tipos de estado:
 
 - **Estado de servidor** (listados, detalle de entidades, mutaciones): gestionado con **TanStack React Query**, con `staleTime` configurado por endpoint (desde 0 para datos que deben estar siempre frescos, hasta 10 min para catálogos poco cambiantes) y `retry: 1` por defecto.
-- **Estado de cliente** (sesión, UI, carrito de venta): gestionado con **Zustand**, en 5 stores:
+- **Estado de cliente** (sesión, UI, carrito de venta): gestionado con **Zustand**, en 4 stores (el turno activo no vive en un store: se lee siempre de `GET /shifts/active` vía React Query):
 
 | Store | Persistido | Contenido |
 |---|---|---|
 | `useAuthStore` | Sí (`auth-storage`) | Sesión: `user`, `token`, `tempToken`, `locations` |
 | `useUiStore` | Sí (`ui-storage`) | `sidebarOpen` (colapso del sidebar) |
 | `useErrorStore` | No | Error puntual mostrado como toast global |
-| `useCashierStore` (feature POS) | Sí (`cashier-storage`) | `activeShift` (turno de caja abierto) |
 | `useCartStore` (feature POS) | No | Carrito de venta activo: ítems, tipo/canal de pedido, datos de cliente, descuento |
 
 No se usa Redux ni Context API para estado global — Zustand cubre todos los casos de estado compartido entre componentes sin pasar por props.
@@ -248,7 +247,7 @@ Las *query keys* están centralizadas en `src/constants/queryKeys/query-keys.ts`
 
 - **`AppLayout`**: shell general — sidebar + topbar + área de contenido (`<Outlet/>`), con el toast global montado.
 - **`Sidebar`**: menú lateral dinámico descrito en la sección 3.3, colapsable.
-- **`Topbar`**: muestra la sucursal activa, indicador de turno abierto (cajero), y menú de usuario (perfil, cambiar de sucursal, cerrar sesión).
+- **`Topbar`**: muestra la sucursal activa, indicador real del turno del cajero ("Turno abierto" / "Sin turno", lleva a Caja), y menú de usuario (perfil, cambiar de sucursal, cerrar sesión).
 
 ### 7.2 Design system propio (`src/components/shared/`, sobre primitivas `src/components/ui/` estilo shadcn/ui)
 
@@ -345,9 +344,19 @@ Componentes principales:
 - **Listado**: el Cajero ve los pagos del **turno activo**; Administrador y Gerente ven una tabla paginada con búsqueda y rango de fechas (el Gerente puede filtrar por sucursal o ver todas, con la sucursal en cada fila).
 - **Reporte** (Administrador/Gerente): total pagado y desglose por empleado en un período. A diferencia de egresos, el Gerente puede omitir la sucursal y obtener el consolidado de todas.
 
-### 8.10 Módulos definidos pero aún no implementados
+### 8.10 Turnos de caja (`features/shifts`) — ruta `/shifts`
 
-Las rutas y el menú ya contemplan los siguientes módulos, actualmente como *placeholders* (`<div>...</div>`): **Dashboard** (indicadores generales), **Reportes** y **Caja** (cierre/arqueo de turno — la apertura de turno sí está implementada dentro del POS, y hoy no existe un hook para cerrar el turno). Existen enums ya definidos (`ShiftStatusEnum`, `InvoiceStatusEnum`), lo que indica que su modelo de datos ya fue anticipado aunque la interfaz todavía no se construyó. La facturación del POS (sección 8.6) también está pendiente.
+Ciclo de vida: `OPEN → (cajero cierra y declara) → PENDING → (admin aprueba) → CLOSED`. Solo un turno `OPEN` por sucursal; un turno `PENDING` no bloquea abrir el siguiente.
+
+- **Apertura** (Cajero): desde el POS, con monto inicial (`POST /shifts/open`).
+- **Caja** (Cajero): muestra el turno activo y su resumen (`GET /shifts/active/summary`) y permite cerrarlo (`POST /shifts/close`). El **cierre es ciego**: el cajero declara el efectivo contado sin ver el monto esperado; la pantalla solo muestra cantidades y los totales de QR/transferencia (no los de efectivo, egresos ni nómina, con los que podría deducirlo). Si lo declarado no coincide, el backend responde `SHIFT_NOTES_REQUIRED` y la nota pasa a ser obligatoria. Con pedidos sin cobrar ni cancelar, el botón de cierre se deshabilita (`SHIFT_HAS_PENDING_ORDERS`).
+- **Turnos de caja** (Administrador/Gerente): historial paginado (`GET /shifts/page`) con filtro de estado y fechas (el Gerente además por sucursal). El Administrador entra a su bandeja de pendientes y aprueba cierres (`POST /shifts/:id/approve`); el comentario es obligatorio si hay diferencia. El Gerente solo consulta. El detalle muestra el arqueo completo (`GET /shifts/:id` y `/summary`, con `expectedCash`).
+
+Contrato completo de API: `CONTRATO_TURNOS_CAJA.md` del backend.
+
+### 8.11 Módulos pendientes
+
+La facturación del POS (sección 8.6) sigue sin conectar a un endpoint real.
 
 ---
 
@@ -378,15 +387,12 @@ Las rutas y el menú ya contemplan los siguientes módulos, actualmente como *pl
 | Ventas | `/sales` | Implementado |
 | Egresos | `/expenses` | Implementado |
 | Nómina | `/payroll` | Implementado |
-| Dashboard | `/dashboard` | Placeholder |
-| Reportes | `/reports` | Placeholder |
-| Caja (cierre/arqueo) | `/shifts` | Placeholder |
+| Dashboard | `/dashboard` | Implementado |
+| Reportes | `/reports` | Implementado |
+| Caja y turnos (cierre, arqueo, aprobación) | `/shifts` | Implementado |
 
 ### 10.2 Observaciones detectadas en el código
 
-- **Bucle de redirección posible para el Cajero**: `RoleRoute` redirige a `/dashboard` cuando el rol no está permitido, pero `/dashboard` tampoco admite al Cajero, así que un Cajero que entre a una ruta no autorizada (p. ej. `/users`) queda redirigiendo a `/dashboard` indefinidamente. Convendría redirigir a una ruta segura según el rol (como hace `RoleBasedRedirect`).
-- **Destino inicial inconsistente para el Cajero**: tras el login se le envía a `/pos`, pero al entrar a la raíz `/` `RoleBasedRedirect` lo envía a `/shifts`, que hoy es un placeholder.
-- **Sin cierre de turno**: el turno de caja se abre desde el POS pero no hay hook ni pantalla para cerrarlo; como cambiar de sucursal exige cerrar el turno, hoy el Cajero no puede cambiar de sucursal desde la interfaz una vez abierto un turno.
 - **Restos de la plantilla de Vite**: `src/App.tsx`, `src/App.css` y el `README.md` son los de la plantilla inicial y no se usan (la entrada real es `main.tsx` → `AppRouter`).
 - **Dependencias sin uso**: `react-hook-form` y `@hookform/resolvers` siguen en `package.json` aunque el proyecto usa Formik + Zod. Conviven además dos librerías de fechas (`react-datepicker` y `react-day-picker`).
 - **Archivo con errata**: `features/catalog/categories/dto/cateogory.dto.ts` y `forms/category.fom.ts` tienen el nombre mal escrito.
