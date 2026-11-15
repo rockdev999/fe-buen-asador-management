@@ -18,7 +18,8 @@ interface PaymentModalProps {
   getTotal: () => number;
   discount: number;
   onUpdateDiscount: (value: number) => void;
-  onConfirm: (method: PaymentMethodEnum) => void;
+  /** receivedAmount: lo entregado en efectivo (incluye el vuelto); en QR/transferencia, el total. */
+  onConfirm: (method: PaymentMethodEnum, receivedAmount: number) => void;
   onClose: () => void;
   isLoading: boolean;
 }
@@ -225,7 +226,7 @@ export function PaymentModal({
               type="button"
               disabled={!canConfirm}
               loading={isLoading}
-              onClick={() => onConfirm(method)}
+              onClick={() => onConfirm(method, isCash ? received : total)}
               className={cn(
                 "flex-1 h-9 text-[14px] font-semibold text-white flex items-center justify-center gap-1.5 transition-all",
                 canConfirm

@@ -18,10 +18,23 @@ import {
 import { DATA_TABLE, QUERY_KEYS, RoleEnum, ShiftStatusEnum } from "@/constants";
 import { ApiResponse } from "@/types/api.types";
 import { useMemo } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { QueryClient, useQueryClient } from "@tanstack/react-query";
 import { toUtcDateRangeParams } from "@/lib/formatters";
 
 // ─── Cajero ───────────────────────────────────────────────────────────────────
+
+// Para el CASHIER, el backend filtra egresos y nómina por su turno OPEN: al
+// abrir o cerrar turno esas listas cambian aunque sus parámetros no.
+const SHIFT_SCOPED_KEYS = [
+  ["finances", "expenses"],
+  ["finances", "payroll"],
+] as const;
+
+function invalidateShiftScoped(queryClient: QueryClient) {
+  SHIFT_SCOPED_KEYS.forEach((queryKey) =>
+    queryClient.invalidateQueries({ queryKey }),
+  );
+}
 
 // POST /shifts/open — deja el turno OPEN y refresca GET /shifts/active.
 export const useOpenShiftHandler = () => {
@@ -35,6 +48,7 @@ export const useOpenShiftHandler = () => {
     onSuccessCallback: (shift) => {
       queryClient.setQueryData<ShiftDTO | null>(QUERY_KEYS.SHIFT_ACTIVE, shift);
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.SHIFTS });
+      invalidateShiftScoped(queryClient);
     },
   });
 };
@@ -99,6 +113,7 @@ export const useCloseShift = () => {
       queryClient.setQueryData(QUERY_KEYS.SHIFT_ACTIVE, null);
       queryClient.removeQueries({ queryKey: QUERY_KEYS.SHIFT_ACTIVE_SUMMARY });
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.SHIFTS });
+      invalidateShiftScoped(queryClient);
     },
   });
 };

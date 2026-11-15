@@ -14,6 +14,7 @@ import { ErrorMessage } from "@/components/shared/Basics/ErrorMessage";
 import { MoneyInput } from "@/components/shared/Interactives/MoneyInput";
 import { AsyncDropdown } from "@/components/shared/Interactives/AsyncDropdown";
 import { formatLocalDateTime } from "@/lib/formatters";
+import { KNOWN_ERROR_CODES, ShiftStatusEnum } from "@/constants";
 import {
   useDeleteExpense,
   useGetExpenseById,
@@ -40,6 +41,9 @@ export const ExpenseModal = ({
   onSuccess,
 }: ExpenseModalProps) => {
   const [confirmDelete, setConfirmDelete] = useState(false);
+  // El backend responde 409 SHIFT_CLOSED si el turno del egreso ya no está
+  // OPEN (PENDING o CLOSED): cambiarlo alteraría el arqueo ya declarado.
+  const [lockedByServer, setLockedByServer] = useState(false);
 
   const { data: expense, status: expenseStatus } =
     useGetExpenseById(expenseId);
@@ -49,6 +53,19 @@ export const ExpenseModal = ({
   );
   const { mutate: deleteExpense, status: deleteStatus } =
     useDeleteExpense(expenseId);
+
+  const isShiftLocked =
+    lockedByServer ||
+    (!!expense?.shiftStatus && expense.shiftStatus !== ShiftStatusEnum.OPEN);
+  const canEdit = canManage && !isShiftLocked;
+
+  function handleMutationError(error: unknown) {
+    const { errorCode } = error as { errorCode?: string };
+    if (errorCode === KNOWN_ERROR_CODES.SHIFT_CLOSED) {
+      setLockedByServer(true);
+      setConfirmDelete(false);
+    }
+  }
 
   const initValues: ExpenseForm = useMemo(() => {
     if (!expense) return ExpenseFormConfig.initialValues;
@@ -77,7 +94,7 @@ export const ExpenseModal = ({
     validate: ExpenseFormConfig.validationSchema,
     onSubmit: (data) => {
       const dto = ExpenseFormConfig.mapFormToDTO(data);
-      updateExpense(dto, { onSuccess });
+      updateExpense(dto, { onSuccess, onError: handleMutationError });
     },
   });
 
@@ -86,7 +103,7 @@ export const ExpenseModal = ({
       setConfirmDelete(true);
       return;
     }
-    deleteExpense(undefined, { onSuccess });
+    deleteExpense(undefined, { onSuccess, onError: handleMutationError });
   };
 
   const isLoading = expenseStatus === "pending";
@@ -95,7 +112,7 @@ export const ExpenseModal = ({
     <AppModal size="md" maxHeightClassName="max-h-[85vh]">
       <PanelHeader
         icon={Receipt}
-        title={canManage ? "Editar egreso" : "Detalle del egreso"}
+        title={canEdit ? "Editar egreso" : "Detalle del egreso"}
         onClose={onClose}
       />
 
@@ -149,13 +166,27 @@ export const ExpenseModal = ({
               </div>
             )}
 
+            {canManage && isShiftLocked && (
+              <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5">
+                <AlertTriangle
+                  size={14}
+                  className="mt-0.5 shrink-0 text-amber-500"
+                />
+                <p className="text-[11px] leading-4 text-amber-800">
+                  Este egreso pertenece a un turno de caja ya cerrado. No se
+                  puede editar ni eliminar porque cambiaría el arqueo
+                  declarado por el cajero.
+                </p>
+              </div>
+            )}
+
             <FormSection icon={Receipt} title="Datos del egreso">
               <FormField>
                 <Label required>Categoría</Label>
                 <AsyncDropdown<ExpenseCategoryOption>
                   fullWidth
                   allowClear={false}
-                  disabled={!canManage}
+                  disabled={!canEdit}
                   placeholder="Seleccionar categoría"
                   emptyText="No hay categorías disponibles"
                   value={formValues.categoryId}
@@ -196,7 +227,7 @@ export const ExpenseModal = ({
                 onBlur={formHandleBlur}
                 touched={formTouched.description}
                 error={formErrors.description}
-                disabled={!canManage}
+                disabled={!canEdit}
                 rows={3}
                 className="rounded-xl bg-white text-[13px]"
               />
@@ -206,7 +237,7 @@ export const ExpenseModal = ({
                 <MoneyInput
                   id="amount"
                   name="amount"
-                  disabled={!canManage}
+                  disabled={!canEdit}
                   defaultValue={formValues.amount}
                   onChange={(value) => formSetFieldValue("amount", value)}
                   onBlur={() => formSetFieldTouched("amount", true)}
@@ -229,12 +260,12 @@ export const ExpenseModal = ({
                 onBlur={formHandleBlur}
                 touched={formTouched.receiptUrl}
                 error={formErrors.receiptUrl}
-                disabled={!canManage}
+                disabled={!canEdit}
                 className="h-9 rounded-xl bg-white text-[13px]"
               />
             </FormSection>
 
-            {canManage && confirmDelete && (
+            {canEdit && confirmDelete && (
               <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2.5">
                 <AlertTriangle
                   size={14}
@@ -249,7 +280,7 @@ export const ExpenseModal = ({
             )}
           </div>
 
-          {canManage && (
+          {canEdit && (
             <PanelFooter>
               <Button
                 type="button"

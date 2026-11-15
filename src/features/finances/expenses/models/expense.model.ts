@@ -1,4 +1,4 @@
-import { ExpenseCategoryEnum } from "@/constants";
+import { ExpenseCategoryEnum, ShiftStatusEnum } from "@/constants";
 import { Audit } from "@/types/audit.types";
 import { UUID } from "@/types/common";
 
@@ -22,6 +22,8 @@ export interface Expense {
   category: { id: UUID; name: string };
   location: { id: UUID; name: string };
   shiftId: UUID;
+  /** null si el backend no lo envía. */
+  shiftStatus: ShiftStatusEnum | null;
   registeredBy: { id: UUID; name: string };
   description: string;
   amount: number;

@@ -145,7 +145,8 @@ export const useCreateSale = () => {
         .post<ApiResponse<SaleDTO>>("/sales", dto)
         .then((r) => r.data.data!),
 
-    invalidateKeys: [QUERY_KEYS.SALES],
+    // El pedido pasa a PAID: también se refrescan pedidos (y su detalle).
+    invalidateKeys: [QUERY_KEYS.SALES, QUERY_KEYS.ORDERS],
   });
 
   const data = useMemo(

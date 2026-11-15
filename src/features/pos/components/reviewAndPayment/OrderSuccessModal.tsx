@@ -178,6 +178,7 @@ export function OrderSuccessModal({
           <button
             type="button"
             disabled
+            title="La facturación electrónica aún no está disponible"
             onClick={onEmitInvoice}
             className="w-full h-9 rounded-xl border border-gray-300 text-gray-500 text-[14px] font-medium bg-gray-100 flex items-center justify-center gap-1.5 cursor-not-allowed"
           >

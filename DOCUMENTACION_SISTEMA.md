@@ -326,9 +326,10 @@ Reparto de responsabilidades por rol:
 | Ver detalle / editar / eliminar | No (el backend responde 403) | Sí | Sí |
 | Reporte por período | No | Su sucursal | Elige sucursal |
 
-- **Registro**: el cajero no envía sucursal ni turno; el backend los resuelve a partir del token y del turno abierto. Sin turno abierto, el botón "Registrar" queda deshabilitado (y el backend respondería `shifts.NOT_OPEN`).
+- **Registro**: el cajero no envía sucursal ni turno; el backend los resuelve a partir del token y del turno abierto. Sin turno abierto, el botón "Registrar" queda deshabilitado (y el backend responde 409 `NO_ACTIVE_SHIFT`).
+- **Edición y eliminación**: solo mientras el turno del egreso siga `OPEN`. Si ya está `PENDING` o `CLOSED`, el backend responde 409 `SHIFT_CLOSED` (cambiarlo alteraría el arqueo declarado) y el modal pasa a solo lectura con la explicación. Si el backend envía `shift.status` en el egreso, el bloqueo se aplica antes de intentar guardar.
 - **Edición**: se hace con `PUT` completo — el backend no acepta actualización parcial, así que siempre se envían los cuatro campos. La eliminación es definitiva (*hard delete*).
-- **Listado**: tabla paginada con filtros de categoría, rango de fechas y búsqueda; el orden lo fija el backend (más reciente primero). Solo existe un endpoint por sucursal, por lo que el Gerente debe elegir una sucursal antes de ver datos.
+- **Listado**: tabla paginada con filtros de categoría, rango de fechas y búsqueda; el orden lo fija el backend (más reciente primero). Solo existe un endpoint por sucursal, por lo que el Gerente debe elegir una sucursal antes de ver datos. El Cajero solo ve los egresos de su **turno abierto**: lo fuerza el backend (ignora cualquier `shiftId` y, sin turno, devuelve la lista vacía), y la pantalla lo indica en el subtítulo y en el estado vacío.
 - **Reporte** (`ExpenseReportView`): total de egresos, cantidad y desglose por categoría para un rango de fechas. Requiere sucursal + fechas; el backend responde `LOCATION_ID_REQUIRED` si falta la sucursal.
 
 ### 8.9 Nómina (`features/finances/payroll`) — ruta `/payroll`, Gerente + Administrador + Cajero
@@ -341,7 +342,7 @@ Componentes principales:
 - **Pago masivo** (`BatchPayrollModal`, Cajero): parte de la hoja de pago, con todos los trabajadores marcados y el monto sugerido igual al sueldo diario; el cajero desmarca a quien no trabajó y ajusta montos. Se envía en una sola transacción (hasta 200 pagos): si un pago falla, se revierte todo el lote.
 - **Pago individual** (`CreatePayrollModal`, Cajero): para pagos sueltos, incluso a personas que no son usuarios del sistema (solo nombre).
 - **Sueldos** (`PayrollWagesView`, Administrador/Gerente): edición del sueldo diario de cada trabajador en una sucursal (`PATCH /users/:id/locations/:locationId/wage`). El sueldo es por sucursal: un mismo usuario puede tener sueldos distintos en distintas sucursales.
-- **Listado**: el Cajero ve los pagos del **turno activo**; Administrador y Gerente ven una tabla paginada con búsqueda y rango de fechas (el Gerente puede filtrar por sucursal o ver todas, con la sucursal en cada fila).
+- **Listado**: el Cajero ve los pagos del **turno activo** (lo garantiza el backend, igual que en egresos); Administrador y Gerente ven una tabla paginada con búsqueda y rango de fechas (el Gerente puede filtrar por sucursal o ver todas, con la sucursal en cada fila).
 - **Reporte** (Administrador/Gerente): total pagado y desglose por empleado en un período. A diferencia de egresos, el Gerente puede omitir la sucursal y obtener el consolidado de todas.
 
 ### 8.10 Turnos de caja (`features/shifts`) — ruta `/shifts`

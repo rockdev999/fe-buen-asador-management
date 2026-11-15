@@ -98,14 +98,17 @@ export const Pos = () => {
   }
 
   // 2. Cajero confirma método de pago → cambia estado a PAID
-  function handleConfirmPayment(method: PaymentMethodEnum) {
+  function handleConfirmPayment(
+    method: PaymentMethodEnum,
+    receivedAmount: number,
+  ) {
     if (!createdOrder) return;
 
     createSale(
       {
         orderId: createdOrder.id,
         paymentMethod: method,
-        receivedAmount: getTotal(),
+        receivedAmount,
         totalDiscount: discount,
       },
       {

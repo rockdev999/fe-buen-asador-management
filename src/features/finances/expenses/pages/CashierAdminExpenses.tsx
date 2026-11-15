@@ -17,9 +17,12 @@ export function CashierAdminExpenses() {
       <PageHeader
         title="Egresos"
         subtitle={
-          user?.locationName
-            ? `Egresos de ${user.locationName}`
-            : "Egresos de tu sucursal"
+          // El backend limita al cajero a los egresos de su turno abierto.
+          isCashier
+            ? "Egresos registrados en tu turno actual"
+            : user?.locationName
+              ? `Egresos de ${user.locationName}`
+              : "Egresos de tu sucursal"
         }
       />
 

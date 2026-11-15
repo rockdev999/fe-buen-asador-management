@@ -9,11 +9,43 @@ import { OrderStatusEnum, OrderTypeEnum } from "@/constants";
 import { FormField } from "@/components/shared/Basics/FormField";
 import { Label } from "@/components/shared/Basics/Label";
 import { Textarea } from "@/components/ui/textarea";
-import { Modifier } from "@dnd-kit/core";
 import { useUpdateOrderStatus } from "../../hooks/useOrder";
 import { useState } from "react";
+import { StatusBadge } from "@/components/shared/OrderBadges";
 
 const trans = t.pos;
+
+// Transiciones que permite PUT /orders/:id/status (ver OrdersService del BE).
+// POST /sales solo acepta pedidos READY, así que cada estado intermedio
+// necesita su paso manual para que el turno pueda cerrarse.
+const NEXT_STATUS: Partial<
+  Record<OrderStatusEnum, { status: OrderStatusEnum; label: string }>
+> = {
+  [OrderStatusEnum.PENDING]: {
+    status: OrderStatusEnum.READY,
+    label: "Marcar como listo",
+  },
+  [OrderStatusEnum.CONFIRMED]: {
+    status: OrderStatusEnum.PREPARING,
+    label: "Pasar a preparación",
+  },
+  [OrderStatusEnum.PREPARING]: {
+    status: OrderStatusEnum.READY,
+    label: "Marcar como listo",
+  },
+  // Cobro del delivery sin control de caja: se marca pagado a mano.
+  [OrderStatusEnum.DELIVERED]: {
+    status: OrderStatusEnum.PAID,
+    label: "Marcar como pagado",
+  },
+};
+
+const CANCELLABLE_STATUSES = [
+  OrderStatusEnum.PENDING,
+  OrderStatusEnum.CONFIRMED,
+  OrderStatusEnum.PREPARING,
+  OrderStatusEnum.READY,
+];
 
 interface ReviewOrderModalProps {
   order: OrderSnapshot;
@@ -23,6 +55,8 @@ interface ReviewOrderModalProps {
   onConfirm: () => void;
   onOrderCancelled?: () => void;
   isLoading: boolean;
+  /** POST /sales es solo del CASHIER: el admin no ve el botón de cobrar. */
+  canCharge?: boolean;
 }
 
 export function ReviewOrderModal({
@@ -33,12 +67,10 @@ export function ReviewOrderModal({
   onConfirm,
   onOrderCancelled,
   isLoading,
+  canCharge = true,
 }: ReviewOrderModalProps) {
+  const cart = useCartStore();
   const {
-    customerName,
-    customerPhone,
-    customerAddress,
-    deliveryReference,
     setCustomer,
     setCustomerPhone,
     setCustomerAddress,
@@ -46,22 +78,51 @@ export function ReviewOrderModal({
   } = useCartStore();
 
   const [confirmCancel, setConfirmCancel] = useState(false);
-  const { mutate: updateStatus, isPending: isCancelling } =
+  const [confirmAdvance, setConfirmAdvance] = useState(false);
+  const { mutate: updateStatus, isPending: isUpdatingStatus } =
     useUpdateOrderStatus();
+  const [pendingStatus, setPendingStatus] = useState<OrderStatusEnum | null>(
+    null,
+  );
 
   const isDelivery = order.orderType === OrderTypeEnum.DELIVERY;
   const isTakeaway = order.orderType === OrderTypeEnum.TAKEAWAY;
   const isExistingOrder = !!orderId;
 
-  const isValid = isDelivery
-    ? !!(
-        customerName?.trim() &&
-        customerPhone?.trim() &&
-        customerAddress?.trim()
-      )
-    : isTakeaway
-      ? !!customerName?.trim()
-      : true;
+  // Pedido existente: se muestran sus datos (solo lectura). Pedido nuevo del
+  // POS: los campos editan el carrito.
+  const customerName = isExistingOrder ? order.customerName : cart.customerName;
+  const customerPhone = isExistingOrder
+    ? order.customerPhone
+    : cart.customerPhone;
+  const customerAddress = isExistingOrder
+    ? order.customerAddress
+    : cart.customerAddress;
+  const deliveryReference = isExistingOrder
+    ? order.deliveryReference
+    : cart.deliveryReference;
+
+  const isValid = isExistingOrder
+    ? true
+    : isDelivery
+      ? !!(
+          customerName?.trim() &&
+          customerPhone?.trim() &&
+          customerAddress?.trim()
+        )
+      : isTakeaway
+        ? !!customerName?.trim()
+        : true;
+
+  const status = order.status;
+  const nextStep = isExistingOrder && status ? NEXT_STATUS[status] : undefined;
+  const canCancel =
+    isExistingOrder && !!status && CANCELLABLE_STATUSES.includes(status);
+  const showCharge = isExistingOrder
+    ? status === OrderStatusEnum.READY && canCharge
+    : true;
+  const isFinal =
+    status === OrderStatusEnum.PAID || status === OrderStatusEnum.CANCELLED;
 
   function getItemTotal(item: OrderSnapshot["items"][0]): number {
     if (item.units.length > 0) {
@@ -88,6 +149,7 @@ export function ReviewOrderModal({
   function handleCancel() {
     if (!orderId) return;
     if (confirmCancel) {
+      setPendingStatus(OrderStatusEnum.CANCELLED);
       updateStatus(
         { id: orderId, status: OrderStatusEnum.CANCELLED },
         {
@@ -95,6 +157,7 @@ export function ReviewOrderModal({
             onOrderCancelled?.();
             onClose();
           },
+          onSettled: () => setPendingStatus(null),
         },
       );
     } else {
@@ -103,7 +166,32 @@ export function ReviewOrderModal({
     }
   }
 
-  const isDisabled = order.status === OrderStatusEnum.CANCELLED;
+  // Avanza al siguiente estado. Marcar como pagado pide doble clic porque
+  // cierra el pedido sin pasar por caja.
+  function handleAdvance() {
+    if (!orderId || !nextStep) return;
+    const needsConfirm = nextStep.status === OrderStatusEnum.PAID;
+    if (needsConfirm && !confirmAdvance) {
+      setConfirmAdvance(true);
+      setTimeout(() => setConfirmAdvance(false), 2500);
+      return;
+    }
+    setConfirmAdvance(false);
+    setPendingStatus(nextStep.status);
+    updateStatus(
+      { id: orderId, status: nextStep.status },
+      {
+        // El detalle se refresca solo (invalida ["orders"]); si queda en un
+        // estado final ya no hay nada que hacer en el modal.
+        onSuccess: () => {
+          if (nextStep.status === OrderStatusEnum.PAID) onClose();
+        },
+        onSettled: () => setPendingStatus(null),
+      },
+    );
+  }
+
+  const isDisabled = isExistingOrder || status === OrderStatusEnum.CANCELLED;
 
   return (
     <div className="h-full absolute inset-0 bg-inkblack/60 flex items-center justify-center z-50 p-6">
@@ -114,11 +202,16 @@ export function ReviewOrderModal({
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-surface flex-shrink-0 overflow-hidden">
           <div>
-            <h2 className="text-lg font-medium text-inkblack">
-              Revisar pedido
-            </h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-medium text-inkblack">
+                {isExistingOrder ? "Pedido" : "Revisar pedido"}
+              </h2>
+              {isExistingOrder && status && <StatusBadge status={status} />}
+            </div>
             <p className="text-[12px] text-muted-foreground mt-0.5">
-              Verifica los detalles antes de confirmar el cobro
+              {isExistingOrder
+                ? "Detalle del pedido y acciones disponibles"
+                : "Verifica los detalles antes de confirmar el cobro"}
             </p>
           </div>
           <div className="flex gap-4">
@@ -177,18 +270,15 @@ export function ReviewOrderModal({
                     </div>
                   </div>
 
-                  {(item.units.length > 0
-                    ? item.units
-                    : Array(item.quantity).fill(null)
-                  ).map((unit, idx) => {
-                    const hasMods = unit && unit.modifiers.length > 0;
+                  {item.units.map((unit, idx) => {
+                    const hasMods = unit.modifiers.length > 0;
                     const unitPrice = getUnitPrice(item, idx);
-                    return unit.hasModifiers || unit.notes ? (
-                      <div className="px-3 py-1 divide-y divide-surface/60">
-                        <div
-                          key={unit?.unitId ?? idx}
-                          className="flex items-center gap-2 py-1.5"
-                        >
+                    return hasMods || unit.notes ? (
+                      <div
+                        key={unit.unitId ?? idx}
+                        className="px-3 py-1 divide-y divide-surface/60"
+                      >
+                        <div className="flex items-center gap-2 py-1.5">
                           {hasMods && (
                             <div
                               className={cn(
@@ -202,12 +292,10 @@ export function ReviewOrderModal({
                           <div className="flex-1 min-w-0">
                             {hasMods && (
                               <p className="text-[11px] text-brand-light">
-                                {unit.modifiers
-                                  .map((m: Modifier) => m.name)
-                                  .join(", ")}
+                                {unit.modifiers.map((m) => m.name).join(", ")}
                               </p>
                             )}
-                            {unit?.notes && (
+                            {unit.notes && (
                               <p className="text-[11px] text-muted-foreground italic mt-0.5">
                                 "{unit.notes}"
                               </p>
@@ -333,13 +421,19 @@ export function ReviewOrderModal({
                   Completa todos los campos
                 </p>
               )}
-              {order.status !== OrderStatusEnum.CANCELLED && (
+              {isFinal ? (
+                <p className="mt-2 text-center text-[12px] text-muted-foreground">
+                  {status === OrderStatusEnum.PAID
+                    ? "Este pedido ya fue pagado."
+                    : "Este pedido fue cancelado."}
+                </p>
+              ) : (
                 <>
-                  {isExistingOrder && (
+                  {canCancel && (
                     <Button
                       type="button"
                       onClick={handleCancel}
-                      disabled={isCancelling}
+                      disabled={isUpdatingStatus}
                       className={cn(
                         "w-full h-8 text-md font-medium border flex items-center justify-center gap-1.5 transition-all bg-white",
                         confirmCancel
@@ -348,7 +442,7 @@ export function ReviewOrderModal({
                       )}
                     >
                       <AlertCircle size={12} />
-                      {isCancelling
+                      {pendingStatus === OrderStatusEnum.CANCELLED
                         ? "Cancelando..."
                         : confirmCancel
                           ? "¿Confirmar cancelación?"
@@ -363,17 +457,44 @@ export function ReviewOrderModal({
                       onClick={onClose}
                       className="w-full h-8 text-md"
                     >
-                      Cancelar
+                      {isExistingOrder ? "Cerrar" : "Cancelar"}
                     </Button>
-                    <Button
-                      type="button"
-                      disabled={!isValid}
-                      loading={isLoading}
-                      onClick={onConfirm}
-                      className="w-full h-9 bg-brand hover:bg-brand-dark text-white font-medium text-md disabled:opacity-50"
-                    >
-                      Confirmar →
-                    </Button>
+                    {nextStep && (
+                      <Button
+                        type="button"
+                        onClick={handleAdvance}
+                        disabled={isUpdatingStatus}
+                        loading={pendingStatus === nextStep.status}
+                        className={cn(
+                          "w-full h-9 font-medium text-md",
+                          confirmAdvance
+                            ? "bg-amber-50 text-amber-700 border border-amber-300 hover:bg-amber-100"
+                            : "bg-inkblack text-white hover:bg-inkblack/90",
+                        )}
+                      >
+                        {confirmAdvance
+                          ? "¿Confirmar? No entra en la caja"
+                          : nextStep.label}
+                      </Button>
+                    )}
+                    {showCharge && (
+                      <Button
+                        type="button"
+                        disabled={!isValid || isUpdatingStatus}
+                        loading={isLoading}
+                        onClick={onConfirm}
+                        className="w-full h-9 bg-brand hover:bg-brand-dark text-white font-medium text-md disabled:opacity-50"
+                      >
+                        {isExistingOrder ? "Cobrar →" : "Confirmar →"}
+                      </Button>
+                    )}
+                    {isExistingOrder &&
+                      status === OrderStatusEnum.READY &&
+                      !canCharge && (
+                        <p className="text-center text-[11px] text-muted-foreground">
+                          El cobro lo registra el cajero desde su turno.
+                        </p>
+                      )}
                   </div>
                 </>
               )}

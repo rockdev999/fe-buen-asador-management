@@ -149,8 +149,18 @@ export function CashierAdminExpensesListTab({
         onPageChange={handlePageChange}
         onRowClick={canManage ? openModalForRow : undefined}
         rowKey={(row) => row.id}
-        emptyMessage="No hay egresos"
-        emptySubMessage="Intenta cambiar los filtros"
+        emptyMessage={
+          canCreate && !hasActiveShift
+            ? "No tienes un turno abierto"
+            : canCreate
+              ? "No hay egresos en este turno"
+              : "No hay egresos"
+        }
+        emptySubMessage={
+          canCreate && !hasActiveShift
+            ? "Abre un turno de caja para registrar y ver egresos"
+            : "Intenta cambiar los filtros"
+        }
       />
 
       {openModal && selectedId && (

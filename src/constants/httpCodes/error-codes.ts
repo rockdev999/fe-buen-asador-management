@@ -81,7 +81,8 @@ export const KNOWN_ERROR_MESSAGES: Record<KnownErrorCode, string> = {
     "Hay pedidos sin cobrar ni cancelar. Resuélvelos antes de cerrar el turno.",
   SHIFT_STILL_OPEN: "Cierra tu turno de caja antes de cambiar de sucursal.",
   SHIFT_NOT_OWNED: "Este turno lo abrió otro cajero.",
-  SHIFT_CLOSED: "No se puede anular: el turno de esta venta ya fue cerrado.",
+  SHIFT_CLOSED:
+    "El turno de caja ya fue cerrado; sus movimientos ya no se pueden modificar.",
   SHIFT_NOTES_REQUIRED:
     "El monto no coincide con el esperado. Explica la diferencia.",
   SHIFT_NOT_PENDING: "Este cierre no está pendiente de aprobación.",

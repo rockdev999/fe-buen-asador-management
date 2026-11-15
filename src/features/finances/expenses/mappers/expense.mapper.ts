@@ -37,6 +37,7 @@ export const mapExpenseDTOToModel = (dto: ExpenseDTO): Expense => ({
   category: dto.category,
   location: dto.location,
   shiftId: dto.shift.id,
+  shiftStatus: dto.shift.status ?? null,
   registeredBy: dto.registeredBy,
   description: dto.description,
   amount: dto.amount,

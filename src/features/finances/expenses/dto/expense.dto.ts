@@ -1,4 +1,4 @@
-import { ExpenseCategoryEnum } from "@/constants";
+import { ExpenseCategoryEnum, ShiftStatusEnum } from "@/constants";
 import { Audit } from "@/types/audit.types";
 import { ISODateTimeString, UUID } from "@/types/common";
 
@@ -21,7 +21,8 @@ export interface ExpenseDTO {
   id: UUID;
   category: { id: UUID; name: string };
   location: { id: UUID; name: string };
-  shift: { id: UUID };
+  // `status` permite bloquear la edición de egresos de turnos cerrados.
+  shift: { id: UUID; status?: ShiftStatusEnum };
   registeredBy: { id: UUID; name: string };
   description: string;
   amount: number;

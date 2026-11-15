@@ -87,15 +87,26 @@ function CashierAdminOrders() {
     setView("payment");
   }
 
-  function handleConfirmPayment(method: PaymentMethodEnum) {
+  // El total se recalcula con el descuento que se ingresa en el modal de pago,
+  // igual que hace el backend (total = subtotal − totalDiscount).
+  const orderDiscount = updateDiscount ?? selectedOrder?.discount ?? 0;
+  const orderTotal = Math.max(
+    0,
+    Math.round(((selectedOrder?.subtotal ?? 0) - orderDiscount) * 100) / 100,
+  );
+
+  function handleConfirmPayment(
+    method: PaymentMethodEnum,
+    receivedAmount: number,
+  ) {
     if (!selectedOrder) return;
 
     createSale(
       {
         orderId: selectedOrder.id ?? "",
         paymentMethod: method,
-        receivedAmount: selectedOrder.total ?? 0,
-        totalDiscount: updateDiscount ?? selectedOrder.discount ?? 0,
+        receivedAmount,
+        totalDiscount: orderDiscount,
       },
       {
         onSuccess: () => {
@@ -136,6 +147,7 @@ function CashierAdminOrders() {
         sortDir={sortDir}
         onRowClick={(data) => {
           setView("review");
+          setUpdateDiscount(null); // el descuento no pasa de un pedido a otro
           setSelectedOrderId(data.id);
         }}
         rowKey={(row) => row.id}
@@ -154,14 +166,15 @@ function CashierAdminOrders() {
           onOrderCancelled={() => setSelectedOrderId(null)}
           onRemoveItem={() => {}} // no-op para pedidos existentes
           isLoading={false}
+          canCharge={isCashier}
         />
       )}
       {view === "payment" && selectedOrder && (
         <PaymentModal
           clientName={selectedOrder.customerName ?? ""}
           getSubtotal={() => selectedOrder.subtotal ?? 0}
-          getTotal={() => selectedOrder.total ?? 0}
-          discount={selectedOrder.discount ?? 0}
+          getTotal={() => orderTotal}
+          discount={orderDiscount}
           onUpdateDiscount={handleUpdateDiscount}
           onConfirm={handleConfirmPayment}
           onClose={() => setView("idle")}
