@@ -1,0 +1,30 @@
+name: CI
+
+on:
+  push:
+    branches: [develop, main]
+  pull_request:
+    branches: [develop, main]
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Análisis estático (ESLint)
+        run: npm run lint
+
+      - name: Pruebas unitarias (Vitest)
+        run: npm run test:coverage
+
+      - name: Verificación de tipos y build
+        run: npm run build

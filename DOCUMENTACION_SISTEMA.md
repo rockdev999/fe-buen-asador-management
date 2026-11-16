@@ -1049,74 +1049,81 @@ Es la contraparte del Inventario para la **materia prima**. Tiene tres pestañas
 
 ## 12. Pruebas y automatización
 
-> **Estado:** en desarrollo. Esta sección describe la situación actual y la estrategia que se va a implementar. Se actualizará a medida que se agreguen las pruebas.
+La verificación del frontend combina tres niveles: **análisis estático**, **pruebas unitarias automatizadas** de la lógica que vive solo en el cliente y **pruebas funcionales manuales** de los casos de uso contra el backend real. La lógica de negocio principal (stock, ventas, turnos, permisos) se valida además en el backend, que cuenta con sus propias pruebas.
 
 ### 12.1 Situación actual
 
-| Aspecto | Estado |
-|---|---|
-| Verificación de tipos (`tsc -b`) | ✅ Sin errores. Se ejecuta en cada `npm run build`. |
-| Análisis estático (`eslint .`) | ⚠️ 8 errores y 13 advertencias, ninguno funcional (sección 14.2) |
-| Pruebas unitarias | ❌ No hay |
-| Pruebas de componentes | ❌ No hay |
-| Pruebas de extremo a extremo (E2E) | ❌ No hay |
-| Integración continua (CI) | ❌ No hay pipeline configurado |
-| Pruebas manuales | ✅ Se validaron los flujos de cada módulo contra el backend durante el desarrollo |
-
-### 12.2 Estrategia propuesta (pirámide de pruebas)
-
-| Nivel | Herramienta | Qué se prueba |
+| Aspecto | Herramienta | Estado |
 |---|---|---|
-| **Unitarias** | Vitest | Funciones puras: mappers DTO ⇄ modelo, `zodToFormik` y esquemas Zod, `getProductAvailability`, `getCategoryAvailability`, `getReportPeriodRange`, `getOrderActions`, `getOfflineIneligibility`, `generateOfflineTicketCode`, `splitAddress`, el parser SSE (`parseBlock`), formato de dinero y fechas |
-| **Stores** | Vitest | `useCartStore` (agregar, quitar, modificadores por unidad), `useWhatsappOrdersStore` (`upsert`, `applyStatus`, salida de estados finales), `useAuthStore` (`setSession`, `logout`) |
-| **Componentes** | Vitest + React Testing Library + MSW (simula el backend) | Formularios con validación (login, producto, egreso), `PaymentModal` (cálculo del cambio), protecciones de ruta por rol, `WaitTime` (colores de la cuenta regresiva) |
-| **Integración HTTP** | Vitest + MSW | Interceptor de errores: renovación ante `TOKEN_EXPIRED` y repetición de la petición, `MUST_CHANGE_PASSWORD`, detección offline; sincronización offline (CREATED, DUPLICATE, REJECTED, 429) con `fake-indexeddb` |
-| **Extremo a extremo** | Playwright | Flujos críticos en el navegador: login → venta en el POS → ticket; cierre de caja → aprobación; venta offline → sincronización; bandeja de WhatsApp |
+| Verificación de tipos | TypeScript (`tsc -b`) | ✅ Sin errores |
+| Análisis estático | ESLint (`npm run lint`) | ✅ 0 errores; 11 advertencias de dependencias de hooks (sección 14.2) |
+| Pruebas unitarias | Vitest (`npm test`) | ✅ 47 pruebas en 7 archivos, todas aprobadas |
+| Cobertura de los módulos probados | `@vitest/coverage-v8` (`npm run test:coverage`) | ✅ 87,6 % de sentencias · 76,8 % de ramas |
+| Integración continua | GitHub Actions (`.github/workflows/ci.yml`) | ✅ Se ejecuta en cada *push* y *pull request* a `develop` y `main` |
+| Pruebas funcionales | Manuales, con los casos de la sección 12.4 | ✅ Flujos validados contra el backend durante el desarrollo |
 
-### 12.3 Automatización propuesta
+### 12.2 Pruebas unitarias
 
-- **Scripts** en `package.json`: `test` (Vitest), `test:coverage` y `test:e2e` (Playwright).
-- **Pipeline de CI** (GitHub Actions) en cada *push* y *pull request* a `develop` y `main`: `npm ci` → `npm run lint` → `tsc -b` → `npm test` → `npm run build`.
-- **Meta de cobertura inicial:** 70 % en `lib/`, `mappers/`, `utils/` y `stores/`.
+Se priorizó la lógica crítica que se ejecuta solo en el navegador: cálculos de dinero, carrito, ventas sin conexión y reglas de permisos por rol y estado. Las pruebas están junto al código que prueban (`*.test.ts`).
 
-### 12.4 Casos de prueba funcionales (base para pruebas manuales y E2E)
+| Archivo de prueba | Qué valida | Casos |
+|---|---|---|
+| `components/shared/Interactives/money-input.utils.test.ts` | Entrada de montos: coma decimal, un solo punto, máximo 2 decimales y 10 dígitos enteros, tope máximo | 10 |
+| `lib/money.test.ts` | Conversión de texto a monto y total sin errores de coma flotante | 4 |
+| `features/pos/stores/cart.store.test.ts` | Carrito del POS: agregar, unidades independientes, cambiar cantidad, modificadores por unidad, descuento, vaciado | 6 |
+| `features/offline/utils/offline-sale.builder.test.ts` | Venta offline: formato del código `-OFF-`, elegibilidad (turno, sucursal, tipo de pedido, carrito vacío), armado de la venta, efectivo insuficiente, método de pago no permitido | 10 |
+| `features/whatsapp/utils/order-actions.test.ts` | Acciones de un pedido de WhatsApp según estado y rol (cajero, administrador, gerente), delivery y separación de links en la dirección | 7 |
+| `features/catalog/products/utils/product-availability.test.ts` | Estado del interruptor de disponibilidad por sucursal y global, y de las categorías | 5 |
+| `features/finances/reports/utils/report-period.test.ts` | Rangos de "Últimos 7 días", "Este mes" y "Mes pasado" (incluido el cambio de año) | 5 |
 
-| ID | Caso de uso | Escenario | Resultado esperado |
-|---|---|---|---|
-| CP-01 | CU-01 | Credenciales válidas | Se muestran las sucursales del usuario con su rol |
-| CP-02 | CU-01 | Contraseña incorrecta | Mensaje de error; no avanza |
-| CP-03 | CU-02 | Gerente en todas sus sucursales | Entra directo al Dashboard con "Todas las sucursales" |
-| CP-04 | CU-03 | Usuario con contraseña temporal | Solo puede ver `/change-password`; tras cambiarla accede a su inicio |
-| CP-05 | — | El token vence durante el uso | La petición se repite sola con un token nuevo; el usuario no lo nota |
-| CP-06 | — | Cajero entra a `/users` escribiendo la URL | Es redirigido a `/pos` |
-| CP-07 | CU-04 | Cajero con turno abierto intenta cambiar de sucursal | El botón está deshabilitado |
-| CP-08 | CU-07 | Restablecer contraseña | El estado del correo pasa de *Pendiente* a *Enviado* |
-| CP-09 | CU-11 | Desactivar una categoría en una sucursal | Sus productos dejan de aparecer en el POS de esa sucursal |
-| CP-10 | CU-14 | Producto desactivado globalmente | El interruptor por sucursal está deshabilitado y explica el motivo |
-| CP-11 | CU-16 | Ajuste "restar" mayor que el stock | Error de stock insuficiente |
-| CP-12 | CU-21 | Crear receta | Aparece stock en 0 de los insumos en las sucursales del producto |
-| CP-13 | CU-22 | Entrar al POS sin turno | Modal de apertura que bloquea la venta |
-| CP-14 | CU-23 | Venta en efectivo con monto recibido mayor que el total | Muestra el cambio correcto, registra la venta e imprime el ticket |
-| CP-15 | CU-23 | Delivery sin dirección | No permite pasar al pago |
-| CP-16 | CU-23 | 3 unidades del mismo producto con modificadores distintos | El ticket refleja cada unidad con sus extras |
-| CP-17 | CU-23 | Venta que deja el stock bajo el mínimo | El Gerente y el Administrador reciben la alerta en tiempo real |
-| CP-18 | CU-24 | Cortar la red y vender "para llevar" en efectivo | Ticket con código `-OFF-`; la venta aparece en la cola |
-| CP-19 | CU-24 | Sin red, elegir Delivery | La opción está deshabilitada |
-| CP-20 | CU-25 | Restaurar la red | La venta se sincroniza y aparece en Ventas |
-| CP-21 | CU-25 | Venta offline rechazada de forma definitiva | Queda "con conflicto" y se puede descartar |
-| CP-22 | CU-29 | Llega un pedido de WhatsApp | Suena, aparece el aviso y sube el contador del botón |
-| CP-23 | CU-29 | El pedido vence sin aprobarse | Desaparece de la bandeja con aviso de vencimiento |
-| CP-24 | CU-29 | Dos cajeros aprueban el mismo pedido | El segundo recibe el estado actualizado sin duplicar |
-| CP-25 | CU-30 | Administrador intenta cobrar | Se le indica que solo el cajero cobra |
-| CP-26 | CU-32 | Anular una venta | Estado anulado y stock devuelto (visible en el kardex) |
-| CP-27 | CU-33 | Registrar egreso sin turno | El botón está deshabilitado |
-| CP-28 | CU-34 | Editar un egreso de un turno cerrado | El modal está en solo lectura |
-| CP-29 | CU-36 | Pago masivo con un pago inválido | Ningún pago se registra |
-| CP-30 | CU-38 | Cerrar turno con pedidos pendientes | El botón de cierre está deshabilitado |
-| CP-31 | CU-38 | Declarar montos con diferencia | El turno pasa a `PENDING`, muestra la diferencia e imprime el comprobante |
-| CP-32 | CU-39 | Aprobar un cierre con diferencia sin comentario | No se permite |
-| CP-33 | CU-41 | Registrar una venta con el Dashboard abierto | Los indicadores se actualizan en 60 s o menos |
-| CP-34 | CU-42 | Reporte "Mes pasado" | El rango va del primer al último día del mes anterior |
+### 12.3 Automatización
+
+- **Scripts** en `package.json`:
+  - `npm test`: ejecuta las pruebas una vez.
+  - `npm run test:watch`: modo observación durante el desarrollo.
+  - `npm run test:coverage`: pruebas con reporte de cobertura (carpeta `coverage/`, excluida del repositorio).
+- **Pipeline de CI** (`.github/workflows/ci.yml`): `npm ci` → `npm run lint` → `npm run test:coverage` → `npm run build` (incluye `tsc -b`). Si un paso falla, el *push* o *pull request* queda marcado en rojo.
+
+### 12.4 Casos de prueba funcionales
+
+Se ejecutan manualmente contra el backend. La columna **Automatizado** indica los casos cuya lógica también está cubierta por una prueba unitaria. La columna **Estado** se completa al ejecutar la prueba (✅ aprobado · ❌ fallido · ⏳ pendiente).
+
+| ID | Caso de uso | Escenario | Resultado esperado | Automatizado | Estado |
+|---|---|---|---|---|---|
+| CP-01 | CU-01 | Credenciales válidas | Se muestran las sucursales del usuario con su rol | — | ⏳ |
+| CP-02 | CU-01 | Contraseña incorrecta | Mensaje de error; no avanza | — | ⏳ |
+| CP-03 | CU-02 | Gerente en todas sus sucursales | Entra directo al Dashboard con "Todas las sucursales" | — | ⏳ |
+| CP-04 | CU-03 | Usuario con contraseña temporal | Solo puede ver `/change-password`; tras cambiarla accede a su inicio | — | ⏳ |
+| CP-05 | — | El token vence durante el uso | La petición se repite sola con un token nuevo; el usuario no lo nota | — | ⏳ |
+| CP-06 | — | Cajero entra a `/users` escribiendo la URL | Es redirigido a `/pos` | — | ⏳ |
+| CP-07 | CU-04 | Cajero con turno abierto intenta cambiar de sucursal | El botón está deshabilitado | — | ⏳ |
+| CP-08 | CU-07 | Restablecer contraseña | El estado del correo pasa de *Pendiente* a *Enviado* | — | ⏳ |
+| CP-09 | CU-11 | Desactivar una categoría en una sucursal | Sus productos dejan de aparecer en el POS de esa sucursal | — | ⏳ |
+| CP-10 | CU-14 | Producto desactivado globalmente | El interruptor por sucursal está deshabilitado y explica el motivo | ✅ product-availability | ⏳ |
+| CP-11 | CU-16 | Ajuste "restar" mayor que el stock | Error de stock insuficiente | — | ⏳ |
+| CP-12 | CU-21 | Crear receta | Aparece stock en 0 de los insumos en las sucursales del producto | — | ⏳ |
+| CP-13 | CU-22 | Entrar al POS sin turno | Modal de apertura que bloquea la venta | — | ⏳ |
+| CP-14 | CU-23 | Venta en efectivo con monto recibido mayor que el total | Muestra el cambio correcto, registra la venta e imprime el ticket | ✅ cart.store, money | ⏳ |
+| CP-15 | CU-23 | Delivery sin dirección | No permite pasar al pago | — | ⏳ |
+| CP-16 | CU-23 | 3 unidades del mismo producto con modificadores distintos | El ticket refleja cada unidad con sus extras | ✅ cart.store | ⏳ |
+| CP-17 | CU-23 | Venta que deja el stock bajo el mínimo | El Gerente y el Administrador reciben la alerta en tiempo real | — | ⏳ |
+| CP-18 | CU-24 | Cortar la red y vender "para llevar" en efectivo | Ticket con código `-OFF-`; la venta aparece en la cola | ✅ offline-sale.builder | ⏳ |
+| CP-19 | CU-24 | Sin red, elegir Delivery | La opción está deshabilitada | ✅ offline-sale.builder | ⏳ |
+| CP-20 | CU-25 | Restaurar la red | La venta se sincroniza y aparece en Ventas | — | ⏳ |
+| CP-21 | CU-25 | Venta offline rechazada de forma definitiva | Queda "con conflicto" y se puede descartar | — | ⏳ |
+| CP-22 | CU-29 | Llega un pedido de WhatsApp | Suena, aparece el aviso y sube el contador del botón | — | ⏳ |
+| CP-23 | CU-29 | El pedido vence sin aprobarse | Desaparece de la bandeja con aviso de vencimiento | — | ⏳ |
+| CP-24 | CU-29 | Dos cajeros aprueban el mismo pedido | El segundo recibe el estado actualizado sin duplicar | — | ⏳ |
+| CP-25 | CU-30 | Administrador intenta cobrar | Se le indica que solo el cajero cobra | ✅ order-actions | ⏳ |
+| CP-26 | CU-32 | Anular una venta | Estado anulado y stock devuelto (visible en el kardex) | — | ⏳ |
+| CP-27 | CU-33 | Registrar egreso sin turno | El botón está deshabilitado | — | ⏳ |
+| CP-28 | CU-34 | Editar un egreso de un turno cerrado | El modal está en solo lectura | — | ⏳ |
+| CP-29 | CU-36 | Pago masivo con un pago inválido | Ningún pago se registra | — | ⏳ |
+| CP-30 | CU-38 | Cerrar turno con pedidos pendientes | El botón de cierre está deshabilitado | — | ⏳ |
+| CP-31 | CU-38 | Declarar montos con diferencia | El turno pasa a `PENDING`, muestra la diferencia e imprime el comprobante | — | ⏳ |
+| CP-32 | CU-39 | Aprobar un cierre con diferencia sin comentario | No se permite | — | ⏳ |
+| CP-33 | CU-41 | Registrar una venta con el Dashboard abierto | Los indicadores se actualizan en 60 s o menos | — | ⏳ |
+| CP-34 | CU-42 | Reporte "Mes pasado" | El rango va del primer al último día del mes anterior | ✅ report-period | ⏳ |
 
 ---
 
@@ -1158,16 +1165,12 @@ Es la contraparte del Inventario para la **materia prima**. Tiene tres pestañas
 | Reportes | `/reports` | ✅ Implementado |
 | Alertas de stock en tiempo real | — | ✅ Implementado |
 | Facturación electrónica | — | ⏸️ Fase 2 (código comentado) |
-| Pruebas automatizadas y CI | — | 🚧 En desarrollo (sección 12) |
+| Pruebas automatizadas y CI | — | ✅ Vitest + GitHub Actions (sección 12) |
 
 ### 14.2 Observaciones detectadas en la revisión
 
 - **Dos `<Toaster>` montados**, uno en `main.tsx` y otro en `AppLayout.tsx`, en la misma posición. Es probable que cada aviso se dibuje dos veces. Se recomienda dejar uno solo.
-- **ESLint, 8 errores y 13 advertencias.** Ninguno afecta el funcionamiento en producción:
-  - 5 de la regla `react-refresh/only-export-components` (`badge.tsx`, `button.tsx`, `form.tsx`, `Router.tsx`), que solo afecta la recarga en caliente durante el desarrollo.
-  - 1 variable usada solo como tipo en `use-toast.ts`.
-  - 2 de `setState` dentro de `useEffect` en `ImageUploader` y `MoneyInput`.
-  - Las advertencias son dependencias de hooks (`exhaustive-deps`).
+- **ESLint: 0 errores y 11 advertencias.** Las advertencias son dependencias de hooks (`exhaustive-deps`) que se dejaron sin cambiar porque corregirlas puede alterar el comportamiento. Los 8 errores anteriores se resolvieron: `setState` dentro de `useEffect` en `ImageUploader` y `MoneyInput` se reemplazó por sincronización durante el render, y la regla `react-refresh/only-export-components` se desactivó puntualmente en los componentes de shadcn y en `Router.tsx`.
 - **Restos de la plantilla de Vite:** `src/App.tsx` y `src/App.css` no se usan (la entrada real es `main.tsx`).
 - **Dependencias poco usadas:**
   - `react-hook-form` y `@hookform/resolvers` solo los usa el componente generado `ui/form.tsx`; el proyecto usa Formik.
@@ -1201,7 +1204,7 @@ El código existe pero está **comentado** con la marca `FASE 2 - Facturación`:
 
 ### 15.2 Otras mejoras sugeridas
 
-- Implementar la estrategia de pruebas y CI (sección 12).
+- Ampliar las pruebas: componentes con React Testing Library, interceptor HTTP y sincronización offline simulando el backend (MSW), y pruebas de extremo a extremo con Playwright para los flujos de venta en el POS y venta offline.
 - Resolver las observaciones de la sección 14.2.
 - Definir las pantallas del rol `EMPLOYEE` o retirarlo.
 
