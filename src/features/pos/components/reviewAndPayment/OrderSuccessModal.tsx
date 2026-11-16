@@ -22,6 +22,11 @@ interface OrderSuccessModalProps {
   onClose: () => void;
   /** Si se define, muestra el botón "Anular venta" (solo en vista de detalle). */
   onAnnul?: () => void;
+  /**
+   * Texto del botón principal. Por defecto "Nuevo pedido" (flujo del POS);
+   * fuera del POS (p. ej. la bandeja de WhatsApp) conviene "Cerrar".
+   */
+  closeLabel?: string;
 }
 
 export function OrderSuccessModal({
@@ -31,6 +36,7 @@ export function OrderSuccessModal({
   onEmitInvoice,
   onClose,
   onAnnul,
+  closeLabel,
 }: OrderSuccessModalProps) {
   const change = sale.receivedAmount - sale.total;
   const isAnnulled = sale.status === SaleStatusEnum.ANNULLED;
@@ -204,8 +210,12 @@ export function OrderSuccessModal({
               className="w-full h-10 rounded-xl bg-brand hover:bg-brand-dark text-white text-[14px]
                        font-semibold transition-colors flex items-center justify-center gap-1.5"
             >
-              <Plus size={14} />
-              Nuevo pedido
+              {closeLabel ?? (
+                <>
+                  <Plus size={14} />
+                  Nuevo pedido
+                </>
+              )}
             </button>
           )}
         </div>

@@ -344,6 +344,7 @@ export function WhatsappOrders() {
         <OrderSuccessModal
           sale={sale}
           customerName={paidCustomer}
+          closeLabel="Cerrar"
           onEmitInvoice={() => setPaidCustomer(undefined)}
           onClose={() => setPaidCustomer(undefined)}
         />
