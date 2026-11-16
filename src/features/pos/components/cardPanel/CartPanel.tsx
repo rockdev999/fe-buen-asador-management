@@ -8,6 +8,8 @@ import { t } from "@/locales/es";
 import { useState } from "react";
 import { CartItem as CartItemType, CartItemUnit } from "../../models/cart";
 import { CartItemEditModal } from "./CartItemEditModal";
+import { useOfflineStore } from "@/features/offline/stores/offline.store";
+import { OFFLINE_ORDER_TYPES } from "@/features/offline/utils/offline-sale.builder";
 import {
   DndContext,
   closestCenter,
@@ -37,6 +39,7 @@ export function CartPanel({ onCheckout }: CartPanelProps) {
   const setOrderType = useCartStore((state) => state.setOrderType);
   const reorderItems = useCartStore((s) => s.reorderItems);
   const getSubtotal = useCartStore((state) => state.getSubtotal);
+  const isOffline = useOfflineStore((s) => s.isOffline);
 
   const subtotal = getSubtotal();
 
@@ -67,13 +70,21 @@ export function CartPanel({ onCheckout }: CartPanelProps) {
     <>
       <div className="flex flex-col h-full">
         <div className="flex gap-1 p-2.5 border-b border-surface flex-shrink-0">
-          {ORDER_TYPE_OPTIONS.map((opt) => (
+          {ORDER_TYPE_OPTIONS.map((opt) => {
+            // Sin conexión no hay delivery: solo comer aquí o para llevar.
+            const disabledOffline =
+              isOffline && !OFFLINE_ORDER_TYPES.includes(opt.value);
+            return (
             <button
               key={opt.value}
               type="button"
+              disabled={disabledOffline}
+              title={
+                disabledOffline ? "No disponible sin conexión" : undefined
+              }
               onClick={() => setOrderType(opt.value, opt.channel)}
               className={cn(
-                "flex-1 py-2 text-sm font-medium rounded-lg border transition-all",
+                "flex-1 py-2 text-sm font-medium rounded-lg border transition-all disabled:opacity-40 disabled:cursor-not-allowed",
                 orderType === opt.value
                   ? "bg-success text-white border-successDark shadow-sm hover:bg-successDark"
                   : "text-muted-foreground border-successLight hover:border-successLight hover:bg-successLight hover:text-inkblack",
@@ -81,7 +92,8 @@ export function CartPanel({ onCheckout }: CartPanelProps) {
             >
               {opt.label}
             </button>
-          ))}
+            );
+          })}
         </div>
 
         {/* Items */}

@@ -18,6 +18,10 @@ import {
 } from "../dto/cateogory.dto";
 import { useMemo } from "react";
 import {
+  fallbackWhenOffline,
+  offlineCache,
+} from "@/features/offline/services/offline-cache";
+import {
   mapCategoryDTOToModel,
   mapCategorySimpleDTOToModel,
   mapMenuCategoryDTOToModel,
@@ -55,10 +59,17 @@ export const useCategoriesHandler = (
 export const useGetMenuHandler = (enabled: boolean = true) => {
   const handler = useGetHandler({
     queryKey: QUERY_KEYS.MENU,
+    // Sin conexión se usa la última copia guardada, para vender offline.
     queryFn: () =>
       httpClient
         .get<ApiResponse<MenuCategoryDTO[]>>("/products/menu")
-        .then((r) => r.data.data!),
+        .then((r) => r.data.data!)
+        .catch((error) =>
+          fallbackWhenOffline(
+            error,
+            offlineCache.readMenu<MenuCategoryDTO[]>(),
+          ),
+        ),
     enabled,
     staleTime: 10 * 60 * 1000, // 10 minutes
   });

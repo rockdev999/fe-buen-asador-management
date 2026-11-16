@@ -9,6 +9,7 @@ import {
 } from "@/utils/generalStatus/sale-display";
 import { DATA_TABLE, SaleStatusEnum } from "@/constants";
 import { formatLocalDateTime } from "@/lib/formatters";
+import { OfflineChip } from "@/features/offline/components/OfflineChip";
 
 export const SALES_TABLE_CONFIG = DATA_TABLE.SALES;
 
@@ -17,8 +18,11 @@ export const SALES_COLUMNS: ColumnDef<SalePageItem>[] = [
     key: "ticketCode",
     label: "Ticket",
     render: (row) => (
-      <span className="text-xs font-mono font-medium text-inkblack">
-        {row.ticketCode}
+      <span className="inline-flex items-center gap-1.5">
+        <span className="text-xs font-mono font-medium text-inkblack">
+          {row.ticketCode}
+        </span>
+        {row.isOffline && <OfflineChip />}
       </span>
     ),
   },
@@ -105,13 +109,16 @@ export const MANAGER_SALES_COLUMNS: ColumnDef<ManagerSalePageItem>[] = [
     label: "Estado",
     sortable: true,
     render: (row) => (
-      <span
-        className={cn(
-          "inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium",
-          STATUS_STYLES[row.status] ?? "bg-surface text-muted-foreground",
-        )}
-      >
-        {STATUS_LABELS[row.status] ?? row.status}
+      <span className="inline-flex items-center gap-1.5">
+        <span
+          className={cn(
+            "inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-medium",
+            STATUS_STYLES[row.status] ?? "bg-surface text-muted-foreground",
+          )}
+        >
+          {STATUS_LABELS[row.status] ?? row.status}
+        </span>
+        {row.isOffline && <OfflineChip />}
       </span>
     ),
   },

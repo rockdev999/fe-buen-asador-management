@@ -22,6 +22,10 @@ import { ApiResponse } from "@/types/api.types";
 import { useMemo } from "react";
 import { QueryClient, useQueryClient } from "@tanstack/react-query";
 import { toUtcDateRangeParams } from "@/lib/formatters";
+import {
+  fallbackWhenOffline,
+  offlineCache,
+} from "@/features/offline/services/offline-cache";
 
 // ─── Cajero ───────────────────────────────────────────────────────────────────
 
@@ -59,10 +63,18 @@ export const useOpenShiftHandler = () => {
 export const useActiveShift = (enabled: boolean = true) => {
   const handler = useGetHandler({
     queryKey: QUERY_KEYS.SHIFT_ACTIVE,
+    // Sin conexión se usa la última copia guardada: si ya había un turno
+    // abierto, el POS puede seguir vendiendo offline.
     queryFn: () =>
       httpClient
         .get<ApiResponse<ShiftDTO | null>>("/shifts/active")
-        .then((r) => r.data.data ?? null),
+        .then((r) => r.data.data ?? null)
+        .catch((error) =>
+          fallbackWhenOffline(
+            error,
+            offlineCache.readActiveShift<ShiftDTO | null>(),
+          ),
+        ),
     enabled,
     staleTime: 60 * 1000,
     retry: false,

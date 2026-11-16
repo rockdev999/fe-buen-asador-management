@@ -47,6 +47,11 @@ export interface Sale {
   details: OrderSaleItem[] | [];
   groups: SaleProductGroup[] | [];
   annulmentReason: string | null;
+  /** Registrada sin conexión y sincronizada después (o aún en la cola local). */
+  isOffline: boolean;
+  /** Algún precio cobrado offline difería del catálogo: revisar. */
+  priceMismatch: boolean;
+  syncedAt: string | null;
   audit: Audit;
 }
 
@@ -59,6 +64,7 @@ export interface SalePageItem {
   paymentMethod: PaymentMethodEnum;
   cashier: UserShort;
   createdAt: Date;
+  isOffline: boolean;
 }
 
 export interface ManagerSalePageItem extends SalePageItem {

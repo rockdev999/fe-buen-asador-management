@@ -3,7 +3,14 @@ import { Button } from "@/components/ui/button";
 import { PaymentMethodEnum } from "@/constants";
 import { PAYMENT_METHOD_OPTIONS } from "@/constants/enums/pos.enum";
 import { cn, formatMoney } from "@/lib/utils";
-import { ArrowRight, Banknote, CreditCard, QrCode, X } from "lucide-react";
+import {
+  ArrowRight,
+  Banknote,
+  CreditCard,
+  QrCode,
+  WifiOff,
+  X,
+} from "lucide-react";
 import { useState } from "react";
 
 const METHOD_ICONS: Record<PaymentMethodEnum, React.ElementType> = {
@@ -22,6 +29,10 @@ interface PaymentModalProps {
   onClose: () => void;
   isLoading: boolean;
   defaultMethod?: PaymentMethodEnum;
+  /** Venta sin conexión: muestra el aviso y limita los métodos (sin QR). */
+  offline?: boolean;
+  /** Métodos habilitados. Por defecto, todos. */
+  allowedMethods?: PaymentMethodEnum[];
 }
 
 export function PaymentModal({
@@ -34,7 +45,12 @@ export function PaymentModal({
   onClose,
   isLoading,
   defaultMethod = PaymentMethodEnum.CASH,
+  offline = false,
+  allowedMethods,
 }: PaymentModalProps) {
+  const methodOptions = allowedMethods
+    ? PAYMENT_METHOD_OPTIONS.filter((opt) => allowedMethods.includes(opt.value))
+    : PAYMENT_METHOD_OPTIONS;
   const [method, setMethod] = useState<PaymentMethodEnum>(defaultMethod);
   const [received, setReceived] = useState<number>(0);
 
@@ -80,13 +96,24 @@ export function PaymentModal({
         </div>
 
         <div className="px-5 pb-5 flex flex-col gap-4">
+          {offline && (
+            <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2">
+              <WifiOff size={14} className="mt-0.5 shrink-0 text-amber-600" />
+              <p className="text-[11px] text-amber-800">
+                <span className="font-semibold">Sin conexión.</span> La venta se
+                guarda en este equipo, se imprime la ficha y se envía al
+                servidor cuando vuelva la conexión. QR no disponible.
+              </p>
+            </div>
+          )}
+
           {/* Métodos de pago */}
           <div className="flex flex-col gap-1.5">
             <p className="text-[12px] font-semibold text-muted-foreground/50 uppercase tracking-widest">
               Método de pago
             </p>
             <div className="flex gap-2">
-              {PAYMENT_METHOD_OPTIONS.map((opt) => {
+              {methodOptions.map((opt) => {
                 const Icon = METHOD_ICONS[opt.value] ?? Banknote;
                 const isActive = method === opt.value;
                 return (
@@ -234,7 +261,7 @@ export function PaymentModal({
               )}
             >
               <span className="flex items-center gap-1.5">
-                Confirmar cobro
+                {offline ? "Registrar venta offline" : "Confirmar cobro"}
                 <ArrowRight size={13} />
               </span>
             </Button>

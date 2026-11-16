@@ -8,12 +8,14 @@ import { Toaster } from "../ui/sonner";
 import { useStockAlertsStream } from "@/features/notifications/hooks/useStockAlertsStream";
 import { useSessionKeepAlive } from "@/features/auth/hooks/useSessionKeepAlive";
 import { useWhatsappOrdersStream } from "@/features/whatsapp/hooks/useWhatsappOrdersStream";
+import { useOfflineSync } from "@/features/offline/hooks/useOfflineSync";
 
 export function AppLayout() {
   //   const { sidebarOpen } = useUiStore();
   useSessionKeepAlive();
   useStockAlertsStream();
   useWhatsappOrdersStream();
+  useOfflineSync();
 
   return (
     <div className="flex h-screen bg-surface overflow-hidden">

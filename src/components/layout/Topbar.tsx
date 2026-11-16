@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import { Building2, LogOut, Repeat, User } from "lucide-react";
+import { Building2, LogOut, Repeat, User, WifiOff } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -19,6 +19,12 @@ import { WhatsappOrdersButton } from "@/features/whatsapp/components/WhatsappOrd
 import { useActiveShift } from "@/features/pos/hooks/useShift";
 import { PATHS } from "@/routes/paths";
 import { useNavigate } from "react-router-dom";
+import { OfflineStatusBadge } from "@/features/offline/components/OfflineStatusBadge";
+import { useOfflineStore } from "@/features/offline/stores/offline.store";
+import { AppModal } from "@/components/shared/Overlay/AppModal";
+import { PanelHeader } from "@/components/shared/Overlay/PanelHeader";
+import { PanelFooter } from "@/components/shared/Overlay/PanelFooter";
+import { Button } from "@/components/shared/Basics/Button";
 
 const trans = t.auth.switchLocation;
 
@@ -26,6 +32,8 @@ export function Topbar() {
   const { user, isCashier } = useAuth();
   const navigate = useNavigate();
   const [isSwitchLocationOpen, setIsSwitchLocationOpen] = useState(false);
+  const [confirmLogout, setConfirmLogout] = useState(false);
+  const unsyncedSales = useOfflineStore((s) => s.sales.length);
   const { isOpen: hasOpenShift, status: shiftStatus } =
     useActiveShift(isCashier);
 
@@ -33,6 +41,12 @@ export function Topbar() {
     user?.role === RoleEnum.ADMIN || user?.role === RoleEnum.CASHIER;
 
   function handleLogout() {
+    // La cola offline no se borra al cerrar sesión, pero conviene avisar:
+    // esas ventas solo se envían con la sesión de este cajero.
+    if (unsyncedSales > 0) {
+      setConfirmLogout(true);
+      return;
+    }
     logoutSession();
   }
 
@@ -53,6 +67,7 @@ export function Topbar() {
 
       {/* Right side */}
       <div className="ml-auto flex items-center gap-3">
+        {isCashier && <OfflineStatusBadge />}
         {isCashier && shiftStatus !== "pending" && (
           <button
             type="button"
@@ -107,6 +122,37 @@ export function Topbar() {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      {confirmLogout && (
+        <AppModal size="sm" onClose={() => setConfirmLogout(false)}>
+          <PanelHeader
+            icon={WifiOff}
+            title="Ventas offline sin sincronizar"
+            onClose={() => setConfirmLogout(false)}
+          />
+          <div className="px-5 py-4 text-[12px] text-muted-foreground">
+            {unsyncedSales === 1
+              ? "Tienes 1 venta offline que aún no llega al servidor."
+              : `Tienes ${unsyncedSales} ventas offline que aún no llegan al servidor.`}{" "}
+            Se quedan guardadas en este equipo y se enviarán cuando vuelvas a
+            iniciar sesión con tu usuario, en este mismo navegador.
+          </div>
+          <PanelFooter align="right">
+            <Button variant="outline" onClick={() => setConfirmLogout(false)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="danger"
+              onClick={() => {
+                setConfirmLogout(false);
+                logoutSession();
+              }}
+            >
+              Cerrar sesión igualmente
+            </Button>
+          </PanelFooter>
+        </AppModal>
+      )}
 
       {isSwitchLocationOpen && (
         <SwitchLocationModal onClose={() => setIsSwitchLocationOpen(false)} />

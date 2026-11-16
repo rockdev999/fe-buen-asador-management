@@ -1,13 +1,17 @@
 import { formatMoney } from "@/lib/utils";
 import {
+  AlertTriangle,
   Ban,
   CheckCircle,
   Plus,
   Receipt,
   TicketCheck,
+  WifiOff,
   X,
   XCircle,
 } from "lucide-react";
+import { OfflineChip } from "@/features/offline/components/OfflineChip";
+import { formatLocalDateTime } from "@/lib/formatters";
 import { Sale } from "../../../sales/models/sale";
 import { t } from "@/locales/es";
 import { SaleStatusEnum, ShiftStatusEnum } from "@/constants";
@@ -102,7 +106,44 @@ export function OrderSuccessModal({
             <span className="text-[14px] font-mono text-muted-foreground/70 tracking-wider">
               {sale.ticketCode}
             </span>
+            {sale.isOffline && showDetails && <OfflineChip />}
           </div>
+
+          {/* Venta offline recién registrada: aún está solo en este equipo */}
+          {sale.isOffline && !sale.syncedAt && !showDetails && (
+            <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2">
+              <WifiOff size={14} className="mt-0.5 shrink-0 text-amber-600" />
+              <p className="text-[12px] text-amber-800">
+                Venta guardada sin conexión en este equipo. Se enviará al
+                servidor automáticamente cuando vuelva la conexión.
+              </p>
+            </div>
+          )}
+
+          {sale.isOffline && showDetails && sale.syncedAt && (
+            <p className="text-center text-[11px] text-muted-foreground">
+              Registrada sin conexión · sincronizada el{" "}
+              {formatLocalDateTime(sale.syncedAt)}
+            </p>
+          )}
+
+          {sale.priceMismatch && showDetails && (
+            <div className="flex items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2">
+              <AlertTriangle
+                size={14}
+                className="mt-0.5 shrink-0 text-amber-600"
+              />
+              <div>
+                <p className="text-[12px] font-semibold text-amber-900">
+                  Precio distinto al catálogo
+                </p>
+                <p className="text-[11px] text-amber-800">
+                  Algún precio cobrado sin conexión no coincidía con el catálogo
+                  al sincronizar. Se respetó lo cobrado; conviene revisarla.
+                </p>
+              </div>
+            </div>
+          )}
 
           {showDetails && (
             <div className="bg-surface rounded-xl p-3 mb-5 text-left overflow-auto max-h-40">

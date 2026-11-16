@@ -49,6 +49,12 @@ export interface SaleDTO {
       })[]
     | [];
   annulmentReason: string | null;
+  /** Registrada sin conexión y sincronizada después. */
+  isOffline?: boolean;
+  /** Algún precio cobrado offline difería del catálogo al sincronizar. */
+  priceMismatch?: boolean;
+  /** Cuándo llegó al servidor (solo ventas offline). */
+  syncedAt?: ISODateTimeString | null;
   audit: Audit;
 }
 
@@ -61,6 +67,7 @@ export interface SalePageItemDTO {
   paymentMethod: PaymentMethodEnum;
   cashier: UserShortDTO;
   createdAt: ISODateTimeString;
+  isOffline?: boolean;
 }
 
 export interface ManagerSalePageItemDTO extends SalePageItemDTO {

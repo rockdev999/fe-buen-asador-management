@@ -6,7 +6,16 @@ import {
   CheckCircle2,
   Lock,
   Printer,
+  WifiOff,
 } from "lucide-react";
+import { toast } from "sonner";
+import {
+  selectConflictCount,
+  selectPendingCount,
+  useOfflineStore,
+} from "@/features/offline/stores/offline.store";
+import { syncOfflineQueue } from "@/features/offline/services/offline-sync.service";
+import { OfflineQueueModal } from "@/features/offline/components/OfflineQueueModal";
 import { PageHeader } from "@/components/shared/DataTable/PageHeader";
 import { Button } from "@/components/shared/Basics/Button";
 import { PaymentMethodEnum } from "@/constants";
@@ -53,6 +62,51 @@ export function CashierShift() {
     shiftStatus === "pending" || (isOpen && summaryStatus === "pending");
   const pendingOrders = summary?.pendingOrders ?? 0;
 
+  // Ventas offline: el cierre se bloquea mientras queden en la cola, porque
+  // el backend rechaza las de un turno ya cerrado (OFFLINE_SHIFT_NOT_OPEN).
+  const isOffline = useOfflineStore((s) => s.isOffline);
+  const offlinePending = useOfflineStore(selectPendingCount);
+  const offlineConflicts = useOfflineStore(selectConflictCount);
+  const offlineSyncing = useOfflineStore((s) => s.syncing);
+  const offlineUnsynced = offlinePending + offlineConflicts;
+  const [checkingClose, setCheckingClose] = useState(false);
+  const [showOfflineQueue, setShowOfflineQueue] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) void syncOfflineQueue();
+  }, [isOpen]);
+
+  const closeBlockedReason = isOffline
+    ? "Sin conexión no se puede cerrar el turno"
+    : offlineUnsynced > 0
+      ? "Hay ventas offline sin sincronizar"
+      : pendingOrders > 0
+        ? "Cobra o cancela los pedidos pendientes antes de cerrar"
+        : undefined;
+
+  /** Siempre sincroniza antes de permitir el cierre. */
+  async function handleRequestClose() {
+    setCheckingClose(true);
+    try {
+      await syncOfflineQueue();
+    } finally {
+      setCheckingClose(false);
+    }
+    const state = useOfflineStore.getState();
+    if (state.isOffline) {
+      toast.error("Sin conexión no se puede cerrar el turno.");
+      return;
+    }
+    if (state.sales.length > 0) {
+      toast.error(
+        "Quedan ventas offline sin sincronizar. Resuélvelas antes de cerrar el turno.",
+      );
+      setShowOfflineQueue(true);
+      return;
+    }
+    setOpenCloseModal(true);
+  }
+
   const methodCount = (method: PaymentMethodEnum) =>
     summary?.sales.byPaymentMethod.find((m) => m.method === method);
 
@@ -69,13 +123,13 @@ export function CashierShift() {
           isOpen && (
             <Button
               size="sm"
-              onClick={() => setOpenCloseModal(true)}
-              disabled={pendingOrders > 0 || summaryStatus !== "success"}
-              title={
-                pendingOrders > 0
-                  ? "Cobra o cancela los pedidos pendientes antes de cerrar"
-                  : undefined
+              onClick={() => void handleRequestClose()}
+              isLoading={checkingClose}
+              loadingText="Sincronizando..."
+              disabled={
+                !!closeBlockedReason || summaryStatus !== "success"
               }
+              title={closeBlockedReason}
             >
               <Lock size={13} />
               Cerrar turno
@@ -99,6 +153,70 @@ export function CashierShift() {
           <EmptyState onGoToPos={() => navigate(PATHS.POS)} />
         ) : (
           <div className="mx-auto flex max-w-3xl flex-col gap-4">
+            {(offlineUnsynced > 0 || isOffline) && (
+              <div
+                className={cn(
+                  "flex items-start gap-2 rounded-xl border px-3.5 py-3",
+                  offlineConflicts > 0
+                    ? "border-red-200 bg-red-50"
+                    : "border-amber-200 bg-amber-50",
+                )}
+              >
+                <WifiOff
+                  size={15}
+                  className={cn(
+                    "mt-0.5 shrink-0",
+                    offlineConflicts > 0 ? "text-red-500" : "text-amber-500",
+                  )}
+                />
+                <div className="flex-1">
+                  <p
+                    className={cn(
+                      "text-[12px] font-semibold",
+                      offlineConflicts > 0 ? "text-red-800" : "text-amber-800",
+                    )}
+                  >
+                    {offlineUnsynced === 0
+                      ? "Sin conexión"
+                      : [
+                          offlinePending > 0 &&
+                            (offlinePending === 1
+                              ? "1 venta offline pendiente de envío"
+                              : `${offlinePending} ventas offline pendientes de envío`),
+                          offlineConflicts > 0 &&
+                            (offlineConflicts === 1
+                              ? "1 venta offline con conflicto"
+                              : `${offlineConflicts} ventas offline con conflicto`),
+                        ]
+                          .filter(Boolean)
+                          .join(" · ")}
+                  </p>
+                  <p
+                    className={cn(
+                      "mt-0.5 text-[11px]",
+                      offlineConflicts > 0 ? "text-red-700" : "text-amber-700",
+                    )}
+                  >
+                    {isOffline
+                      ? "El turno se puede cerrar cuando vuelva la conexión y se sincronicen las ventas."
+                      : offlineConflicts > 0
+                        ? "El servidor las rechazó. Revísalas con el administrador antes de cerrar."
+                        : "Se están enviando al servidor. El turno se puede cerrar cuando terminen."}
+                  </p>
+                </div>
+                {offlineUnsynced > 0 && (
+                  <Button
+                    size="xs"
+                    variant="outline"
+                    isLoading={offlineSyncing}
+                    onClick={() => setShowOfflineQueue(true)}
+                  >
+                    Ver ventas
+                  </Button>
+                )}
+              </div>
+            )}
+
             {pendingOrders > 0 && (
               <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 px-3.5 py-3">
                 <AlertTriangle
@@ -198,6 +316,10 @@ export function CashierShift() {
           </div>
         )}
       </div>
+
+      {showOfflineQueue && (
+        <OfflineQueueModal onClose={() => setShowOfflineQueue(false)} />
+      )}
 
       {openCloseModal && (
         <CloseShiftModal

@@ -19,4 +19,18 @@ export interface ApiErrorResponse {
   errors: { field: string; message: string }[];
   timestamp: string;
   path: string;
+  /**
+   * La petición falló sin respuesta del servidor (red caída o timeout). Lo
+   * agrega el interceptor de errores; con esto el POS ofrece la venta offline.
+   */
+  networkError?: boolean;
+  /** Status HTTP de la respuesta, si la hubo (lo agrega el interceptor). */
+  status?: number;
+}
+
+declare module "axios" {
+  interface AxiosRequestConfig {
+    /** No mostrar toasts de error para esta petición (p. ej. sincronización en segundo plano). */
+    silentErrors?: boolean;
+  }
 }

@@ -72,6 +72,9 @@ export const mapSaleDTOtoModel = (dto: SaleDTO): Sale => {
     ),
     groups: groupDetails(details),
     annulmentReason: dto.annulmentReason,
+    isOffline: dto.isOffline ?? false,
+    priceMismatch: dto.priceMismatch ?? false,
+    syncedAt: dto.syncedAt ?? null,
     audit: dto.audit,
   };
 };
@@ -90,6 +93,7 @@ export const mapSalePageItemDTOToModel = (
     name: dto.cashier.name,
   },
   createdAt: new Date(dto.createdAt),
+  isOffline: dto.isOffline ?? false,
 });
 
 export const mapManagerSalePageItemDTOToModel = (

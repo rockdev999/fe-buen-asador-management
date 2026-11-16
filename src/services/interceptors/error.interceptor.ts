@@ -20,6 +20,11 @@ import axios, {
   InternalAxiosRequestConfig,
 } from "axios";
 import { toast } from "sonner";
+import {
+  markOffline,
+  markOnline,
+  useOfflineStore,
+} from "@/features/offline/stores/offline.store";
 
 interface RetriableConfig extends InternalAxiosRequestConfig {
   /** Ya se renovó el token y se reintentó una vez esta petición. */
@@ -94,8 +99,9 @@ function toRejection(
   status?: number,
   errorCode?: string,
   fields: ApiErrorResponse["errors"] = [],
+  networkError = false,
 ) {
-  return Promise.reject({ message, fields, status, errorCode });
+  return Promise.reject({ message, fields, status, errorCode, networkError });
 }
 
 export async function errorInterceptor(
@@ -106,6 +112,25 @@ export async function errorInterceptor(
   const errorCode = error.response?.data?.errorCode;
   const fields = error.response?.data?.errors ?? [];
   const config = error.config as RetriableConfig | undefined;
+
+  // ── Sin respuesta del servidor: el POS pasa a modo offline ──────────────
+  if (!error.response) {
+    const message = getErrorMessage(error);
+    if (axios.isCancel(error)) {
+      if (!config?.silentErrors) toast.error(message);
+      return toRejection(message);
+    }
+    // Un solo aviso al perder la conexión; luego el indicador fijo del POS
+    // muestra el estado y no se repite el toast en cada petición.
+    const wasOffline = useOfflineStore.getState().isOffline;
+    markOffline();
+    if (!config?.silentErrors && !wasOffline) {
+      toast.error(message, { id: "network-offline" });
+    }
+    return toRejection(message, undefined, undefined, [], true);
+  }
+
+  markOnline();
 
   // ── Access token vencido: renovar y reintentar en silencio ──────────────
   if (
@@ -131,8 +156,11 @@ export async function errorInterceptor(
         return toRejection(refreshError.message, status, errorCode);
       }
       // Error de red al renovar: no se cierra sesión, solo falla esta petición.
-      toast.error(MESSAGES.ERROR.OFFLINE, { id: "refresh-offline" });
-      return toRejection(MESSAGES.ERROR.OFFLINE, status, errorCode);
+      markOffline();
+      if (!config.silentErrors) {
+        toast.error(MESSAGES.ERROR.OFFLINE, { id: "network-offline" });
+      }
+      return toRejection(MESSAGES.ERROR.OFFLINE, status, errorCode, [], true);
     }
   }
 
@@ -161,7 +189,9 @@ export async function errorInterceptor(
   // un toast por campo (p. ej. SHIFT_REVIEW_NOTES_REQUIRED llega con errors[notes]).
   const hasFieldErrors = fields.length > 0 && !isKnownErrorCode(errorCode);
 
-  if (hasFieldErrors) {
+  if (config?.silentErrors) {
+    // Quien hizo la petición maneja el error sin avisar al usuario.
+  } else if (hasFieldErrors) {
     fields.forEach(({ field, message: fieldMessage }) => {
       toast.error(`${field}: ${fieldMessage}`);
     });

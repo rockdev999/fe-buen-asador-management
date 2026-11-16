@@ -27,7 +27,11 @@ export const TicketPrint = forwardRef<HTMLDivElement, TicketPrintProps>(
         {/* Info pedido */}
         <div className="ticket-row">
           <span>Pedido</span>
-          <span>#{shortOrderId(sale.orderId)}</span>
+          <span>
+            {sale.isOffline && !sale.syncedAt
+              ? "Sin conexión"
+              : `#${shortOrderId(sale.orderId)}`}
+          </span>
         </div>
         <div className="ticket-row">
           <span>Fecha</span>
