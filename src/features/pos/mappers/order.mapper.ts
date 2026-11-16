@@ -17,12 +17,14 @@ import {
   OrderSaleItem,
 } from "../models/order";
 import { OrderSnapshot } from "../models/order-snapshot";
+import { isWhatsappOrder } from "@/features/whatsapp/mappers/whatsapp-order.mapper";
 
 export function mapOrderDTOToSnapshot(dto: OrderDTO): OrderSnapshot {
   return {
     id: dto.id,
     status: dto.status as OrderStatusEnum,
     cancellationReason: dto.cancellationReason ?? null,
+    isWhatsapp: isWhatsappOrder(dto),
     orderType: dto.type as OrderTypeEnum,
     orderChannel: dto.channel as OrderEnum,
     customerName: dto.customerName ?? null,

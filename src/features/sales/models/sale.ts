@@ -27,6 +27,8 @@ export interface SaleProductGroup {
 export interface Sale {
   id: UUID;
   ticketCode: string;
+  /** Pedido cobrado; su código corto es el que ve el cliente (#E0131C53). */
+  orderId: UUID;
   customerName: string | null;
   orderType: OrderTypeEnum;
   status: SaleStatusEnum;

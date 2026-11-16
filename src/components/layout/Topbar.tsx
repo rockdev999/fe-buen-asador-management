@@ -15,6 +15,7 @@ import { t } from "@/locales/es";
 import { SwitchLocationModal } from "@/features/auth/components/SwitchLocationModal";
 import { logoutSession } from "@/services/auth/session.service";
 import { StockAlertsBell } from "@/features/notifications/components/StockAlertsBell";
+import { WhatsappOrdersButton } from "@/features/whatsapp/components/WhatsappOrdersButton";
 import { useActiveShift } from "@/features/pos/hooks/useShift";
 import { PATHS } from "@/routes/paths";
 import { useNavigate } from "react-router-dom";
@@ -65,6 +66,7 @@ export function Topbar() {
             {hasOpenShift ? "Turno abierto" : "Sin turno"}
           </button>
         )}
+        <WhatsappOrdersButton />
         <StockAlertsBell />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

@@ -1,5 +1,6 @@
 import { forwardRef } from "react";
 import { formatMoney } from "@/lib/utils";
+import { shortOrderId } from "@/lib/order-code";
 import { Sale } from "../../../sales/models/sale";
 import { formatDateTime } from "@/lib/formatters";
 import { OrderTypeEnum, PaymentMethodEnum } from "@/constants";
@@ -26,7 +27,7 @@ export const TicketPrint = forwardRef<HTMLDivElement, TicketPrintProps>(
         {/* Info pedido */}
         <div className="ticket-row">
           <span>Pedido</span>
-          <span>#{sale.ticketCode.slice(-8)}</span>
+          <span>#{shortOrderId(sale.orderId)}</span>
         </div>
         <div className="ticket-row">
           <span>Fecha</span>

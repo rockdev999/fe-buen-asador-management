@@ -28,6 +28,7 @@ import { Payroll } from "@/features/finances/payroll/pages/Payroll";
 import { Reports } from "@/features/finances/reports/pages/Reports";
 import { Dashboard } from "@/features/dashboard/pages/Dashboard";
 import { Shifts } from "@/features/shifts/pages/Shifts";
+import { WhatsappOrders } from "@/features/whatsapp/pages/WhatsappOrders";
 
 export const router = createBrowserRouter([
   { path: PATHS.LOGIN, element: <Login /> },
@@ -89,6 +90,7 @@ export const router = createBrowserRouter([
                 ),
                 children: [
                   { path: PATHS.ORDERS, element: <Orders /> },
+                  { path: PATHS.WHATSAPP_ORDERS, element: <WhatsappOrders /> },
                   { path: PATHS.SALES, element: <Sales /> },
                   { path: PATHS.EXPENSES, element: <Expenses /> },
                   { path: PATHS.PAYROLL, element: <Payroll /> },

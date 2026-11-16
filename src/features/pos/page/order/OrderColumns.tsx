@@ -7,6 +7,7 @@ import {
   OrderTypeEnum,
 } from "@/constants";
 import { formatMoney } from "@/lib/utils";
+import { shortOrderId } from "@/lib/order-code";
 
 import { ManagerOrderPageItem, OrderPageItem } from "../../models/order";
 import {
@@ -25,7 +26,7 @@ export const ORDERS_COLUMNS: ColumnDef<OrderPageItem>[] = [
     // width: "120px",
     render: (row) => (
       <span className="text-xs font-medium text-inkblack font-mono">
-        #{row.id.slice(-8).toUpperCase()}
+        #{shortOrderId(row.id)}
       </span>
     ),
   },
@@ -157,7 +158,7 @@ export const MANAGER_ORDERS_COLUMNS: ColumnDef<ManagerOrderPageItem>[] = [
     sortable: false,
     render: (row) => (
       <span className="text-xs font-medium text-inkblack/50 font-mono">
-        #{row.id.slice(-8).toUpperCase()}
+        #{shortOrderId(row.id)}
       </span>
     ),
   },

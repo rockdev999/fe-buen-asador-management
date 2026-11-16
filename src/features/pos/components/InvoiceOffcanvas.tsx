@@ -2,6 +2,7 @@ import z from "zod";
 import { useFormik } from "formik";
 import { zodToFormik } from "@/lib/zodToFormik";
 import { cn, formatMoney } from "@/lib/utils";
+import { shortOrderId } from "@/lib/order-code";
 import { X } from "lucide-react";
 import { FormField } from "@/components/shared/Basics/FormField";
 import { Label } from "@/components/shared/Basics/Label";
@@ -72,7 +73,7 @@ export function InvoiceOffcanvas({
         {/* Resumen pedido */}
         <div className="px-5 py-4 bg-surface border-b border-surface flex-shrink-0">
           <p className="text-xs text-muted-foreground mb-2">
-            Pedido #{order.id.slice(-6).toUpperCase()}
+            Pedido #{shortOrderId(order.orderId)}
           </p>
           {order.details.map((item) => (
             <div key={item.id} className="flex justify-between text-xs py-0.5">

@@ -23,6 +23,7 @@ import {
 } from "../mappers/sale.mapper";
 import { SortDirectionEnum } from "@/constants/enums/sort.enum";
 import { useAuthStore } from "@/stores/auth.store";
+import { useWhatsappOrdersStore } from "@/features/whatsapp/stores/whatsapp-orders.store";
 
 interface UseSalesPageParams {
   page: number;
@@ -147,6 +148,10 @@ export const useCreateSale = () => {
 
     // El pedido pasa a PAID: también se refrescan pedidos (y su detalle).
     invalidateKeys: [QUERY_KEYS.SALES, QUERY_KEYS.ORDERS],
+    // El backend también emite `order-status` PAID por SSE; quitarlo aquí de
+    // la bandeja de WhatsApp evita esperar al evento.
+    onSuccessCallback: (sale) =>
+      useWhatsappOrdersStore.getState().remove(sale.order.id),
   });
 
   const data = useMemo(

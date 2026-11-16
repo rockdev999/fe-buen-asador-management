@@ -23,6 +23,7 @@ import {
 } from "../mappers/order.mapper";
 import { SortDirectionEnum } from "@/constants/enums/sort.enum";
 import { useAuthStore } from "@/stores/auth.store";
+import { useWhatsappOrdersStore } from "@/features/whatsapp/stores/whatsapp-orders.store";
 
 interface UseOrdersPageParams {
   page: number;
@@ -200,6 +201,9 @@ export const useUpdateOrderStatus = () => {
         .then((r) => r.data.data!),
 
     invalidateKeys: [QUERY_KEYS.ORDERS],
+    // Si es un pedido de WhatsApp, la bandeja se actualiza sin esperar al SSE.
+    onSuccessCallback: (order) =>
+      useWhatsappOrdersStore.getState().applyOrderDTO(order),
   });
 
   const data = useMemo(

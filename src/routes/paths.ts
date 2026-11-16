@@ -19,6 +19,7 @@ export const PATHS = {
   REPORTS: "/reports",
   ORDERS: "/orders",
   SHIFTS: "/shifts",
+  WHATSAPP_ORDERS: "/whatsapp-orders",
 
   // Cashier
   POS: "/pos",

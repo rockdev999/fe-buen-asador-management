@@ -9,6 +9,7 @@ import {
   ClipboardList,
   CreditCard,
   LayoutDashboard,
+  MessageCircle,
   Package,
   Receipt,
   ShoppingBag,
@@ -138,6 +139,12 @@ export const NAV_SECTIONS: NavSection[] = [
         label: "Pedidos",
         path: PATHS.ORDERS,
         icon: ClipboardList,
+        roles: [RoleEnum.CASHIER, RoleEnum.ADMIN, RoleEnum.MANAGER],
+      },
+      {
+        label: "Pedidos WhatsApp",
+        path: PATHS.WHATSAPP_ORDERS,
+        icon: MessageCircle,
         roles: [RoleEnum.CASHIER, RoleEnum.ADMIN, RoleEnum.MANAGER],
       },
       {

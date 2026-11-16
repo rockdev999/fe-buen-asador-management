@@ -18,10 +18,10 @@ interface PaymentModalProps {
   getTotal: () => number;
   discount: number;
   onUpdateDiscount: (value: number) => void;
-  /** receivedAmount: lo entregado en efectivo (incluye el vuelto); en QR/transferencia, el total. */
   onConfirm: (method: PaymentMethodEnum, receivedAmount: number) => void;
   onClose: () => void;
   isLoading: boolean;
+  defaultMethod?: PaymentMethodEnum;
 }
 
 export function PaymentModal({
@@ -33,10 +33,9 @@ export function PaymentModal({
   onConfirm,
   onClose,
   isLoading,
+  defaultMethod = PaymentMethodEnum.CASH,
 }: PaymentModalProps) {
-  const [method, setMethod] = useState<PaymentMethodEnum>(
-    PaymentMethodEnum.CASH,
-  );
+  const [method, setMethod] = useState<PaymentMethodEnum>(defaultMethod);
   const [received, setReceived] = useState<number>(0);
 
   const subtotal = getSubtotal();

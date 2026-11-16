@@ -12,6 +12,8 @@ export interface OrderSnapshot {
   deliveryReference: string | null;
   status?: OrderStatusEnum;
   cancellationReason?: string | null;
+  /** Creado por el bot de WhatsApp (ONLINE sin createdBy). */
+  isWhatsapp?: boolean;
   subtotal: number;
   discount?: number;
   total: number;

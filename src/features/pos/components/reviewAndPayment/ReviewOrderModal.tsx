@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useUpdateOrderStatus } from "../../hooks/useOrder";
 import { useState } from "react";
 import { StatusBadge } from "@/components/shared/OrderBadges";
+import { shortOrderId } from "@/lib/order-code";
 
 const trans = t.pos;
 
@@ -33,12 +34,9 @@ const NEXT_STATUS: Partial<
     status: OrderStatusEnum.READY,
     label: "Marcar como listo",
   },
-  // Cobro del delivery sin control de caja: se marca pagado a mano.
-  [OrderStatusEnum.DELIVERED]: {
-    status: OrderStatusEnum.PAID,
-    label: "Marcar como pagado",
-  },
 };
+
+const CHARGEABLE_STATUSES = [OrderStatusEnum.READY, OrderStatusEnum.DELIVERED];
 
 const CANCEL_REASON_MAX = 500;
 
@@ -82,7 +80,6 @@ export function ReviewOrderModal({
   // Cancelar exige motivo (PUT /orders/:id/status con `reason`).
   const [isCancelling, setIsCancelling] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
-  const [confirmAdvance, setConfirmAdvance] = useState(false);
   const { mutate: updateStatus, isPending: isUpdatingStatus } =
     useUpdateOrderStatus();
   const [pendingStatus, setPendingStatus] = useState<OrderStatusEnum | null>(
@@ -119,11 +116,23 @@ export function ReviewOrderModal({
         : true;
 
   const status = order.status;
-  const nextStep = isExistingOrder && status ? NEXT_STATUS[status] : undefined;
+  // WhatsApp: PENDING → CONFIRMED obligatorio, porque esa transición es la
+  // que le envía al cliente la confirmación y el QR de pago.
+  const nextStep =
+    isExistingOrder && status
+      ? order.isWhatsapp && status === OrderStatusEnum.PENDING
+        ? { status: OrderStatusEnum.CONFIRMED, label: "Aprobar pedido" }
+        : isDelivery && status === OrderStatusEnum.READY
+          ? {
+              status: OrderStatusEnum.DELIVERED,
+              label: "Marcar como entregado",
+            }
+          : NEXT_STATUS[status]
+      : undefined;
   const canCancel =
     isExistingOrder && !!status && CANCELLABLE_STATUSES.includes(status);
   const showCharge = isExistingOrder
-    ? status === OrderStatusEnum.READY && canCharge
+    ? !!status && CHARGEABLE_STATUSES.includes(status) && canCharge
     : true;
   const isFinal =
     status === OrderStatusEnum.PAID || status === OrderStatusEnum.CANCELLED;
@@ -171,28 +180,13 @@ export function ReviewOrderModal({
     );
   }
 
-  // Avanza al siguiente estado. Marcar como pagado pide doble clic porque
-  // cierra el pedido sin pasar por caja.
+  // Avanza al siguiente estado. El detalle se refresca solo (invalida ["orders"]).
   function handleAdvance() {
     if (!orderId || !nextStep) return;
-    const needsConfirm = nextStep.status === OrderStatusEnum.PAID;
-    if (needsConfirm && !confirmAdvance) {
-      setConfirmAdvance(true);
-      setTimeout(() => setConfirmAdvance(false), 2500);
-      return;
-    }
-    setConfirmAdvance(false);
     setPendingStatus(nextStep.status);
     updateStatus(
       { id: orderId, status: nextStep.status },
-      {
-        // El detalle se refresca solo (invalida ["orders"]); si queda en un
-        // estado final ya no hay nada que hacer en el modal.
-        onSuccess: () => {
-          if (nextStep.status === OrderStatusEnum.PAID) onClose();
-        },
-        onSettled: () => setPendingStatus(null),
-      },
+      { onSettled: () => setPendingStatus(null) },
     );
   }
 
@@ -211,6 +205,11 @@ export function ReviewOrderModal({
               <h2 className="text-lg font-medium text-inkblack">
                 {isExistingOrder ? "Pedido" : "Revisar pedido"}
               </h2>
+              {orderId && (
+                <span className="font-mono text-sm font-medium text-muted-foreground">
+                  #{shortOrderId(orderId)}
+                </span>
+              )}
               {isExistingOrder && status && <StatusBadge status={status} />}
             </div>
             <p className="text-[12px] text-muted-foreground mt-0.5">
@@ -517,16 +516,9 @@ export function ReviewOrderModal({
                         onClick={handleAdvance}
                         disabled={isUpdatingStatus}
                         loading={pendingStatus === nextStep.status}
-                        className={cn(
-                          "w-full h-9 font-medium text-md",
-                          confirmAdvance
-                            ? "bg-amber-50 text-amber-700 border border-amber-300 hover:bg-amber-100"
-                            : "bg-inkblack text-white hover:bg-inkblack/90",
-                        )}
+                        className="w-full h-9 font-medium text-md bg-inkblack text-white hover:bg-inkblack/90"
                       >
-                        {confirmAdvance
-                          ? "¿Confirmar? No entra en la caja"
-                          : nextStep.label}
+                        {nextStep.label}
                       </Button>
                     )}
                     {showCharge && (
@@ -541,7 +533,8 @@ export function ReviewOrderModal({
                       </Button>
                     )}
                     {isExistingOrder &&
-                      status === OrderStatusEnum.READY &&
+                      !!status &&
+                      CHARGEABLE_STATUSES.includes(status) &&
                       !canCharge && (
                         <p className="text-center text-[11px] text-muted-foreground">
                           El cobro lo registra el cajero desde su turno.

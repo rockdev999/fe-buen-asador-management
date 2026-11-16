@@ -48,6 +48,7 @@ export const mapSaleDTOtoModel = (dto: SaleDTO): Sale => {
   return {
     id: dto.id,
     ticketCode: dto.ticketCode,
+    orderId: dto.order.id,
     customerName: dto.customerName ?? null,
     orderType: dto.orderType,
     status: dto.status,
