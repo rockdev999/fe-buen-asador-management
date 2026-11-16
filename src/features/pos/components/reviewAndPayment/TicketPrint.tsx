@@ -2,6 +2,9 @@ import { forwardRef } from "react";
 import { formatMoney } from "@/lib/utils";
 import { Sale } from "../../../sales/models/sale";
 import { formatDateTime } from "@/lib/formatters";
+import { OrderTypeEnum, PaymentMethodEnum } from "@/constants";
+import { ORDER_TYPE_LABELS } from "@/utils/generalStatus/order-display";
+import { PAYMENT_LABELS } from "@/utils/generalStatus/sale-display";
 
 interface TicketPrintProps {
   sale: Sale;
@@ -37,7 +40,10 @@ export const TicketPrint = forwardRef<HTMLDivElement, TicketPrintProps>(
         </div>
         <div className="ticket-row">
           <span>Tipo</span>
-          <span>{sale.orderType}</span>
+          <span>
+            {ORDER_TYPE_LABELS[sale.orderType as OrderTypeEnum] ??
+              sale.orderType}
+          </span>
         </div>
         <div className="ticket-row">
           <span>Cajero</span>
@@ -80,13 +86,24 @@ export const TicketPrint = forwardRef<HTMLDivElement, TicketPrintProps>(
           </div>
         )}
         <div className="ticket-row">
-          <span>Efectivo recibido</span>
-          <span>{formatMoney(sale.receivedAmount)}</span>
+          <span>Pago</span>
+          <span>
+            {sale.paymentMethod ? PAYMENT_LABELS[sale.paymentMethod] : "--"}
+          </span>
         </div>
-        <div className="ticket-row">
-          <span>Cambio</span>
-          <span>{formatMoney(sale.change)}</span>
-        </div>
+        {/* Recibido y cambio solo tienen sentido en efectivo */}
+        {sale.paymentMethod === PaymentMethodEnum.CASH && (
+          <>
+            <div className="ticket-row">
+              <span>Efectivo recibido</span>
+              <span>{formatMoney(sale.receivedAmount)}</span>
+            </div>
+            <div className="ticket-row">
+              <span>Cambio</span>
+              <span>{formatMoney(sale.change)}</span>
+            </div>
+          </>
+        )}
         <div className="ticket-divider" />
         <div className="ticket-row ticket-total">
           <span>TOTAL</span>
