@@ -16,7 +16,7 @@ import {
 const PAYMENT_METHOD_LABELS: Record<PaymentMethodEnum, string> = {
   [PaymentMethodEnum.CASH]: "Efectivo",
   [PaymentMethodEnum.QR]: "QR",
-  [PaymentMethodEnum.BANK_TRANSFER]: "Transferencia",
+  [PaymentMethodEnum.BANK_TRANSFER]: "Tarjeta",
 };
 
 const PAYMENT_METHOD_COLORS: Record<PaymentMethodEnum, string> = {

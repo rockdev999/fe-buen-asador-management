@@ -1,4 +1,3 @@
-import { useState } from "react";
 import { useFormik } from "formik";
 import { Lock } from "lucide-react";
 import { AppModal } from "@/components/shared/Overlay/AppModal";
@@ -10,16 +9,41 @@ import { Button } from "@/components/shared/Basics/Button";
 import { ErrorMessage } from "@/components/shared/Basics/ErrorMessage";
 import { MoneyInput } from "@/components/shared/Interactives/MoneyInput";
 import { FormTextarea } from "@/components/shared/Form/FormTextarea";
-import { KNOWN_ERROR_CODES } from "@/constants";
 import { useCloseShift } from "@/features/pos/hooks/useShift";
 import { ShiftCloseForm } from "@/features/pos/forms/shift.form";
 import { mapShiftCloseFormToDTO } from "@/features/pos/mappers/shift.mapper";
 import { Shift } from "@/features/pos/models/shift";
 
 const NOTES_MAX = 500;
-const DECLARED_MAX = 100_000_000;
-const NOTES_REQUIRED_MESSAGE =
-  "El monto no coincide con el esperado. Explica la diferencia.";
+const AMOUNT_MAX = 100_000_000;
+
+type AmountField = "declaredCash" | "declaredQr" | "declaredBankTransfer";
+
+const AMOUNT_FIELDS: {
+  name: AmountField;
+  label: string;
+  hint: string;
+  missing: string;
+}[] = [
+  {
+    name: "declaredCash",
+    label: "Efectivo contado en caja",
+    hint: "Lo que contaste en el cajón",
+    missing: "Ingresa el efectivo que contaste",
+  },
+  {
+    name: "declaredQr",
+    label: "Total QR (app)",
+    hint: "El total que muestra la app del QR",
+    missing: "Ingresa el total del QR (0 si no hubo)",
+  },
+  {
+    name: "declaredBankTransfer",
+    label: "Total tarjeta (tarjetero)",
+    hint: "El total del cierre del tarjetero",
+    missing: "Ingresa el total de tarjeta (0 si no hubo)",
+  },
+];
 
 interface CloseShiftModalProps {
   onClose: () => void;
@@ -27,26 +51,30 @@ interface CloseShiftModalProps {
 }
 
 /**
- * Cierre ciego: el cajero declara lo que contó sin ver el monto esperado.
- * Si no coincide, el backend responde SHIFT_NOTES_REQUIRED y la nota pasa a
- * ser obligatoria, sin revelar cuánto es la diferencia.
+ * Cierre ciego por método de pago: el cajero declara efectivo, QR y tarjeta
+ * sin ver lo esperado. El primer envío es definitivo: el cierre siempre pasa
+ * (queda PENDING) y el backend no indica si hubo diferencia, para que no se
+ * pueda probar montos hasta acertar. La justificación la exige el admin al
+ * aprobar; aquí la nota es opcional.
  */
 export function CloseShiftModal({ onClose, onSuccess }: CloseShiftModalProps) {
   const { mutate: closeShift, status } = useCloseShift();
-  const [notesRequired, setNotesRequired] = useState(false);
 
   const formik = useFormik<ShiftCloseForm>({
-    initialValues: { declaredAmount: null, notes: "" },
+    initialValues: {
+      declaredCash: null,
+      declaredQr: null,
+      declaredBankTransfer: null,
+      notes: "",
+    },
     validate: (values) => {
       const errors: Partial<Record<keyof ShiftCloseForm, string>> = {};
-      if (values.declaredAmount === null) {
-        errors.declaredAmount = "Ingresa el monto que contaste en caja";
-      } else if (values.declaredAmount < 0) {
-        errors.declaredAmount = "El monto no puede ser negativo";
-      }
-      if (notesRequired && !values.notes.trim()) {
-        errors.notes = NOTES_REQUIRED_MESSAGE;
-      } else if (values.notes.length > NOTES_MAX) {
+      AMOUNT_FIELDS.forEach(({ name, missing }) => {
+        const value = values[name];
+        if (value === null) errors[name] = missing;
+        else if (value < 0) errors[name] = "El monto no puede ser negativo";
+      });
+      if (values.notes.length > NOTES_MAX) {
         errors.notes = `Máximo ${NOTES_MAX} caracteres`;
       }
       return errors;
@@ -54,25 +82,16 @@ export function CloseShiftModal({ onClose, onSuccess }: CloseShiftModalProps) {
     onSubmit: (values) => {
       closeShift(mapShiftCloseFormToDTO(values), {
         onSuccess: (shift) => onSuccess(shift),
-        onError: (error) => {
-          // El interceptor rechaza con { message, fields, status, errorCode }.
-          const { errorCode } = error as unknown as { errorCode?: string };
-          if (errorCode === KNOWN_ERROR_CODES.SHIFT_NOTES_REQUIRED) {
-            setNotesRequired(true);
-            formik.setFieldTouched("notes", true, false);
-            formik.setFieldError("notes", NOTES_REQUIRED_MESSAGE);
-          }
-        },
       });
     },
   });
 
   return (
-    <AppModal size="sm" maxHeightClassName="max-h-[85vh]">
+    <AppModal size="sm" maxHeightClassName="max-h-[88vh]">
       <PanelHeader
         icon={Lock}
         title="Cerrar turno"
-        description="Cuenta el efectivo de la caja e ingresa el total."
+        description="Declara lo cobrado por cada método de pago."
         onClose={onClose}
       />
 
@@ -81,36 +100,32 @@ export function CloseShiftModal({ onClose, onSuccess }: CloseShiftModalProps) {
         className="flex min-h-0 flex-1 flex-col"
       >
         <div className="flex flex-1 flex-col gap-3 overflow-y-auto px-5 py-4">
-          <FormField>
-            <Label required>Efectivo contado</Label>
-            <MoneyInput
-              id="declaredAmount"
-              name="declaredAmount"
-              placeholder="0.00"
-              max={DECLARED_MAX}
-              autoFocus
-              onChange={(value) =>
-                formik.setFieldValue("declaredAmount", value)
-              }
-              onBlur={() => formik.setFieldTouched("declaredAmount", true)}
-              className="h-9 rounded-xl bg-white text-[13px]"
-            />
-            <ErrorMessage
-              touched={formik.touched.declaredAmount}
-              error={formik.errors.declaredAmount}
-            />
-          </FormField>
+          {AMOUNT_FIELDS.map(({ name, label, hint }, index) => (
+            <FormField key={name}>
+              <Label required>{label}</Label>
+              <MoneyInput
+                id={name}
+                name={name}
+                placeholder="0.00"
+                max={AMOUNT_MAX}
+                autoFocus={index === 0}
+                onChange={(value) => formik.setFieldValue(name, value)}
+                onBlur={() => formik.setFieldTouched(name, true)}
+                className="h-9 rounded-xl bg-white text-[13px]"
+              />
+              <p className="text-[10px] text-muted-foreground">{hint}</p>
+              <ErrorMessage
+                touched={formik.touched[name]}
+                error={formik.errors[name]}
+              />
+            </FormField>
+          ))}
 
           <FormTextarea
             id="notes"
             name="notes"
-            label="Nota"
-            required={notesRequired}
-            placeholder={
-              notesRequired
-                ? "Explica por qué el monto no coincide"
-                : "Opcional: cualquier observación del turno"
-            }
+            label="Notas"
+            placeholder="Opcional: si sabes de alguna diferencia, explícala para el administrador"
             value={formik.values.notes}
             onChange={formik.handleChange}
             onBlur={formik.handleBlur}
@@ -122,8 +137,10 @@ export function CloseShiftModal({ onClose, onSuccess }: CloseShiftModalProps) {
           />
 
           <p className="text-[11px] text-muted-foreground">
-            Al cerrar, el turno queda pendiente de aprobación del administrador
-            y ya no podrás registrar ventas, egresos ni pagos en él.
+            Si no hubo ventas por un método, ingresa 0. Revisa los montos
+            antes de confirmar: el cierre es definitivo, queda pendiente de
+            aprobación del administrador y ya no podrás registrar ventas,
+            egresos ni pagos en este turno.
           </p>
         </div>
 

@@ -1,6 +1,7 @@
 import {
   API_ERROR_CODES,
   HTTP_STATUS,
+  KNOWN_ERROR_CODES,
   KNOWN_ERROR_MESSAGES,
   MESSAGES,
 } from "@/constants";
@@ -32,6 +33,19 @@ function isKnownErrorCode(code: string | undefined): code is KnownErrorCode {
   return !!code && code in KNOWN_ERROR_MESSAGES;
 }
 
+// errorCodes conocidos cuyo `message` del backend es más preciso que el texto
+// curado: SHIFT_CLOSED dice si es una anulación o un egreso;
+// SHIFT_HAS_PENDING_ORDERS indica cuántos pedidos faltan.
+const PREFER_BACKEND_MESSAGE = new Set<string>([
+  KNOWN_ERROR_CODES.SHIFT_CLOSED,
+  KNOWN_ERROR_CODES.SHIFT_HAS_PENDING_ORDERS,
+]);
+
+function backendMessageText(message: unknown): string | undefined {
+  if (Array.isArray(message)) return message.filter(Boolean).join(". ");
+  return typeof message === "string" && message ? message : undefined;
+}
+
 function getErrorMessage(error: AxiosError<ApiErrorResponse>): string {
   const status = error.response?.status;
   const errorCode = error.response?.data?.errorCode;
@@ -43,7 +57,11 @@ function getErrorMessage(error: AxiosError<ApiErrorResponse>): string {
     return MESSAGES.ERROR.OFFLINE;
   }
 
-  if (isKnownErrorCode(errorCode)) return KNOWN_ERROR_MESSAGES[errorCode];
+  if (isKnownErrorCode(errorCode)) {
+    const fromBackend = backendMessageText(beMessage);
+    if (PREFER_BACKEND_MESSAGE.has(errorCode) && fromBackend) return fromBackend;
+    return KNOWN_ERROR_MESSAGES[errorCode];
+  }
 
   if (beMessage) return beMessage;
 
@@ -140,7 +158,7 @@ export async function errorInterceptor(
   }
 
   // Un errorCode conocido ya trae un mensaje curado: se muestra ese en vez de
-  // un toast por campo (p. ej. SHIFT_NOTES_REQUIRED llega con errors[notes]).
+  // un toast por campo (p. ej. SHIFT_REVIEW_NOTES_REQUIRED llega con errors[notes]).
   const hasFieldErrors = fields.length > 0 && !isKnownErrorCode(errorCode);
 
   if (hasFieldErrors) {

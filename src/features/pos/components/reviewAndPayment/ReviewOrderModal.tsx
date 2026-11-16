@@ -40,6 +40,8 @@ const NEXT_STATUS: Partial<
   },
 };
 
+const CANCEL_REASON_MAX = 500;
+
 const CANCELLABLE_STATUSES = [
   OrderStatusEnum.PENDING,
   OrderStatusEnum.CONFIRMED,
@@ -77,7 +79,9 @@ export function ReviewOrderModal({
     setDeliveryReference,
   } = useCartStore();
 
-  const [confirmCancel, setConfirmCancel] = useState(false);
+  // Cancelar exige motivo (PUT /orders/:id/status con `reason`).
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [cancelReason, setCancelReason] = useState("");
   const [confirmAdvance, setConfirmAdvance] = useState(false);
   const { mutate: updateStatus, isPending: isUpdatingStatus } =
     useUpdateOrderStatus();
@@ -146,24 +150,25 @@ export function ReviewOrderModal({
 
   const subtotal = order.items.reduce((s, item) => s + getItemTotal(item), 0);
 
+  const trimmedReason = cancelReason.trim();
+
   function handleCancel() {
-    if (!orderId) return;
-    if (confirmCancel) {
-      setPendingStatus(OrderStatusEnum.CANCELLED);
-      updateStatus(
-        { id: orderId, status: OrderStatusEnum.CANCELLED },
-        {
-          onSuccess: () => {
-            onOrderCancelled?.();
-            onClose();
-          },
-          onSettled: () => setPendingStatus(null),
+    if (!orderId || !trimmedReason) return;
+    setPendingStatus(OrderStatusEnum.CANCELLED);
+    updateStatus(
+      {
+        id: orderId,
+        status: OrderStatusEnum.CANCELLED,
+        reason: trimmedReason,
+      },
+      {
+        onSuccess: () => {
+          onOrderCancelled?.();
+          onClose();
         },
-      );
-    } else {
-      setConfirmCancel(true);
-      setTimeout(() => setConfirmCancel(false), 2500);
-    }
+        onSettled: () => setPendingStatus(null),
+      },
+    );
   }
 
   // Avanza al siguiente estado. Marcar como pagado pide doble clic porque
@@ -422,31 +427,78 @@ export function ReviewOrderModal({
                 </p>
               )}
               {isFinal ? (
-                <p className="mt-2 text-center text-[12px] text-muted-foreground">
-                  {status === OrderStatusEnum.PAID
-                    ? "Este pedido ya fue pagado."
-                    : "Este pedido fue cancelado."}
-                </p>
+                <div className="mt-2 flex flex-col gap-1.5">
+                  <p className="text-center text-[12px] text-muted-foreground">
+                    {status === OrderStatusEnum.PAID
+                      ? "Este pedido ya fue pagado."
+                      : "Este pedido fue cancelado."}
+                  </p>
+                  {status === OrderStatusEnum.CANCELLED && (
+                    <div className="rounded-lg border border-red-100 bg-red-50 px-3 py-2">
+                      <p className="text-[10px] font-medium uppercase tracking-wider text-red-700/70">
+                        Motivo
+                      </p>
+                      <p className="mt-0.5 whitespace-pre-line text-[12px] text-red-800">
+                        {order.cancellationReason ?? "Sin motivo registrado"}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              ) : isCancelling ? (
+                <div className="mt-2 flex flex-col gap-2">
+                  <FormField>
+                    <Label
+                      className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider"
+                      important
+                    >
+                      Motivo de cancelación
+                    </Label>
+                    <Textarea
+                      autoFocus
+                      value={cancelReason}
+                      onChange={(e) => setCancelReason(e.target.value)}
+                      maxLength={CANCEL_REASON_MAX}
+                      placeholder="Ej: El cliente se fue sin esperar"
+                      className="text-xs"
+                      rows={3}
+                    />
+                    <p className="text-right text-[10px] text-muted-foreground">
+                      {cancelReason.length}/{CANCEL_REASON_MAX}
+                    </p>
+                  </FormField>
+                  <Button
+                    type="button"
+                    onClick={handleCancel}
+                    disabled={!trimmedReason || isUpdatingStatus}
+                    loading={pendingStatus === OrderStatusEnum.CANCELLED}
+                    className="w-full h-9 bg-red-500 hover:bg-red-600 text-white font-medium text-md disabled:opacity-50"
+                  >
+                    Confirmar cancelación
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => {
+                      setIsCancelling(false);
+                      setCancelReason("");
+                    }}
+                    disabled={isUpdatingStatus}
+                    className="w-full h-8 text-md"
+                  >
+                    Volver
+                  </Button>
+                </div>
               ) : (
                 <>
                   {canCancel && (
                     <Button
                       type="button"
-                      onClick={handleCancel}
+                      onClick={() => setIsCancelling(true)}
                       disabled={isUpdatingStatus}
-                      className={cn(
-                        "w-full h-8 text-md font-medium border flex items-center justify-center gap-1.5 transition-all bg-white",
-                        confirmCancel
-                          ? "border-red-300 bg-red-50 text-red-600 hover:bg-red-100"
-                          : "border-surface text-muted-foreground hover:border-red-200 hover:text-red-500 hover:bg-red-50",
-                      )}
+                      className="w-full h-8 text-md font-medium border flex items-center justify-center gap-1.5 transition-all bg-white border-surface text-muted-foreground hover:border-red-200 hover:text-red-500 hover:bg-red-50"
                     >
                       <AlertCircle size={12} />
-                      {pendingStatus === OrderStatusEnum.CANCELLED
-                        ? "Cancelando..."
-                        : confirmCancel
-                          ? "¿Confirmar cancelación?"
-                          : "Cancelar pedido"}
+                      Cancelar pedido
                     </Button>
                   )}
 

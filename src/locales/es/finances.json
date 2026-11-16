@@ -10,7 +10,7 @@
     },
     "methods": {
       "CASH": "Efectivo",
-      "BANK_TRANSFER": "Transferencia bancaria",
+      "BANK_TRANSFER": "Tarjeta",
       "QR": "QR"
     }
   },

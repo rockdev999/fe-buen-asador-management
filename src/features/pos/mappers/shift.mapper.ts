@@ -9,7 +9,9 @@ export const mapShiftFormToDTO = (form: ShiftOpenForm): ShiftOpenDTO => ({
 export const mapShiftCloseFormToDTO = (form: ShiftCloseForm): ShiftCloseDTO => {
   const notes = form.notes.trim();
   return {
-    declaredAmount: form.declaredAmount ?? 0,
+    declaredCash: form.declaredCash ?? 0,
+    declaredQr: form.declaredQr ?? 0,
+    declaredBankTransfer: form.declaredBankTransfer ?? 0,
     ...(notes && { notes }),
   };
 };
@@ -24,6 +26,15 @@ export const mapShiftDTOToModel = (dto: ShiftDTO): Shift => ({
   declaredAmount: dto.declaredAmount === null ? null : Number(dto.declaredAmount),
   systemAmount: dto.systemAmount === null ? null : Number(dto.systemAmount),
   difference: dto.difference === null ? null : Number(dto.difference),
+  reconciliation: dto.reconciliation
+    ? dto.reconciliation.map((r) => ({
+        method: r.method,
+        declared: r.declared === null ? null : Number(r.declared),
+        expected: r.expected === null ? null : Number(r.expected),
+        difference: r.difference === null ? null : Number(r.difference),
+      }))
+    : null,
+  hasDifference: dto.hasDifference ?? null,
   notes: dto.notes ?? null,
   status: dto.status,
   review: dto.review

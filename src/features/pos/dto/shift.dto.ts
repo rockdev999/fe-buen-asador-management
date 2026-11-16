@@ -6,11 +6,23 @@ export interface ShiftOpenDTO {
   initialAmount: number;
 }
 
-// POST /shifts/close — sucursal y cajero salen del token.
+// POST /shifts/close — sucursal y cajero salen del token. Arqueo por método:
+// efectivo contado, total de la app del QR y total del tarjetero.
 export interface ShiftCloseDTO {
-  declaredAmount: number;
-  /** Obligatorio si lo declarado no coincide con lo esperado (SHIFT_NOTES_REQUIRED). */
+  declaredCash: number;
+  declaredQr: number;
+  /** BANK_TRANSFER = pago con tarjeta. */
+  declaredBankTransfer: number;
+  /** Opcional (máx. 500). El cierre siempre pasa; la justificación la exige el admin. */
   notes?: string;
+}
+
+export interface ShiftReconciliationItemDTO {
+  method: PaymentMethodEnum;
+  declared: number | null;
+  expected: number | null;
+  /** declared - expected (+ sobrante, - faltante). */
+  difference: number | null;
 }
 
 // POST /shifts/:id/approve — `notes` obligatorio si difference ≠ 0.
@@ -31,9 +43,14 @@ export interface ShiftDTO {
   openedAt: ISODateTimeString;
   closedAt: ISODateTimeString | null;
   initialAmount: number;
+  /** Solo el efectivo (declarado / esperado / diferencia). */
   declaredAmount: number | null;
   systemAmount: number | null;
   difference: number | null;
+  /** Arqueo por método; null mientras el turno está OPEN. */
+  reconciliation: ShiftReconciliationItemDTO[] | null;
+  /** true si algún método no cuadra; null mientras está OPEN. */
+  hasDifference: boolean | null;
   notes: string | null;
   status: ShiftStatusEnum;
   review: ShiftReviewDTO | null;
@@ -43,10 +60,11 @@ export interface ShiftDTO {
 
 export interface ShiftSummaryCountDTO {
   count: number;
-  total: number;
+  /** null para el CASHIER: el resumen es ciego para todos los montos. */
+  total: number | null;
 }
 
-// GET /shifts/active/summary (CASHIER, expectedCash = null: cierre ciego)
+// GET /shifts/active/summary (CASHIER: solo cantidades, todos los montos null)
 // GET /shifts/:id/summary   (ADMIN/MANAGER, expectedCash calculado)
 export interface ShiftSummaryDTO {
   shiftId: UUID;

@@ -14,6 +14,6 @@ export const STATUS_LABELS: Record<SaleStatusEnum, string> = {
 
 export const PAYMENT_LABELS: Record<PaymentMethodEnum, string> = {
   [PaymentMethodEnum.CASH]: "Efectivo",
-  [PaymentMethodEnum.BANK_TRANSFER]: "Transferencia",
+  [PaymentMethodEnum.BANK_TRANSFER]: "Tarjeta",
   [PaymentMethodEnum.QR]: "QR",
 };

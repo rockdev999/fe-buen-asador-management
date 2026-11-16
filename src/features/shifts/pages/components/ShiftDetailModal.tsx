@@ -14,15 +14,22 @@ import {
   useShiftSummaryById,
 } from "@/features/pos/hooks/useShift";
 import { ShiftApproveForm } from "@/features/pos/forms/shift.form";
+import { Shift, ShiftSummary } from "@/features/pos/models/shift";
 import { PAYMENT_LABELS } from "@/utils/generalStatus/sale-display";
-import {
-  differenceLabel,
-  differenceTone,
-} from "@/utils/generalStatus/shift-display";
+import { differenceTone } from "@/utils/generalStatus/shift-display";
 import { ShiftStatusBadge } from "../../components/ShiftStatusBadge";
 import { SummaryStat } from "../../components/SummaryStat";
 
 const NOTES_MAX = 500;
+
+const PAYMENT_METHODS = [
+  PaymentMethodEnum.CASH,
+  PaymentMethodEnum.QR,
+  PaymentMethodEnum.BANK_TRANSFER,
+];
+
+const money = (value: number | null | undefined) =>
+  value == null ? "—" : formatMoney(value);
 
 interface ShiftDetailModalProps {
   shiftId: string;
@@ -42,7 +49,8 @@ export function ShiftDetailModal({
   const { data: summary } = useShiftSummaryById(shiftId);
   const { mutate: approve, status: approveStatus } = useApproveShift();
 
-  const hasDifference = !!shift?.difference && shift.difference !== 0;
+  // El backend exige comentario si cualquier método no cuadra.
+  const hasDifference = shift?.hasDifference === true;
   const showApprove = canApprove && shift?.status === ShiftStatusEnum.PENDING;
 
   const formik = useFormik<ShiftApproveForm>({
@@ -88,50 +96,45 @@ export function ShiftDetailModal({
         ) : (
           <div className="flex flex-col gap-4">
             <section>
-              <h3 className="mb-2 text-[12px] font-semibold text-inkblack">
-                Arqueo
-              </h3>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              <div className="mb-2 flex items-center justify-between gap-2">
+                <h3 className="text-[12px] font-semibold text-inkblack">
+                  Arqueo
+                </h3>
+                {shift.hasDifference !== null && (
+                  <span
+                    className={cn(
+                      "rounded px-2 py-0.5 text-[10px] font-medium",
+                      shift.hasDifference
+                        ? "bg-red-50 text-red-600"
+                        : "bg-green-50 text-green-700",
+                    )}
+                  >
+                    {shift.hasDifference ? "Con diferencia" : "Cuadra"}
+                  </span>
+                )}
+              </div>
+
+              <div className="mb-2 grid grid-cols-2 gap-2">
                 <SummaryStat
-                  label="Monto inicial"
+                  label="Monto inicial (efectivo)"
                   value={formatMoney(shift.initialAmount)}
                 />
                 <SummaryStat
-                  label="Esperado (sistema)"
+                  label="Horario"
                   value={
-                    shift.systemAmount !== null
-                      ? formatMoney(shift.systemAmount)
-                      : summary?.expectedCash != null
-                        ? formatMoney(summary.expectedCash)
-                        : "—"
-                  }
-                  hint={shift.systemAmount === null ? "Al momento" : undefined}
-                />
-                <SummaryStat
-                  label="Declarado"
-                  value={
-                    shift.declaredAmount !== null
-                      ? formatMoney(shift.declaredAmount)
-                      : "—"
-                  }
-                />
-                <SummaryStat
-                  label="Diferencia"
-                  value={
-                    <span className={differenceTone(shift.difference)}>
-                      {shift.difference !== null
-                        ? formatMoney(shift.difference)
-                        : "—"}
+                    <span className="text-[12.5px] font-medium">
+                      {formatLocalDateTime(shift.openedAt)}
                     </span>
                   }
-                  hint={differenceLabel(shift.difference)}
+                  hint={
+                    shift.closedAt
+                      ? `Cierre ${formatLocalDateTime(shift.closedAt)}`
+                      : "Turno en curso"
+                  }
                 />
               </div>
-              <p className="mt-2 text-[11px] text-muted-foreground">
-                Apertura {formatLocalDateTime(shift.openedAt)}
-                {shift.closedAt &&
-                  ` · Cierre ${formatLocalDateTime(shift.closedAt)}`}
-              </p>
+
+              <ReconciliationTable shift={shift} summary={summary} />
             </section>
 
             {summary && (
@@ -140,11 +143,7 @@ export function ShiftDetailModal({
                   Movimientos
                 </h3>
                 <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-                  {[
-                    PaymentMethodEnum.CASH,
-                    PaymentMethodEnum.QR,
-                    PaymentMethodEnum.BANK_TRANSFER,
-                  ].map((method) => {
+                  {PAYMENT_METHODS.map((method) => {
                     const row = summary.sales.byPaymentMethod.find(
                       (m) => m.method === method,
                     );
@@ -152,30 +151,30 @@ export function ShiftDetailModal({
                       <SummaryStat
                         key={method}
                         label={`Ventas ${PAYMENT_LABELS[method]}`}
-                        value={formatMoney(row?.total ?? 0)}
+                        value={money(row?.total)}
                         hint={`${row?.count ?? 0} ventas`}
                       />
                     );
                   })}
                   <SummaryStat
+                    label="Total vendido"
+                    value={money(summary.sales.total)}
+                    hint={`${summary.sales.count} ventas`}
+                  />
+                  <SummaryStat
                     label="Anuladas"
-                    value={formatMoney(summary.sales.annulled.total)}
+                    value={money(summary.sales.annulled.total)}
                     hint={`${summary.sales.annulled.count} ventas`}
                   />
                   <SummaryStat
                     label="Egresos"
-                    value={formatMoney(summary.expenses.total)}
+                    value={money(summary.expenses.total)}
                     hint={`${summary.expenses.count} registros`}
                   />
                   <SummaryStat
                     label="Nómina"
-                    value={formatMoney(summary.payroll.total)}
+                    value={money(summary.payroll.total)}
                     hint={`${summary.payroll.count} pagos`}
-                  />
-                  <SummaryStat
-                    label="Total vendido"
-                    value={formatMoney(summary.sales.total)}
-                    hint={`${summary.sales.count} ventas`}
                   />
                   {shift.status === ShiftStatusEnum.OPEN && (
                     <SummaryStat
@@ -247,9 +246,86 @@ export function ShiftDetailModal({
   );
 }
 
+/**
+ * Declarado vs esperado por método. Con el turno OPEN no hay arqueo todavía:
+ * se muestra el esperado al momento (efectivo desde expectedCash; QR y
+ * tarjeta, lo vendido por ese medio).
+ */
+function ReconciliationTable({
+  shift,
+  summary,
+}: {
+  shift: Shift;
+  summary: ShiftSummary | null;
+}) {
+  const rows = PAYMENT_METHODS.map((method) => {
+    const closed = shift.reconciliation?.find((r) => r.method === method);
+    if (closed) return closed;
+    const sold = summary?.sales.byPaymentMethod.find(
+      (m) => m.method === method,
+    );
+    return {
+      method,
+      declared: null,
+      expected:
+        method === PaymentMethodEnum.CASH
+          ? (summary?.expectedCash ?? null)
+          : (sold?.total ?? null),
+      difference: null,
+    };
+  });
+
+  return (
+    <div className="overflow-hidden rounded-xl border border-surface">
+      <table className="w-full text-[12px]">
+        <thead className="bg-surface/50 text-[11px] text-muted-foreground">
+          <tr>
+            <th className="px-3 py-2 text-left font-medium">Método</th>
+            <th className="px-3 py-2 text-right font-medium">Declarado</th>
+            <th className="px-3 py-2 text-right font-medium">
+              {shift.reconciliation ? "Esperado" : "Esperado al momento"}
+            </th>
+            <th className="px-3 py-2 text-right font-medium">Diferencia</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.method} className="border-t border-surface">
+              <td className="px-3 py-2 text-inkblack">
+                {PAYMENT_LABELS[row.method]}
+              </td>
+              <td className="px-3 py-2 text-right tabular-nums text-inkblack">
+                {money(row.declared)}
+              </td>
+              <td className="px-3 py-2 text-right tabular-nums text-muted-foreground">
+                {money(row.expected)}
+              </td>
+              <td
+                className={cn(
+                  "px-3 py-2 text-right font-semibold tabular-nums",
+                  differenceTone(row.difference),
+                )}
+              >
+                {money(row.difference)}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {shift.reconciliation?.some(
+        (r) => r.method !== PaymentMethodEnum.CASH && r.declared === null,
+      ) && (
+        <p className="border-t border-surface px-3 py-2 text-[10.5px] text-muted-foreground">
+          Turno anterior al arqueo por método: solo se arqueó el efectivo.
+        </p>
+      )}
+    </div>
+  );
+}
+
 function Note({ title, body }: { title: string; body: string }) {
   return (
-    <div className={cn("rounded-xl border border-surface bg-surface/40 px-3.5 py-2.5")}>
+    <div className="rounded-xl border border-surface bg-surface/40 px-3.5 py-2.5">
       <p className="text-[11px] font-medium text-muted-foreground">{title}</p>
       <p className="mt-0.5 whitespace-pre-line text-[12.5px] text-inkblack">
         {body}

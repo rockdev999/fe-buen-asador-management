@@ -21,6 +21,6 @@ export const ORDER_TYPE_OPTIONS = [
 
 export const PAYMENT_METHOD_OPTIONS = [
   { label: "Efectivo", value: PaymentMethodEnum.CASH },
-  { label: "Transferencia", value: PaymentMethodEnum.BANK_TRANSFER },
+  { label: "Tarjeta", value: PaymentMethodEnum.BANK_TRANSFER },
   { label: "QR", value: PaymentMethodEnum.QR },
 ] as const;

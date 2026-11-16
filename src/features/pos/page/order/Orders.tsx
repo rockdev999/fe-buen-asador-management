@@ -58,6 +58,7 @@ function CashierAdminOrders() {
     data,
     meta,
     status: queryStatus,
+    refetch,
   } = useOrdersPage({
     page,
     search: filters.search ?? "",
@@ -75,8 +76,11 @@ function CashierAdminOrders() {
   }
 
   function handleApply(newFilters: Record<string, string>) {
+    // Con los mismos filtros la clave no cambia: se fuerza la recarga.
+    const isSame = JSON.stringify(newFilters) === JSON.stringify(filters);
     setFilters(newFilters);
     setPage(1);
+    if (isSame) refetch();
   }
 
   function handleCreateOrder() {
@@ -134,6 +138,7 @@ function CashierAdminOrders() {
         onApply={handleApply}
         dropdowns={ORDER_DROPDOWNS}
         initialValues={filters}
+        isLoading={queryStatus === "pending"}
       />
 
       <DataTable

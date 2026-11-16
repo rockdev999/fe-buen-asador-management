@@ -22,6 +22,7 @@ export function mapOrderDTOToSnapshot(dto: OrderDTO): OrderSnapshot {
   return {
     id: dto.id,
     status: dto.status as OrderStatusEnum,
+    cancellationReason: dto.cancellationReason ?? null,
     orderType: dto.type as OrderTypeEnum,
     orderChannel: dto.channel as OrderEnum,
     customerName: dto.customerName ?? null,

@@ -16,12 +16,17 @@ import { PAYMENT_LABELS } from "@/utils/generalStatus/sale-display";
 import { SummaryStat } from "../components/SummaryStat";
 import { CloseShiftModal } from "./components/CloseShiftModal";
 
+const PAYMENT_METHODS = [
+  PaymentMethodEnum.CASH,
+  PaymentMethodEnum.QR,
+  PaymentMethodEnum.BANK_TRANSFER,
+];
+
 /**
  * Caja del cajero: estado del turno activo, resumen y cierre.
  *
- * Cierre ciego: no se muestra ningún monto que permita deducir el efectivo
- * esperado (total en efectivo, total vendido, egresos ni nómina). Solo
- * cantidades y los totales de QR/transferencia, que no entran en la caja.
+ * Cierre ciego para todos los métodos: el backend envía los montos del
+ * resumen en null y la pantalla solo muestra cantidades.
  */
 export function CashierShift() {
   const navigate = useNavigate();
@@ -131,25 +136,14 @@ export function CashierShift() {
                       label="Ventas cobradas"
                       value={summary.sales.count}
                     />
-                    <SummaryStat
-                      label={PAYMENT_LABELS[PaymentMethodEnum.CASH]}
-                      value={methodCount(PaymentMethodEnum.CASH)?.count ?? 0}
-                      hint="ventas"
-                    />
-                    <SummaryStat
-                      label={PAYMENT_LABELS[PaymentMethodEnum.QR]}
-                      value={formatMoney(
-                        methodCount(PaymentMethodEnum.QR)?.total ?? 0,
-                      )}
-                      hint={`${methodCount(PaymentMethodEnum.QR)?.count ?? 0} ventas`}
-                    />
-                    <SummaryStat
-                      label={PAYMENT_LABELS[PaymentMethodEnum.BANK_TRANSFER]}
-                      value={formatMoney(
-                        methodCount(PaymentMethodEnum.BANK_TRANSFER)?.total ?? 0,
-                      )}
-                      hint={`${methodCount(PaymentMethodEnum.BANK_TRANSFER)?.count ?? 0} ventas`}
-                    />
+                    {PAYMENT_METHODS.map((method) => (
+                      <SummaryStat
+                        key={method}
+                        label={PAYMENT_LABELS[method]}
+                        value={methodCount(method)?.count ?? 0}
+                        hint="ventas"
+                      />
+                    ))}
                   </div>
                 </section>
 
@@ -178,9 +172,9 @@ export function CashierShift() {
                 </section>
 
                 <p className="text-[11px] text-muted-foreground">
-                  Al cerrar, cuenta el efectivo de la caja y declara el total.
-                  El sistema lo compara con lo esperado y el administrador
-                  revisa el cierre.
+                  Al cerrar, declara el efectivo contado en caja, el total de
+                  la app del QR y el total del tarjetero. El sistema los
+                  compara con lo esperado y el administrador revisa el cierre.
                 </p>
               </>
             )}
@@ -239,10 +233,33 @@ function ClosedState({
           Turno cerrado
         </p>
         <p className="mt-0.5 max-w-sm text-[12px] text-muted-foreground">
-          Declaraste {formatMoney(shift.declaredAmount ?? 0)}. El cierre queda
-          pendiente de aprobación del administrador.
+          El cierre queda pendiente de aprobación del administrador.
         </p>
       </div>
+      {/* Solo lo declarado: lo esperado no se muestra al cajero. */}
+      {shift.reconciliation && (
+        <div className="w-full max-w-xs rounded-xl border border-surface bg-white px-4 py-3 text-left">
+          <p className="mb-1.5 text-[11px] font-medium text-muted-foreground">
+            Declaraste
+          </p>
+          {PAYMENT_METHODS.map((method) => {
+            const row = shift.reconciliation?.find((r) => r.method === method);
+            return (
+              <div
+                key={method}
+                className="flex items-center justify-between py-0.5 text-[12.5px]"
+              >
+                <span className="text-muted-foreground">
+                  {PAYMENT_LABELS[method]}
+                </span>
+                <span className="font-medium tabular-nums text-inkblack">
+                  {row?.declared != null ? formatMoney(row.declared) : "—"}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
       <Button size="sm" variant="outline" onClick={onGoToPos}>
         Abrir un nuevo turno
       </Button>

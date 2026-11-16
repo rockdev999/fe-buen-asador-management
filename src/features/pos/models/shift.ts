@@ -8,6 +8,13 @@ export interface ShiftReview {
   notes: string | null;
 }
 
+export interface ShiftReconciliationItem {
+  method: PaymentMethodEnum;
+  declared: number | null;
+  expected: number | null;
+  difference: number | null;
+}
+
 export interface Shift {
   id: UUID;
   location: { id: UUID; name: string };
@@ -18,6 +25,8 @@ export interface Shift {
   declaredAmount: number | null;
   systemAmount: number | null;
   difference: number | null;
+  reconciliation: ShiftReconciliationItem[] | null;
+  hasDifference: boolean | null;
   notes: string | null;
   status: ShiftStatusEnum;
   review: ShiftReview | null;
@@ -27,7 +36,7 @@ export interface Shift {
 
 export interface ShiftSummaryCount {
   count: number;
-  total: number;
+  total: number | null;
 }
 
 export interface ShiftSummary {

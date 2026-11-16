@@ -146,6 +146,12 @@ export const QUERY_KEYS = {
   // POS — Órdenes
   ORDERS: ["orders"],
   ORDER: (id: string) => ["orders", id],
+  // Listado por sucursal (CASHIER/ADMIN). Los params van en la clave: si no,
+  // cambiar filtros, página u orden reutiliza la caché y no vuelve a pedir.
+  PAGINATION_ORDERS: (
+    locationId: string | null | undefined,
+    params: Record<string, any>,
+  ) => ["orders", "pagination", locationId ?? "", params],
   PAGINATION_ORDERS_MANAGER: (params: Record<string, any>) => [
     "orders",
     "manager",

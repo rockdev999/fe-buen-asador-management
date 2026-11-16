@@ -60,7 +60,7 @@ export function useOrdersPage({
     OrderPageItemDTO,
     ReturnType<typeof mapOrderPageItemDTOToModel>
   >({
-    queryKey: QUERY_KEYS.ORDERS,
+    queryKey: QUERY_KEYS.PAGINATION_ORDERS(locationId, params),
     queryFn: () =>
       httpClient
         .get<
@@ -183,9 +183,20 @@ export const useCreateOrder = () => {
 
 export const useUpdateOrderStatus = () => {
   const handler = usePutHandler({
-    mutationFn: ({ id, status }: { id: string; status: OrderStatusEnum }) =>
+    mutationFn: ({
+      id,
+      status,
+      reason,
+    }: {
+      id: string;
+      status: OrderStatusEnum;
+      reason?: string;
+    }) =>
       httpClient
-        .put<ApiResponse<OrderDTO>>(`/orders/${id}/status`, { status })
+        .put<ApiResponse<OrderDTO>>(`/orders/${id}/status`, {
+          status,
+          ...(reason && { reason }),
+        })
         .then((r) => r.data.data!),
 
     invalidateKeys: [QUERY_KEYS.ORDERS],

@@ -44,8 +44,9 @@ const BASE_COLUMNS: ColumnDef<Shift>[] = [
     ),
   },
   {
+    // declaredAmount/systemAmount/difference son solo del efectivo.
     key: "declaredAmount",
-    label: "Declarado",
+    label: "Efectivo declarado",
     render: (row) => (
       <span className="text-xs tabular-nums text-inkblack">
         {money(row.declaredAmount)}
@@ -54,7 +55,7 @@ const BASE_COLUMNS: ColumnDef<Shift>[] = [
   },
   {
     key: "systemAmount",
-    label: "Sistema",
+    label: "Efectivo esperado",
     render: (row) => (
       <span className="text-xs tabular-nums text-muted-foreground">
         {money(row.systemAmount)}
@@ -62,8 +63,27 @@ const BASE_COLUMNS: ColumnDef<Shift>[] = [
     ),
   },
   {
+    key: "hasDifference",
+    label: "Arqueo",
+    render: (row) =>
+      row.hasDifference === null ? (
+        <span className="text-xs text-muted-foreground">—</span>
+      ) : (
+        <span
+          className={cn(
+            "inline-flex px-2 py-0.5 rounded text-[10px] font-medium whitespace-nowrap",
+            row.hasDifference
+              ? "bg-red-50 text-red-600"
+              : "bg-green-50 text-green-700",
+          )}
+        >
+          {row.hasDifference ? "Con diferencia" : "Cuadra"}
+        </span>
+      ),
+  },
+  {
     key: "difference",
-    label: "Diferencia",
+    label: "Dif. efectivo",
     render: (row) => (
       <span
         className={cn(

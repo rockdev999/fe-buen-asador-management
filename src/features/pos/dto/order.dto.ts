@@ -65,11 +65,15 @@ export interface OrderDTO {
   items: OrderItemDTO[];
   subtotal: number;
   total: number;
+  /** Motivo al cancelar (o "Venta anulada: <motivo>"). null si no aplica. */
+  cancellationReason?: string | null;
   audit: Audit;
 }
 
 export interface UpdateOrderStatusDTO {
   status: OrderStatusEnum;
+  /** Obligatorio solo al cancelar (máx. 500); en otras transiciones se ignora. */
+  reason?: string;
 }
 
 export interface OrderPageItemDTO {

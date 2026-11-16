@@ -11,6 +11,7 @@ export interface OrderSnapshot {
   customerAddress: string | null;
   deliveryReference: string | null;
   status?: OrderStatusEnum;
+  cancellationReason?: string | null;
   subtotal: number;
   discount?: number;
   total: number;
