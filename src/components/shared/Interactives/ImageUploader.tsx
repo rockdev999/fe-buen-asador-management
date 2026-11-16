@@ -8,7 +8,6 @@ import {
   Upload,
 } from "lucide-react";
 import {
-  useCallback,
   useEffect,
   useId,
   useRef,
@@ -59,10 +58,14 @@ export function ImageUploader({
   const errorMsg = localError || (touched && error ? error : null);
   const hasError = Boolean(errorMsg);
 
-  useEffect(() => {
-    if (objectUrlRef.current) return;
-    setPreview(value ?? null);
-  }, [value]);
+  // Sincroniza la vista previa con `value` durante el render (sin efecto),
+  // salvo que haya una imagen local seleccionada.
+  const [prevValue, setPrevValue] = useState(value);
+  const [hasLocalFile, setHasLocalFile] = useState(false);
+  if (value !== prevValue) {
+    setPrevValue(value);
+    if (!hasLocalFile) setPreview(value ?? null);
+  }
 
   useEffect(() => {
     return () => {
@@ -99,36 +102,34 @@ export function ImageUploader({
     });
   };
 
-  const handleFile = useCallback(
-    (file: File) => {
-      setLocalError(null);
+  const handleFile = (file: File) => {
+    setLocalError(null);
 
-      if (!file.type.startsWith("image/")) {
-        setLocalError("El archivo seleccionado no es una imagen.");
-        return;
-      }
+    if (!file.type.startsWith("image/")) {
+      setLocalError("El archivo seleccionado no es una imagen.");
+      return;
+    }
 
-      if (!isValidFileType(file)) {
-        setLocalError("Formato no válido. Usa JPG, PNG o WEBP.");
-        return;
-      }
+    if (!isValidFileType(file)) {
+      setLocalError("Formato no válido. Usa JPG, PNG o WEBP.");
+      return;
+    }
 
-      if (file.size > maxSizeMB * 1024 * 1024) {
-        setLocalError(`La imagen no puede superar ${maxSizeMB}MB.`);
-        return;
-      }
+    if (file.size > maxSizeMB * 1024 * 1024) {
+      setLocalError(`La imagen no puede superar ${maxSizeMB}MB.`);
+      return;
+    }
 
-      clearObjectUrl();
+    clearObjectUrl();
 
-      const url = URL.createObjectURL(file);
-      objectUrlRef.current = url;
+    const url = URL.createObjectURL(file);
+    objectUrlRef.current = url;
 
-      setPreview(url);
-      setFileName(file.name);
-      onChange(file);
-    },
-    [accept, maxSizeMB, onChange],
-  );
+    setPreview(url);
+    setHasLocalFile(true);
+    setFileName(file.name);
+    onChange(file);
+  };
 
   const handleInputChange = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -144,6 +145,7 @@ export function ImageUploader({
     event?.stopPropagation();
 
     clearObjectUrl();
+    setHasLocalFile(false);
     setPreview(null);
     setFileName(null);
     setLocalError(null);

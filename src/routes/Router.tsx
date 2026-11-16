@@ -30,6 +30,7 @@ import { Dashboard } from "@/features/dashboard/pages/Dashboard";
 import { Shifts } from "@/features/shifts/pages/Shifts";
 import { WhatsappOrders } from "@/features/whatsapp/pages/WhatsappOrders";
 
+// eslint-disable-next-line react-refresh/only-export-components -- usado por session.service
 export const router = createBrowserRouter([
   { path: PATHS.LOGIN, element: <Login /> },
 

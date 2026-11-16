@@ -1,4 +1,4 @@
-import { forwardRef, InputHTMLAttributes, useEffect, useState } from "react";
+import { forwardRef, InputHTMLAttributes, useState } from "react";
 import { Input } from "../../ui/input";
 import { cn } from "@/lib/utils";
 import { Label } from "../Basics/Label";
@@ -99,11 +99,15 @@ export const MoneyInput = forwardRef<HTMLInputElement, MoneyInputProps>(
     const [isFocused, setIsFocused] = useState(false);
     const [isTouched, setIsTouched] = useState(false);
 
-    useEffect(() => {
+    // Sincroniza el valor externo durante el render (sin efecto) cuando cambia
+    // defaultValue y el usuario no está editando.
+    const [prevDefaultValue, setPrevDefaultValue] = useState(defaultValue);
+    if (defaultValue !== prevDefaultValue) {
+      setPrevDefaultValue(defaultValue);
       if (defaultValue !== undefined && !isFocused) {
         setRaw(defaultValue > 0 ? formatForDisplay(defaultValue) : "");
       }
-    }, [defaultValue]);
+    }
 
     const numericValue = parseMoneyString(raw);
     const exceedsMax = max !== undefined && numericValue > max;

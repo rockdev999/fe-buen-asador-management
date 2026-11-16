@@ -1,416 +1,1225 @@
 # Documentación del Sistema — Fe Buen Asador Management
 
-> Documento técnico de referencia sobre la estructura y funcionamiento del frontend del sistema de gestión para el restaurante "Buen Asador". Elaborado como insumo para la documentación del proyecto de grado.
+> Documento técnico de referencia sobre la estructura y el funcionamiento del frontend del sistema de gestión del restaurante "Buen Asador". Sirve como insumo para la documentación del proyecto de grado.
+>
+> **Alcance:** este documento describe el **frontend** (repositorio `fe-buen-asador-management`). El backend es un repositorio aparte; cuando aquí se menciona lo que hace el servidor, se describe tal como el frontend lo consume.
+
+## Índice
+
+1. [Visión general](#1-visión-general)
+2. [Arquitectura del proyecto](#2-arquitectura-del-proyecto)
+3. [Enrutamiento y navegación](#3-enrutamiento-y-navegación)
+4. [Autenticación, sesión y autorización](#4-autenticación-sesión-y-autorización)
+5. [Gestión de estado](#5-gestión-de-estado)
+6. [Comunicación con el backend](#6-comunicación-con-el-backend)
+7. [Tiempo real (Server-Sent Events)](#7-tiempo-real-server-sent-events)
+8. [Sistema de diseño y componentes compartidos](#8-sistema-de-diseño-y-componentes-compartidos)
+9. [Módulos funcionales](#9-módulos-funcionales)
+10. [Matriz de acceso por rol](#10-matriz-de-acceso-por-rol)
+11. [Casos de uso](#11-casos-de-uso)
+12. [Pruebas y automatización](#12-pruebas-y-automatización)
+13. [Convenciones transversales](#13-convenciones-transversales)
+14. [Estado actual y observaciones técnicas](#14-estado-actual-y-observaciones-técnicas)
+15. [Trabajo futuro (Fase 2)](#15-trabajo-futuro-fase-2)
+16. [Resumen de valor para la memoria del proyecto](#16-resumen-de-valor-para-la-memoria-del-proyecto)
 
 ---
 
 ## 1. Visión general
 
-**Fe Buen Asador Management** es una aplicación web (SPA) de gestión integral para un restaurante con **múltiples sucursales**, operado en Bolivia (moneda `BOB`/"Bs.", zona horaria `America/La_Paz`). Cubre dos grandes frentes:
+**Fe Buen Asador Management** es una aplicación web de una sola página (SPA) para gestionar de forma integral un restaurante con **varias sucursales** que opera en Bolivia (moneda `BOB`/"Bs.", zona horaria `America/La_Paz`). Cubre cuatro frentes:
 
-1. **Back-office administrativo**: gestión de usuarios, sucursales, catálogo de productos (categorías, modificadores, productos), inventario de productos terminados, insumos/ingredientes y recetas, consulta de ventas/pedidos, y **finanzas** (egresos y nómina, con reportes por período).
-2. **Punto de venta (POS)**: pantalla operativa para cajeros que permite abrir turno de caja, armar pedidos desde un menú visual, revisar el pedido, cobrar y emitir/imprimir el ticket. Desde el turno abierto, el cajero también registra **egresos de caja** y **pagos de sueldos** del día.
+1. **Back-office administrativo:** usuarios, sucursales, catálogo (categorías, modificadores y productos), inventario de productos terminados, insumos y recetas.
+2. **Operación de venta (POS):** apertura y cierre de turno de caja, armado de pedidos desde un menú visual, cobro, impresión de tickets, pedidos diferidos (delivery) y **venta sin conexión a internet**.
+3. **Canal WhatsApp:** bandeja en tiempo real de los pedidos que los clientes hacen por WhatsApp, con su ciclo de aprobación, preparación, entrega y cobro.
+4. **Finanzas y control:** egresos de caja, nómina diaria, arqueo y aprobación de cierres de caja, dashboard del día y reportes por período (ventas, egresos, nómina e insumos).
 
-El sistema está diseñado para **múltiples roles** (Gerente, Administrador, Cajero, Empleado) con acceso diferenciado por pantalla, y para **múltiples sucursales**, donde un mismo usuario puede tener distintos roles según la sucursal en la que trabaje.
+El sistema distingue **roles** (Gerente, Administrador, Cajero y Empleado) con acceso diferenciado por pantalla. Además es **multi-sucursal**: un mismo usuario puede tener roles distintos según la sucursal en la que trabaje.
 
 ### 1.1 Stack tecnológico
 
 | Categoría | Tecnología |
 |---|---|
-| Framework UI | React 19 + TypeScript |
-| Build tool | Vite |
+| Framework de interfaz | React 19 + TypeScript 5.9 |
+| Herramienta de build | Vite 8 |
 | Enrutamiento | react-router-dom v7 (`createBrowserRouter`) |
-| Datos remotos / cache | TanStack React Query v5 |
-| Estado de cliente global | Zustand (con middleware `persist` para sesión/carrito de caja/UI) |
+| Datos remotos y caché | TanStack React Query v5 |
+| Estado global del cliente | Zustand 5 (con `persist` para la sesión y la interfaz) |
 | Formularios | Formik |
-| Validación de esquemas | Zod (con un adaptador propio `zodToFormik`, **no** se usa `@hookform/resolvers` ni react-hook-form pese a estar en las dependencias) |
-| HTTP | Axios (cliente único con interceptores) |
-| Estilos | Tailwind CSS + componentes propios inspirados en shadcn/ui (Radix UI como base de primitivas: dialog, dropdown, select, avatar, tabs, popover, etc.) |
-| Iconografía | lucide-react |
-| Notificaciones | sonner (toasts) |
-| Drag & drop | @dnd-kit (reordenar ítems del carrito del POS) |
+| Validación | Zod, con un adaptador propio (`zodToFormik`) |
+| HTTP | Axios (un único cliente con interceptores) |
+| Tiempo real | Server-Sent Events con un cliente propio sobre `fetch` |
+| Almacenamiento sin conexión | IndexedDB (cola de ventas), localStorage (copia del menú y del turno) y Service Worker (archivos de la aplicación) |
+| Estilos | Tailwind CSS + componentes estilo shadcn/ui sobre primitivas Radix UI |
+| Iconos | lucide-react |
+| Avisos (toasts) | sonner |
+| Arrastrar y soltar | @dnd-kit (reordenar el carrito del POS) |
 | Fechas | date-fns, react-datepicker |
-| i18n | Diccionario propio en español (`src/locales/es`), usado principalmente para mensajes de validación |
+| Audio | Web Audio API (aviso sonoro de pedidos de WhatsApp, sin archivos de audio) |
+| Textos | Diccionario propio en español (`src/locales/es`) |
 
-### 1.2 Scripts disponibles
+### 1.2 Scripts y configuración
 
 ```json
-"dev" / "start": "vite"        // servidor de desarrollo
-"build": "tsc -b && vite build" // chequeo de tipos + build de producción
+"dev" / "start": "vite"         // servidor de desarrollo
+"build": "tsc -b && vite build" // verificación de tipos + build de producción
 "lint": "eslint ."
 "preview": "vite preview"
 ```
 
-Configuración de entorno (`src/config/env.ts`, variables `VITE_*` en `.env`): `VITE_API_URL` (URL base del backend, por defecto `http://localhost:3000/api`), `VITE_APP_NAME`, `VITE_VERSION`. Configuración de negocio (`src/config/app.config.ts`): nombre "Buen Asador", moneda `BOB`/"Bs.", timeout HTTP 10s, reintentos máx. 2, paginación por defecto (10 ítems, opciones 10/20/50/100).
+- **Entorno** (`src/config/env.ts`, variables `VITE_*` en `.env`): `VITE_API_URL` (URL base del backend; por defecto `http://localhost:3000/api`), `VITE_APP_NAME` y `VITE_VERSION`.
+- **Negocio** (`src/config/app.config.ts`): nombre "Buen Asador", moneda `BOB`/"Bs.", timeout HTTP de 10 s, hasta 2 reintentos y paginación por defecto de 10 ítems (opciones 10/20/50/100).
+- **Service Worker** (`public/sw.js`): se registra **solo en producción** para no interferir con la recarga en caliente de Vite durante el desarrollo.
 
 ---
 
-## 2. Arquitectura general del proyecto
+## 2. Arquitectura del proyecto
 
-### 2.1 Organización por *features* (feature-based / screaming architecture)
+### 2.1 Organización por dominio (*feature-based*)
 
-El código fuente (`src/`) no se organiza por tipo técnico (todos los componentes juntos, todos los hooks juntos), sino **por dominio de negocio**, bajo `src/features/`:
+El código de `src/` no se agrupa por tipo técnico (todos los componentes juntos, todos los hooks juntos), sino **por dominio de negocio**, dentro de `src/features/`:
 
 ```
 src/features/
-  auth/          # login, selección/cambio de sucursal
-  users/         # gestión de usuarios, roles por sucursal, cargos
-  locations/     # gestión de sucursales
-  catalog/       # categorías, modificadores, productos
-    categories/
-    modifiers/
-    products/
-  inventory/     # stock de productos terminados, kardex, alertas
-  supplies/      # ingredientes, stock de ingredientes, recetas
-  pos/           # punto de venta (carrito, pago, turno de caja, impresión)
-  sales/         # consulta de ventas (histórico, filtros)
-  finances/      # finanzas
-    expenses/    #   egresos (gastos de caja) y su reporte por categoría
-    payroll/     #   nómina: pagos de sueldo, pago masivo, sueldos diarios, reporte
-  public/        # página 404
+  auth/           # login, selección y cambio de sucursal, cambio de contraseña, renovación de sesión
+  users/          # usuarios, cargos, restablecimiento de contraseña
+  locations/      # sucursales y asignación de usuarios con su rol
+  catalog/
+    categories/   # categorías y disponibilidad masiva
+    modifiers/    # modificadores (extras)
+    products/     # productos y disponibilidad por sucursal
+  inventory/      # stock de productos terminados, kardex, alertas
+  supplies/       # insumos, stock de insumos y recetas
+  pos/            # punto de venta: carrito, pago, ticket, turno, pedidos
+  sales/          # historial y anulación de ventas
+  shifts/         # caja del cajero, cierre, arqueo y aprobación
+  whatsapp/       # bandeja de pedidos de WhatsApp en tiempo real
+  offline/        # venta sin conexión: cola, sincronización y conectividad
+  notifications/  # alertas de stock en tiempo real
+  dashboard/      # resumen del día
+  finances/
+    expenses/     # egresos de caja
+    payroll/      # nómina diaria
+    reports/      # reportes por período
+  public/         # página 404
 ```
 
-Cada módulo de negocio sigue **la misma subestructura interna** (patrón repetido de forma consistente en todo el proyecto):
+Cada módulo repite **la misma estructura interna**:
 
 ```
-feature/
-  dto/          # forma de los datos tal como los envía/recibe el backend (wire format)
-  models/       # forma de los datos ya adaptada para la UI
+módulo/
+  dto/          # forma de los datos tal como los envía o recibe el backend
+  models/       # forma adaptada a la interfaz
   mappers/      # funciones puras que convierten DTO ⇄ modelo ⇄ formulario
-  validators/   # esquemas Zod (reglas de validación + mensajes)
-  forms/        # tipos de formulario + "form-config" (initialValues, validationSchema, mapFormToDTO)
-  hooks/        # acceso a datos vía React Query (queries y mutaciones) sobre el cliente HTTP
-  config/       # constantes de UI del módulo (opciones de filtros, config de tabla)
-  pages/        # páginas y modales de esa feature
+  validators/   # esquemas Zod (reglas y mensajes de validación)
+  forms/        # tipos de formulario y su configuración (valores iniciales, validación, conversión a DTO)
+  hooks/        # acceso a datos con React Query (consultas y mutaciones)
+  config/       # constantes de interfaz del módulo (filtros, configuración de tabla)
+  stores/       # estado propio del módulo con Zustand, cuando hace falta
+  services/     # lógica fuera de React (solo en offline)
+  utils/        # funciones auxiliares del módulo
+  pages/        # pantallas y modales
+  components/   # componentes que otros módulos reutilizan
 ```
 
-Este patrón **DTO → Mapper → Modelo** se aplica de forma estricta: nunca se pasa un DTO crudo del backend directamente a un componente de UI; siempre existe una función mapper explícita, campo por campo, lo que facilita rastrear cambios de contrato con el backend y desacopla la UI del formato exacto de la API.
+El patrón **DTO → Mapper → Modelo** se aplica de forma estricta: ningún componente recibe un DTO del backend sin pasar por un mapper explícito. Así los cambios en el contrato de la API quedan aislados en un solo lugar y es fácil rastrearlos.
 
 ### 2.2 Estructura transversal (fuera de `features/`)
 
 ```
 src/
   components/
-    layout/       # AppLayout, Sidebar, Topbar
-    shared/        # sistema de diseño propio (ver sección 6)
-    ui/            # primitivas estilo shadcn/ui (button, input, dialog, table, etc.)
-  routes/          # definición de rutas, guards de autenticación/rol
-  stores/          # stores globales de Zustand (auth, ui, error)
-  hooks/           # hooks genéricos de acceso a datos (api.handlers.ts)
-  services/        # cliente Axios + interceptores
-  constants/       # enums, mensajes, códigos de error HTTP, query keys, config de tablas
-  config/          # configuración de entorno, negocio y navegación
-  locales/es/      # diccionario de strings en español
-  types/           # tipos compartidos (envelope de API, auditoría, alias de tipos primitivos)
-  utils/           # utilidades transversales (mapas enum → etiqueta/color)
-  lib/             # utilidades de bajo nivel (p. ej. `zodToFormik`, `cn` para clases)
+    layout/     # AppLayout, Sidebar, Topbar
+    shared/     # sistema de diseño propio (sección 8)
+    ui/         # primitivas estilo shadcn/ui (button, input, dialog, table, etc.)
+  routes/       # rutas y protecciones de acceso
+  stores/       # stores globales de Zustand (auth, ui, error)
+  hooks/        # hooks genéricos de acceso a datos (api.handlers.ts)
+  services/     # cliente Axios, interceptores, sesión y cliente SSE
+  constants/    # enums, mensajes, códigos de error, query keys, configuración de tablas
+  config/       # entorno, negocio y navegación
+  locales/es/   # textos en español
+  types/        # tipos compartidos (envelope de API, auditoría, alias)
+  lib/          # utilidades (zodToFormik, cn, formato de dinero y fechas, códigos de pedido)
 ```
+
+### 2.3 Arranque de la aplicación (`src/main.tsx`)
+
+1. Activa la copia local del menú y del turno activo (`persistOfflineQueries`) para poder vender sin conexión.
+2. Registra el Service Worker (solo en producción).
+3. Monta `QueryClientProvider` y el enrutador (`AppRouter`).
+
+Al entrar al área autenticada, `AppLayout` monta **una sola vez** cuatro procesos en segundo plano:
+
+| Hook | Función |
+|---|---|
+| `useSessionKeepAlive` | Renueva el token antes de que venza |
+| `useStockAlertsStream` | Escucha las alertas de stock en tiempo real (Gerente y Administrador) |
+| `useWhatsappOrdersStream` | Mantiene sincronizada la bandeja de WhatsApp |
+| `useOfflineSync` | Detecta la conexión y sincroniza las ventas offline (Cajero) |
 
 ---
 
 ## 3. Enrutamiento y navegación
 
-### 3.1 Definición de rutas (`src/routes/Router.tsx`)
-
-El árbol de rutas se define con `createBrowserRouter` y tiene tres niveles de protección anidados:
+### 3.1 Árbol de rutas (`src/routes/Router.tsx`)
 
 ```
-/login                          → Login (pública)
-<ProtectedRoute>                 → exige sesión activa
-  <AppLayout>                    → sidebar + topbar + <Outlet/>
-    /                            → RoleBasedRedirect (decide destino según rol)
-    <RoleRoute roles=[MANAGER,ADMIN]>
-      /dashboard                 → Dashboard
-    <RoleRoute roles=[MANAGER]>
-      /users                     → Users
-      /locations                 → Locations
-      /reports                    → Reports
-    <RoleRoute roles=[MANAGER,ADMIN]>
-      /catalog/products           → Products
-      /catalog/categories         → Categories
-      /catalog/modifiers          → Modifiers
-      /inventory                  → Inventory
-      /ingredients                → Supplies
-    <RoleRoute roles=[MANAGER,ADMIN,CASHIER]>
-      /orders                     → Orders
-      /sales                      → Sales
-      /shifts                     → Shifts (Cajero: Caja · Admin/Gerente: turnos de caja)
-      /expenses                   → Expenses (vista según rol)
-      /payroll                    → Payroll (vista según rol)
-    <RoleRoute roles=[CASHIER]>
-      /pos                        → Pos
-    *                             → NotFound
-* (fuera del layout)              → redirige a /login
+/login                              → Login (pública)
+<ProtectedRoute>                     → exige sesión
+  /change-password                   → ChangePassword (fuera del layout)
+  <PasswordChangeGuard>              → bloquea si hay cambio de contraseña pendiente
+    <AppLayout>                      → sidebar + topbar + contenido
+      /                              → RoleBasedRedirect
+      <RoleRoute [MANAGER, ADMIN]>
+        /dashboard                   → Dashboard
+      <RoleRoute [MANAGER]>
+        /users                       → Usuarios
+        /locations                   → Sucursales
+        /reports                     → Reportes
+      <RoleRoute [MANAGER, ADMIN]>
+        /catalog/products            → Productos
+        /catalog/categories          → Categorías
+        /catalog/modifiers           → Modificadores
+        /inventory                   → Inventario
+        /ingredients                 → Insumos y recetas
+      <RoleRoute [MANAGER, ADMIN, CASHIER]>
+        /orders                      → Pedidos
+        /whatsapp-orders             → Pedidos de WhatsApp
+        /sales                       → Ventas
+        /expenses                    → Egresos (vista según rol)
+        /payroll                     → Nómina (vista según rol)
+        /shifts                      → Caja (Cajero) / Turnos de caja (Admin, Gerente)
+      <RoleRoute [CASHIER]>
+        /pos                         → Punto de venta
+      *                              → 404
+* (fuera del layout)                 → redirige a /login
 ```
 
-Todas las rutas (incluidas las de negocio ya implementadas) están centralizadas como constantes en `src/routes/paths.ts` (`PATHS.LOGIN`, `PATHS.DASHBOARD`, `PATHS.USERS`, etc.), evitando strings de ruta "mágicos" repetidos por el código.
+Todas las rutas están centralizadas como constantes en `src/routes/paths.ts` (`PATHS`), así no se repiten cadenas de texto por el código.
 
-### 3.2 Guards de acceso
+### 3.2 Protecciones de acceso (guards)
 
-- **`ProtectedRoute.tsx`**: exige `isAuthenticated` (derivado de `!!token && !!user` en el store de sesión); si no, redirige a `/login`.
-- **`RoleRoute.tsx`**: recibe una lista de roles permitidos y usa `hasRole(...roles)`; si el usuario no cumple, redirige a la pantalla de inicio de su rol (`getHomePath`). Si esa pantalla es justo la prohibida, muestra 404 para no entrar en bucle.
-- **`RoleBasedRedirect.tsx`**: al entrar a la raíz `/`, redirige con `getHomePath` (`src/routes/home-path.ts`): Cajero → `/pos`, resto → `/dashboard`. Es el mismo destino que se usa tras elegir sucursal, cambiar contraseña y en el botón "Volver al inicio" del 404.
+- **`ProtectedRoute`**: exige sesión (`token` y `user`). Si no la hay, redirige a `/login`.
+- **`PasswordChangeGuard`**: si el usuario tiene `mustChangePassword`, lo envía a `/change-password` **antes** de montar el layout. Mientras ese cambio esté pendiente, el backend responde 403 a todo lo demás, así que esto evita peticiones que fallarían.
+- **`RoleRoute`**: recibe los roles permitidos. Si el usuario no los tiene, lo envía a la pantalla de inicio de su rol. Si esa pantalla es justamente la prohibida, muestra 404 para no entrar en un bucle.
+- **`RoleBasedRedirect`** y `getHomePath`: el Cajero va a `/pos`; el resto, a `/dashboard`.
 
-### 3.3 Menú de navegación (`src/config/navigation/navSections.ts`)
+### 3.3 Menú lateral (`src/config/navigation/navSections.ts`)
 
-El sidebar se genera dinámicamente a partir de una configuración declarativa `NAV_SECTIONS`, agrupada en secciones (**General, Administración, Finanzas, Operaciones, POS**), donde cada ítem puede tener `roles` (visibilidad condicionada) e hijos anidados (p. ej. "Catálogo" agrupa Productos/Categorías/Modificadores). El componente `Sidebar.tsx` filtra recursivamente qué mostrar según el rol del usuario autenticado, resalta la ruta activa, soporta grupos colapsables y puede replegarse a solo íconos.
+El menú se genera a partir de una configuración declarativa (`NAV_SECTIONS`) con las secciones **General, Administración, Finanzas, Operaciones y POS**. Cada ítem declara qué roles lo ven y puede tener hijos (por ejemplo, "Catálogo" agrupa Productos, Categorías y Modificadores). `Sidebar.tsx` filtra los ítems según el rol, resalta la ruta activa, permite grupos colapsables y puede plegarse para mostrar solo iconos.
 
-La misma ruta puede aparecer con distinto nombre o sección según el rol: `/shifts` es "Caja" (sección Operaciones) para el Cajero y "Turnos de caja" (sección Finanzas) para Gerente/Administrador, y Egresos/Nómina aparecen en la sección "Finanzas" para Gerente/Administrador y en la sección "POS" para el Cajero (misma ruta, distinta ubicación en el menú). La autorización real la define siempre `Router.tsx` (y, en última instancia, el backend).
+Una misma ruta puede aparecer con otro nombre según el rol: `/shifts` es "Caja" para el Cajero y "Turnos de caja" para el Gerente y el Administrador. Lo que realmente decide el acceso es `Router.tsx` y, en última instancia, el backend.
 
-### 3.4 Páginas que se adaptan al rol
+### 3.4 Barra superior (`Topbar`)
 
-Varias rutas no tienen una página por rol, sino un **componente "despachador"** que elige la vista según la sesión: `Orders`, `Sales`, `Expenses` y `Payroll` renderizan una vista de Gerente (`Manager*`, alcance global con filtro de sucursal) o una vista de Cajero/Administrador (alcance fijo a la sucursal activa). Dentro de esta última, las acciones disponibles se habilitan por rol (`canCreate` para Cajero, `canManage` para Administrador) y las pestañas de reporte solo se muestran al Administrador.
+- Muestra la sucursal activa.
+- **Cajero:** indicador de conexión y de ventas offline pendientes (`OfflineStatusBadge`) y estado del turno ("Turno abierto" / "Sin turno"), que lleva a Caja.
+- **Botón de WhatsApp** con el número de pedidos pendientes de aprobación (Cajero, Administrador y Gerente).
+- **Campana de alertas de stock** con el número de alertas abiertas de productos e insumos (Gerente y Administrador).
+- **Menú de usuario:** cambiar de sucursal (Administrador y Cajero) y cerrar sesión. Si el cajero tiene ventas offline sin sincronizar, pide confirmación antes de cerrar sesión.
+
+### 3.5 Páginas que se adaptan al rol
+
+`Orders`, `Sales`, `Expenses`, `Payroll` y `Shifts` funcionan como **despachadores**: según el rol muestran la vista del Gerente (alcance global, con filtro de sucursal) o la del Cajero/Administrador (fija en la sucursal activa). Dentro de esta última, las acciones se habilitan por rol: el Cajero registra y el Administrador gestiona y aprueba.
 
 ---
 
-## 4. Autenticación y autorización
+## 4. Autenticación, sesión y autorización
 
 ### 4.1 Roles del sistema (`RoleEnum`)
 
-```ts
-enum RoleEnum { MANAGER, ADMIN, CASHIER, EMPLOYEE }
-```
+| Rol | Alcance | Responsabilidades |
+|---|---|---|
+| **MANAGER** (Gerente) | Todas las sucursales | Control total: usuarios, sucursales, catálogo, inventario e insumos. Ve de forma consolidada los pedidos, ventas, egresos, nómina y turnos. Es el único con acceso a Reportes. |
+| **ADMIN** (Administrador) | Su sucursal | Catálogo, inventario e insumos. Gestiona pedidos (cambia estados), edita egresos y nómina, configura sueldos diarios y **aprueba los cierres de caja**. No cobra ni registra egresos o pagos. |
+| **CASHIER** (Cajero) | Su sucursal | POS, cobros, pedidos de WhatsApp, **registro** de egresos y pagos de nómina, apertura y cierre de su turno. Necesita un turno abierto para operar. |
+| **EMPLOYEE** (Empleado) | — | Definido pero sin pantallas (reservado para uso futuro). |
 
-- **MANAGER (Gerente)**: control total — usuarios, sucursales, catálogo, inventario, insumos, y visión consolidada de pedidos/ventas/egresos/nómina de **todas** las sucursales. No opera en una sucursal fija.
-- **ADMIN (Administrador)**: gestiona catálogo/inventario/insumos/pedidos/ventas y consulta/edita egresos y nómina (incluido el sueldo diario de sus trabajadores), pero **acotado a su propia sucursal** (el backend fuerza el `locationId` del token; el frontend oculta selectores de sucursal para este rol). No registra pagos ni egresos: eso lo hace el cajero desde su turno.
-- **CASHIER (Cajero)**: acceso al POS, pedidos y ventas de su sucursal, **registro** de egresos y pagos de nómina, y apertura/cierre de su turno de caja; requiere turno abierto para operar (ventas, egresos y pagos quedan vinculados al turno). No recibe el stream de alertas de stock (el backend le responde 403).
-- **EMPLOYEE (Empleado)**: definido en el enum pero sin rutas específicas asignadas actualmente (rol reservado para uso futuro).
+El **cargo** (`JobPositionEnum`: parrillero, cocinero, ayudante de cocina, cajero, mesero, repartidor, administrador u otro) es otro concepto: es descriptivo y **no otorga permisos**.
 
-Nota: existe además un concepto independiente de **cargo de trabajo** (`JobPositionEnum`: parrillero, cocinero, ayudante de cocina, cajero, mesero, repartidor, administrador, otro) que es puramente descriptivo/operativo y no otorga permisos — no debe confundirse con el rol.
+### 4.2 Inicio de sesión en dos pasos
 
-### 4.2 Flujo de login en dos pasos
+**Paso 1 — Credenciales** (`POST /auth/login`).
+- El usuario ingresa su usuario **o** correo (`identifier`) y su contraseña.
+- El backend devuelve un **token temporal** y la lista de sucursales donde el usuario tiene acceso, con el rol que tiene en cada una (`LocationWithRole[]`).
 
-El sistema **no autentica en un solo paso**. El flujo es:
+**Paso 2 — Selección de sucursal** (`POST /auth/select-location`).
+- Si el usuario es Gerente en todas sus sucursales, el sistema la selecciona sola con `locationId: null` (vista consolidada).
+- Si no, el usuario elige la sucursal en una pantalla.
+- El backend devuelve el **access token**, su duración (`expiresIn`), el **refresh token** y los datos del usuario (rol y sucursal fijados para la sesión, más `mustChangePassword`).
+- Se borra **todo** el caché de React Query, porque los datos pertenecen a la sucursal anterior.
+- Redirección: a `/change-password` si hay una contraseña temporal pendiente; si no, a la pantalla de inicio del rol.
 
-**Paso 1 — Credenciales.** El usuario ingresa `identifier` (usuario o email indistintamente — el commit `447d7bf` renombró este campo desde `email` para permitir ambos) + `password`. El backend responde con un **token temporal** y la lista de sucursales donde ese usuario tiene acceso, cada una con el rol que le corresponde en esa sucursal (`LocationWithRole[]`). En este punto la sesión queda en estado "autenticación temporal" (hay `tempToken` pero no `token` ni sesión completa).
+**Cambio de sucursal en caliente** (`SwitchLocationModal`, Administrador y Cajero): repite el paso 2. Si el cajero tiene un turno abierto, el cambio se bloquea (el backend también lo rechaza con `SHIFT_STILL_OPEN`).
 
-**Paso 2 — Selección de sucursal.**
-- Si **todas** las sucursales del usuario son con rol Gerente (`isManagerOnly`), se omite la pantalla y se selecciona automáticamente sin sucursal fija (`locationId: null`) — el Gerente opera de forma consolidada.
-- En caso contrario, se muestra una pantalla para elegir la sucursal. Al confirmar, el backend emite el **token de acceso completo** y los datos completos del usuario (`UserDetails`, con el rol y la sucursal ya fijados para esa sesión). Se limpia **todo** el caché de React Query (incluido el turno activo, que pertenecía a otra sucursal), porque prácticamente todos los datos operativos (inventario, ventas, turnos) son específicos de la sucursal activa.
-- Navegación resultante: Cajero → `/pos`; Gerente/Administrador → `/dashboard`.
+### 4.3 Contraseña temporal y cambio obligatorio
 
-**Cambio de sucursal en caliente** (`SwitchLocationModal`, disponible desde el menú de usuario en el Topbar, solo para Administrador y Cajero): reutiliza el mismo mecanismo de selección de sucursal; si el usuario es Cajero con un turno de caja abierto, se bloquea el cambio hasta que cierre el turno (el backend también lo rechaza con `SHIFT_STILL_OPEN`).
+- Al crear un usuario, o cuando el Gerente restablece su contraseña, el backend genera una **contraseña temporal** y la envía por correo.
+- En el primer ingreso, el usuario queda con `mustChangePassword = true` y solo puede usar la pantalla `/change-password` (`POST /users/change-password`, con la contraseña actual y la nueva).
+- Si en cualquier momento el backend responde 403 `MUST_CHANGE_PASSWORD`, el interceptor marca la bandera y redirige a esa pantalla (`requirePasswordChange`).
+- Al cambiar la contraseña, la sesión sigue activa y el usuario va a su pantalla de inicio.
 
-### 4.3 Gestión de sesión (sin cookies, sin refresh token)
+### 4.4 Gestión de sesión con renovación de tokens
 
-La sesión se guarda en un store de Zustand persistido en `localStorage` (`useAuthStore`, clave `"auth-storage"`): `tempToken`, `locations`, `user`, `token`. El interceptor HTTP agrega automáticamente el header `Authorization: Bearer <token ?? tempToken>` en cada petición, lo que permite que las dos únicas rutas permitidas durante la autenticación temporal (`/auth/my-locations`, `/auth/select-location`) funcionen con el token temporal.
+La sesión se guarda en `useAuthStore` (Zustand persistido en localStorage con la clave `auth-storage`): `user`, `token`, `refreshToken`, `accessTokenExpiresAt`, `tempToken` y `locations`.
 
-**No existe lógica de refresh token**: cuando el backend responde 401 (token expirado o inválido) en una ruta protegida, el interceptor de errores fuerza automáticamente el *logout* y redirige a `/login`.
+| Mecanismo | Cómo funciona |
+|---|---|
+| **Encabezado de autorización** | El interceptor agrega `Authorization: Bearer <token ?? tempToken>` a cada petición. |
+| **Renovación preventiva** (`useSessionKeepAlive`) | Renueva el token **60 s antes** de que venza, con un margen aleatorio de hasta 10 s para que varias pestañas no renueven a la vez. |
+| **Renovación reactiva** (interceptor de errores) | Ante un 401 `TOKEN_EXPIRED`, renueva el token (`POST /auth/refresh`) y **repite la petición original**. |
+| **Una renovación a la vez** | `refreshSession` comparte una sola promesa entre todas las peticiones que fallaron a la vez. Usa una instancia de Axios sin interceptores para evitar bucles. |
+| **Rotación del refresh token** | Cada renovación entrega un refresh token nuevo. La sesión se sincroniza entre pestañas con el evento `storage`: antes de renovar, se relee el estado guardado y, si otra pestaña ya renovó, se reutiliza su token. Así se evita que el backend detecte una "reutilización" (indicio de robo) y revoque la sesión. |
+| **Fin de sesión** | Si el refresh es rechazado (`REFRESH_TOKEN_INVALID`, `_EXPIRED`, `_REVOKED`, `_REUSED` o `SESSION_NO_LONGER_VALID`), se cierra la sesión con un aviso. Un error de red durante el refresh **no** cierra la sesión. |
+| **Cierre de sesión** (`logoutSession`) | Avisa al backend (`POST /auth/logout`) para revocar el refresh token sin esperar la respuesta, limpia el store y el caché y vuelve a `/login`. |
 
 ---
 
 ## 5. Gestión de estado
 
-El sistema separa claramente dos tipos de estado:
+- **Estado del servidor** (listados, detalles y mutaciones): **TanStack React Query**. El `staleTime` se ajusta por endpoint: 0 para datos que deben estar siempre frescos (dashboard, turno) y varios minutos para catálogos que cambian poco.
+- **Estado del cliente**: **Zustand**, en estos stores:
 
-- **Estado de servidor** (listados, detalle de entidades, mutaciones): gestionado con **TanStack React Query**, con `staleTime` configurado por endpoint (desde 0 para datos que deben estar siempre frescos, hasta 10 min para catálogos poco cambiantes) y `retry: 1` por defecto.
-- **Estado de cliente** (sesión, UI, carrito de venta): gestionado con **Zustand**, en 4 stores (el turno activo no vive en un store: se lee siempre de `GET /shifts/active` vía React Query):
-
-| Store | Persistido | Contenido |
+| Store | Persistencia | Contenido |
 |---|---|---|
-| `useAuthStore` | Sí (`auth-storage`) | Sesión: `user`, `token`, `tempToken`, `locations` |
-| `useUiStore` | Sí (`ui-storage`) | `sidebarOpen` (colapso del sidebar) |
-| `useErrorStore` | No | Error puntual mostrado como toast global |
-| `useCartStore` (feature POS) | No | Carrito de venta activo: ítems, tipo/canal de pedido, datos de cliente, descuento |
+| `useAuthStore` | localStorage (`auth-storage`) | Sesión: usuario, tokens, vencimiento, sucursales del paso 1 |
+| `useUiStore` | localStorage (`ui-storage`) | Sidebar plegado o desplegado |
+| `useErrorStore` | No | Error puntual que se muestra como aviso global |
+| `useCartStore` (POS) | No | Carrito: ítems y unidades, tipo y canal de pedido, cliente, descuento |
+| `useWhatsappOrdersStore` | No (se reconstruye con GET + SSE) | Bandeja de WhatsApp indexada por `order.id`, estado de carga |
+| `useOfflineStore` | No (la cola vive en IndexedDB) | `isOffline`, ventas en cola del usuario, `syncing` |
 
-No se usa Redux ni Context API para estado global — Zustand cubre todos los casos de estado compartido entre componentes sin pasar por props.
+El turno activo no vive en un store: siempre se lee de `GET /shifts/active` con React Query (y, sin conexión, de su copia local).
+
+No se usa Redux ni Context API para estado global.
 
 ---
 
-## 6. Capa de comunicación con el backend (HTTP)
+## 6. Comunicación con el backend
 
 ### 6.1 Cliente Axios único (`src/services/http.client.ts`)
 
-Un solo cliente Axios (`httpClient`) con `baseURL` desde variables de entorno, timeout de 10s, y **tres interceptores** encadenados:
+Un solo cliente (`httpClient`) con `baseURL` desde el entorno, timeout de 10 s y **tres interceptores** encadenados:
 
-1. **Interceptor de autenticación**: agrega el header `Authorization` leyendo el token directamente del store de Zustand (fuera del ciclo de render de React).
-2. **Interceptor de errores**: normaliza cualquier error de red o HTTP a un mensaje humano en español, priorizando en este orden: (a) código de error de dominio conocido (p. ej. `INSUFFICIENT_STOCK`, `LOCATION_ID_REQUIRED` → mensaje curado), (b) mensaje que venga del backend, (c) mensaje genérico por código HTTP (403/404/409/422/500). Muestra automáticamente un *toast* de error (o uno por campo, si el backend devuelve errores de validación por campo). Si detecta 401 fuera de las rutas públicas, cierra sesión automáticamente y redirige al login.
-3. **Interceptor de reintento**: reintenta automáticamente (con backoff progresivo, máx. 2 veces) solo ante *timeout* o error de red — nunca ante errores HTTP con respuesta (4xx/5xx), que ya gestiona el interceptor de errores.
+1. **Autenticación:** agrega el token leyéndolo directamente del store, fuera del ciclo de render de React.
+2. **Errores** (`error.interceptor.ts`):
+   - Normaliza cualquier error a un mensaje en español. Prioridad: (a) código de error de dominio conocido (p. ej. `INSUFFICIENT_STOCK`, `NO_ACTIVE_SHIFT`, `SHIFT_HAS_PENDING_ORDERS`); (b) mensaje del backend; (c) mensaje genérico según el código HTTP.
+   - Muestra un aviso (uno por campo si el backend devuelve errores de validación). La opción `silentErrors` lo desactiva para peticiones que manejan su propio error, como la sincronización offline.
+   - Renueva el token ante un 401 `TOKEN_EXPIRED` (sección 4.4) y redirige ante un 403 `MUST_CHANGE_PASSWORD`.
+   - Cierra la sesión ante un 401 que no se puede resolver renovando.
+   - **Detecta la falta de conexión:** si no hay respuesta del servidor, marca el POS como offline (`markOffline`) y rechaza con `networkError: true`.
+3. **Reintento:** reintenta con espera progresiva (máx. 2 veces) **solo** ante timeout o error de red, nunca ante una respuesta 4xx/5xx.
 
-### 6.2 Hooks genéricos de acceso a datos (`src/hooks/api.handlers.ts`)
+### 6.2 Hooks genéricos (`src/hooks/api.handlers.ts`)
 
-Toda la aplicación construye sus hooks de negocio sobre tres envoltorios estandarizados de React Query:
+Todos los hooks de negocio se construyen sobre tres envoltorios de React Query:
 
-- **`useGetHandler`**: para queries simples; incluye un *guard* por rol integrado (si se especifica `roles`, la petición ni siquiera se dispara si el usuario no cumple el rol, evitando 403 innecesarios).
-- **`usePaginatedGetHandler`**: para listados paginados; separa los datos (`data`) de los metadatos de paginación (`meta`: total, página, límite, total de páginas).
-- **`useSubmitHandler`** (y sus alias `usePostHandler`/`usePutHandler`/`usePatchHandler`/`useDeleteHandler`): para mutaciones; soporta toast de éxito, invalidación de *query keys* relacionadas y callbacks de éxito/error.
+- **`useGetHandler`**: consultas simples, con control de rol integrado. Si se indica `roles` y el usuario no los tiene, la petición no se hace.
+- **`usePaginatedGetHandler`**: listados paginados; separa `data` de `meta` (total, página, límite y total de páginas).
+- **`useSubmitHandler`** (y sus alias `usePostHandler`, `usePutHandler`, `usePatchHandler` y `useDeleteHandler`): mutaciones con aviso de éxito, invalidación de *query keys* y callbacks.
 
-Este patrón se repite en las decenas de hooks de negocio del proyecto (`useUsersPage`, `useCreateProduct`, `useAdjustStock`, etc.), lo que da consistencia total en el manejo de carga/error/éxito en toda la app.
+Las *query keys* están centralizadas en `src/constants/queryKeys/query-keys.ts` (`QUERY_KEYS`) para coordinar invalidaciones entre módulos. Por ejemplo, una venta sincronizada offline invalida ventas, turnos e inventario.
 
-Las *query keys* están centralizadas en `src/constants/queryKeys/query-keys.ts` (`QUERY_KEYS`) para evitar duplicación y coordinar invalidaciones de caché entre features relacionadas (p. ej. crear una receta invalida también el stock de insumos).
+### 6.3 Contrato de la API
 
----
-
-## 7. Sistema de diseño y componentes compartidos
-
-### 7.1 Layout de la aplicación (`src/components/layout/`)
-
-- **`AppLayout`**: shell general — sidebar + topbar + área de contenido (`<Outlet/>`), con el toast global montado.
-- **`Sidebar`**: menú lateral dinámico descrito en la sección 3.3, colapsable.
-- **`Topbar`**: muestra la sucursal activa, indicador real del turno del cajero ("Turno abierto" / "Sin turno", lleva a Caja), y menú de usuario (perfil, cambiar de sucursal, cerrar sesión).
-
-### 7.2 Design system propio (`src/components/shared/`, sobre primitivas `src/components/ui/` estilo shadcn/ui)
-
-- **`DataTable/`**: sistema de tablas paginadas reutilizado en casi todos los listados (Usuarios, Sucursales, Productos, Ingredientes, Pedidos, Ventas, Inventario, Egresos, Nómina). Incluye ordenamiento por columna, paginación numerada, estados de carga (skeleton) y vacío, y un hook `useTableState` que centraliza página/orden/filtros para cualquier página de listado.
-- **`Form/`**: inputs conectados a Formik (`FormInput`, `FormPassword`, `FormTextarea` con contador de caracteres, `FormSection` para agrupar campos).
-- **`Basics/`**: átomos base — `Button` (múltiples variantes/tamaños/formas, con estado de carga), `Label`, `ErrorMessage`, `FormSwitch` (toggle), `Image`.
-- **`Overlay/`**: sistema propio de modales (`AppModal`, tamaños xs–full) y paneles laterales (`AppOffcanvas`), con cabeceras/pies estandarizados (`PanelHeader`/`PanelFooter`).
-- **`Interactives/`**: controles complejos construidos a medida — `AsyncDropdown` (select con datos remotos y búsqueda), `MultiSelectDropdown` (multi-selección con chips), `MoneyInput` (formato de moneda boliviana), `ImageUploader` (drag&drop con preview y validación), `UserRoleAssigner` (asignación de pares usuario+rol), `DatePicker` (selector simple y de rango, localizado en español).
-
-### 7.3 Patrón de validación de formularios
-
-Cada formulario define su regla de validación con **Zod** (`validators/*.schema.ts`), y un adaptador propio (`src/lib/zodToFormik.ts`) lo traduce a una función `validate` compatible con **Formik**. Así, todo el proyecto usa Formik + Zod de forma consistente (no react-hook-form, pese a estar entre las dependencias del `package.json`).
+- **Respuesta normal:** `{ code, message, data?, meta? }` (`ApiResponse<T>`). Las rutas `/auth/*` responden sin este envoltorio.
+- **Error:** `{ code, errorCode, message, errors[], timestamp, path }` (`ApiErrorResponse`).
+- **Códigos de error de dominio** (`src/constants/httpCodes/error-codes.ts`):
+  - Sesión: `TOKEN_EXPIRED`, `TOKEN_INVALID`, `REFRESH_TOKEN_*`, `SESSION_NO_LONGER_VALID`, `MUST_CHANGE_PASSWORD`.
+  - Stock: `INSUFFICIENT_STOCK`, `NOT_QUANTIFIABLE`, `STOCK_NOT_FOUND`, `ALERT_NOT_FOUND`, `ALERT_WRONG_LOCATION`.
+  - Turnos: `NO_ACTIVE_SHIFT`, `SHIFT_ALREADY_OPEN`, `SHIFT_HAS_PENDING_ORDERS`, `SHIFT_STILL_OPEN`, `SHIFT_NOT_OWNED`, `SHIFT_CLOSED`, `SHIFT_NOT_PENDING`, `SHIFT_REVIEW_NOTES_REQUIRED`, `SHIFT_NOT_CLOSED`.
+  - Otros: `LOCATION_ID_REQUIRED`.
 
 ---
 
-## 8. Módulos funcionales
+## 7. Tiempo real (Server-Sent Events)
 
-### 8.1 Sucursales (`features/locations`) — ruta `/locations`, solo Gerente
+### 7.1 Cliente SSE propio (`src/services/sse.client.ts`)
 
-Gestión de las sucursales físicas del restaurante: alta, edición (nombre/dirección), activación/desactivación (soft-delete, con doble confirmación), y **asignación de usuarios con su rol** a cada sucursal (modal en dos pasos: datos de la sucursal → usuarios y roles). Una sucursal desactivada conserva su historial. Es la pieza central del modelo multi-sucursal: el login devuelve las sucursales de cada usuario con su rol específico en cada una, y prácticamente todos los módulos operativos (inventario, insumos, pedidos, ventas) filtran sus datos por sucursal activa.
+No se usa el `EventSource` nativo porque **no permite enviar encabezados**, y el backend autentica con `Authorization: Bearer`. Poner el token en la URL lo dejaría expuesto en los registros de servidores y proxies. El cliente propio, construido sobre `fetch`:
 
-### 8.2 Usuarios (`features/users`) — ruta `/users`, solo Gerente
+- Interpreta el protocolo SSE (`event:`, `data:` y comentarios `:`).
+- **Se reconecta automáticamente** con espera exponencial: 1 s, 2 s, 4 s… hasta 30 s.
+- Tiene un **vigilante de inactividad**: si en 75 s no llega nada (ni siquiera el `ping` que el backend envía cada 30 s), da la conexión por muerta y la reabre.
+- Ante un 401/403 detiene los reintentos y avisa con `onFatalError`. Si es un 401 `TOKEN_EXPIRED`, quien escucha renueva la sesión y el stream se reabre con el token nuevo.
+- `onOpen` indica si la conexión es una **reconexión**, para volver a consultar lo que se perdió: el servidor no reenvía los eventos emitidos mientras el stream estuvo caído.
 
-CRUD de usuarios del sistema con desactivación (soft-delete). Cada usuario tiene datos personales (nombre, apellido, usuario, email — estos tres inmutables tras la creación), teléfono opcional, descripción, y uno o varios **cargos de trabajo** (parrillero, cocinero, cajero, mesero, etc., puramente descriptivos). La relación usuario↔sucursal↔rol es de muchos-a-muchos: un mismo usuario puede trabajar en varias sucursales con roles distintos en cada una; esta asignación se gestiona desde el módulo de Sucursales, mientras que el modal de Usuario solo la muestra en modo lectura.
+### 7.2 Streams del sistema
 
-### 8.3 Catálogo (`features/catalog`) — rutas `/catalog/*`, Gerente + Administrador
+| Stream | Roles | Eventos | Efecto |
+|---|---|---|---|
+| `/notifications/stream` | Gerente, Administrador | `alert`, `ping` | Aviso de stock bajo; actualiza alertas, stock y dashboard (sección 9.17) |
+| `/whatsapp/orders/stream` | Cajero, Administrador, Gerente | `whatsapp-order`, `order-status`, `ping` | Agrega o actualiza pedidos en la bandeja, con sonido y aviso (sección 9.11) |
 
-Tres sub-módulos con el mismo patrón de UI (grilla de tarjetas + modal de creación/edición, salvo Productos que usa tabla paginada):
+---
 
-- **Categorías** (`/catalog/categories`): agrupan productos para el menú (p. ej. "Parrillas", "Bebidas") y definen su orden de aparición. Cada categoría se asigna a una o varias sucursales.
-- **Modificadores** (`/catalog/modifiers`): extras/adicionales pagos que se pueden agregar a un producto en el POS (p. ej. "Carne extra +Bs 15"), con precio adicional, estado activo/inactivo, y asignación a una o varias sucursales.
-- **Productos** (`/catalog/products`): los ítems vendibles del menú. Cada producto tiene nombre, marca, descripción, imagen (subida de archivo), precio, categoría, disponibilidad, orden de aparición, y dos banderas de configuración clave: `isQuantifiable` (si controla stock/inventario) y `haveModifiers` (si acepta modificadores en el POS). Al igual que categorías y modificadores, un producto puede habilitarse en una o varias sucursales.
+## 8. Sistema de diseño y componentes compartidos
 
-En los tres casos, el rol Gerente puede asignar libremente las sucursales; el rol Administrador queda restringido a su propia sucursal tanto en la interfaz como de forma defensiva antes de enviar el formulario (el backend también lo valida).
+### 8.1 Layout (`src/components/layout/`)
 
-### 8.4 Inventario (`features/inventory`) — ruta `/inventory`, Gerente + Administrador
+- **`AppLayout`**: estructura general (sidebar + topbar + contenido). Monta los avisos y los procesos en segundo plano (sección 2.3).
+- **`Sidebar`**: menú dinámico según el rol, plegable (sección 3.3).
+- **`Topbar`**: barra superior (sección 3.4).
 
-Control de stock de **productos terminados** marcados como cuantificables, por sucursal. Funcionalidades: registrar el stock inicial de un producto en una sucursal, ajustar cantidades (sumar/restar/fijar valor), consultar el **kardex** (historial de movimientos de entrada/salida, con motivo: venta o entrada manual), y gestionar **alertas de stock bajo** (comparando cantidad actual contra un mínimo configurado, con opción de marcarlas como resueltas). El Gerente puede ver/filtrar cualquier sucursal; el Administrador queda limitado a la suya.
+### 8.2 Sistema de diseño propio (`src/components/shared/`)
 
-### 8.5 Insumos (`features/supplies`) — ruta `/ingredients`, Gerente + Administrador
+Se apoya en las primitivas estilo shadcn/ui de `src/components/ui/`.
 
-Contraparte del Inventario a nivel de **materia prima**, con una capa adicional: las **recetas**. Tres pestañas:
+- **`DataTable/`**: tablas paginadas usadas en casi todos los listados. Incluyen orden por columna, paginación numerada, estados de carga (skeleton) y de vacío, filtros (`TableFilters`, con rango de fechas), edición numérica en línea (`InlineNumberEdit`) y el hook `useTableState`, que centraliza página, orden y filtros.
+- **`Form/`**: campos conectados a Formik (`FormInput`, `FormPassword`, `FormTextarea` con contador de caracteres, `FormSection`).
+- **`Basics/`**: `Button` (variantes, tamaños y estado de carga), `Label`, `ErrorMessage`, `FormSwitch`, `Switch` e `Image`.
+- **`Overlay/`**: modales (`AppModal`, tamaños xs–full) y paneles laterales (`AppOffcanvas`), con cabecera y pie estandarizados.
+- **`Interactives/`**:
+  - `AsyncDropdown`: selector con datos remotos y búsqueda.
+  - `MultiSelectDropdown`: selección múltiple con chips.
+  - `MoneyInput`: campo de dinero en bolivianos.
+  - `ImageUploader`: arrastrar y soltar, con vista previa y validación.
+  - `UserRoleAssigner`: asignación de pares usuario + rol.
+  - `PasswordField`.
+  - `DatePicker`: fecha simple y rango, en español.
+- **`OrderBadges`** y **`GlobalErrorToast`**.
 
-- **Insumos**: catálogo de ingredientes (nombre, unidad de medida: kg, lb, arroba, unidad).
-- **Stock de insumos**: mismo patrón que Inventario (ajustar/crear stock, kardex, alertas), pero además registra el **costo unitario** de cada entrada de stock, habilitando el costeo de recetas.
-- **Recetas**: vinculan un producto del catálogo con los ingredientes (y cantidades) que consume por unidad vendida. Al crear una receta, el sistema registra automáticamente el stock de ese ingrediente (en 0) en todas las sucursales donde el producto ya está habilitado — esta es la base para que, al concretarse una venta, se descuente automáticamente el stock de insumos (motivo de kardex "consumo por venta").
+### 8.3 Validación de formularios
 
-### 8.6 Punto de Venta / POS (`features/pos`) — ruta `/pos`, solo Cajero
+Cada formulario define sus reglas con **Zod** (`validators/*.schema.ts`) y el adaptador `src/lib/zodToFormik.ts` las convierte en una función `validate` para **Formik**. Todo el proyecto usa Formik + Zod de forma consistente.
 
-Pantalla operativa de venta, con un flujo de estados: `idle → review → payment → success (→ invoice)`.
+### 8.4 Impresión térmica
 
-1. **Apertura de turno**: obligatoria antes de vender; se registra un monto inicial de caja. Sin turno abierto, la pantalla queda bloqueada por un modal.
-2. **Selección de productos**: menú visual organizado por pestañas de categoría (tarjetas con imagen, nombre, marca y precio); solo se pueden agregar productos disponibles.
-3. **Carrito**: cada línea del carrito puede tener varias unidades físicas, y **cada unidad puede llevar sus propios modificadores y notas** (p. ej. 3 hamburguesas, cada una con extras distintos). Soporta reordenar ítems por arrastre, editar cantidad, y elegir el tipo de pedido (en local / para llevar / delivery) y su canal.
-4. **Revisión del pedido**: resumen agrupado por producto con sus modificadores, captura de datos del cliente (obligatorios según el tipo de pedido: delivery exige nombre+teléfono+dirección; para llevar exige nombre), posibilidad de cancelar un pedido existente.
-5. **Pago**: selección de método (Efectivo, QR, Tarjeta), aplicación de descuento, y para pagos en efectivo, cálculo en vivo del cambio a entregar; se envía lo recibido como `receivedAmount`. En la API la tarjeta es `BANK_TRANSFER` (no se renombró para no afectar ventas existentes): la UI siempre la muestra como **Tarjeta**.
-6. **Confirmación e impresión**: pantalla de éxito con el código de ticket y detalle, impresión automática de un ticket con formato de recibo (80mm) mediante una vista oculta imprimible.
-7. **Facturación**: existe un panel de emisión de factura (NIT + nombre) construido pero **no conectado aún** a un endpoint real (funcionalidad pendiente).
+Los tickets de venta (`TicketPrint`) y los comprobantes de cierre de caja (`ShiftReceiptPrint`) se generan como una vista oculta con estilos de impresión de **80 mm** (`ticket.css`) y se imprimen con `window.print()` mediante el hook `usePrintTicket`.
 
-El módulo también expone la gestión de **pedidos históricos** (`/orders`): para Cajero/Administrador, acotada a su sucursal; para Gerente, vista global con filtro de sucursal y fecha.
+---
 
-### 8.7 Ventas (`features/sales`) — ruta `/sales`, Gerente + Administrador + Cajero
+## 9. Módulos funcionales
 
-Consulta del histórico de ventas (una venta se genera al cobrarse un pedido). Vista para Cajero/Administrador acotada a su propia sucursal; vista de Gerente con alcance global (todas las sucursales, con filtro de sucursal, método de pago y cajero). Cada venta registra subtotal, descuento, total, monto recibido, cambio, método de pago y estado (abierta/cobrada/anulada), con detalle de ítems agrupados por producto para reimpresión o auditoría.
+> Cada módulo se describe con su objetivo, quién lo usa, sus funcionalidades y cómo funciona.
 
-### 8.8 Egresos (`features/finances/expenses`) — ruta `/expenses`, Gerente + Administrador + Cajero
+### 9.1 Autenticación (`features/auth`) — `/login`, `/change-password`
 
-Registro de los **gastos pagados desde la caja** de una sucursal. Cada egreso tiene categoría, descripción (máx. 500 caracteres), monto, URL de comprobante opcional, quién lo registró, y queda **vinculado al turno de caja** en el que se registró. Las categorías son fijas en el backend (`ExpenseCategoryEnum`: servicios, personal, insumos, mantenimiento, otros), pero se consultan por API porque cada una tiene un `id` (UUID) propio en base de datos.
+**Objetivo:** controlar el acceso al sistema y mantener la sesión.
 
-Reparto de responsabilidades por rol:
+**Funcionalidades:** login en dos pasos, selección y cambio de sucursal, cambio obligatorio de contraseña, renovación automática de la sesión y cierre de sesión. El detalle técnico está en la sección 4.
+
+### 9.2 Dashboard (`features/dashboard`) — `/dashboard`, Gerente y Administrador
+
+**Objetivo:** dar una foto operativa **del día** (hora de Bolivia).
+
+**Contenido:**
+- **4 indicadores:** ventas de hoy (monto y cantidad), ticket promedio, egresos de hoy (incluye nómina) y balance (ventas − egresos, en rojo si es negativo).
+- **Cajas:** por sucursal, si el turno está abierto, quién es el cajero y desde qué hora.
+- **Pedidos:** pendientes, en preparación y listos (incluye los entregados que esperan el cobro).
+- **Alertas:** alertas de stock de productos y de insumos.
+- **Gráfico de los últimos 7 días** de ventas (el último día es hoy).
+- **Tabla por sucursal:** ventas, cantidad, caja abierta y alertas. Solo aparece para el Gerente cuando elige "Todas las sucursales".
+
+**Cómo funciona:**
+- Consulta `GET /finances/reports/dashboard`. El Gerente puede elegir una sucursal o todas; para el Administrador, el backend usa siempre su sucursal.
+- Se actualiza **cada 60 s**, al volver a la pestaña y al instante cuando llega una alerta de stock por SSE.
+- Muestra mensajes específicos ante un 403 o un 404, y el aviso "Aún no hay ventas hoy" cuando corresponde.
+
+### 9.3 Usuarios (`features/users`) — `/users`, solo Gerente
+
+**Objetivo:** gestionar el personal del restaurante.
+
+**Funcionalidades:**
+- **Crear y editar usuarios:** nombre, apellido, usuario y correo (estos tres no se pueden cambiar tras la creación), teléfono, descripción y uno o varios **cargos**.
+- **Desactivar** (borrado lógico, conserva el historial).
+- **Credenciales por correo:** al crear un usuario o al **restablecer su contraseña** (`POST /users/:id/reset-password`), el backend genera una contraseña temporal y la envía por correo.
+  - La tabla muestra el estado del envío: *Pendiente*, *Enviado* o *Fallido* (`CredentialsEmailBadge`).
+  - El hook `usePasswordReset` consulta `GET /users/:id` cada 2 s, durante un máximo de 30 s, y muestra el estado al instante.
+  - Si el envío falla, se puede **reintentar**. Cada restablecimiento invalida la contraseña temporal anterior.
+- La relación usuario ↔ sucursal ↔ rol es de muchos a muchos. Se **edita en Sucursales**; aquí se muestra en modo lectura.
+
+### 9.4 Sucursales (`features/locations`) — `/locations`, solo Gerente
+
+**Objetivo:** gestionar los locales físicos y quién trabaja en cada uno.
+
+**Funcionalidades:**
+- Crear y editar sucursales (nombre y dirección).
+- Activar o desactivar con doble confirmación (borrado lógico).
+- **Asignar usuarios con su rol** en un modal de dos pasos: datos de la sucursal → usuarios y roles (`StepCard`, `AssignRoles`).
+
+Es la base del modelo multi-sucursal: el login devuelve estas asignaciones, y los datos operativos (stock, ventas, pedidos, turnos) se separan por sucursal.
+
+### 9.5 Catálogo (`features/catalog`) — `/catalog/*`, Gerente y Administrador
+
+**Categorías** (`/catalog/categories`):
+- Agrupan los productos del menú y definen su orden de aparición. Se asignan a una o varias sucursales.
+- **Disponibilidad masiva** (`PATCH /categories/:id/availability`): activa o desactiva de una vez todos los productos de la categoría, en una sucursal o en todas.
+  - El interruptor tiene cuatro estados (encendido, apagado, parcial y sin productos), calculados con `productsCount` y `availableProductsCount`.
+  - Se pide confirmación (`CategoryAvailabilityModal`) y luego se informa cuántos productos cambiaron.
+  - No modifica el stock ni las recetas.
+
+**Modificadores** (`/catalog/modifiers`):
+- Extras con precio adicional que se agregan a un producto en el POS (p. ej. "Carne extra +Bs 15").
+- Tienen precio, estado activo o inactivo y sucursales asignadas.
+
+**Productos** (`/catalog/products`):
+- Tabla paginada con nombre, marca, descripción, **imagen** (subida de archivo), precio, categoría y orden.
+- Dos opciones clave:
+  - `isQuantifiable`: el producto controla stock en Inventario.
+  - `haveModifiers`: el producto acepta modificadores en el POS.
+- **Disponibilidad en dos niveles** (`product-availability.ts`):
+  - *Global*: se cambia desde el formulario del producto. Si está apagada, el producto no se vende en ninguna sucursal.
+  - *Por sucursal*: se cambia con un interruptor en la tabla. Si el Gerente ve "todas las sucursales", el interruptor puede mostrar el estado *parcial*.
+
+En los tres submódulos, el Gerente asigna libremente las sucursales. El Administrador queda restringido a la suya, tanto en la interfaz como antes de enviar el formulario; el backend también lo valida.
+
+### 9.6 Inventario (`features/inventory`) — `/inventory`, Gerente y Administrador
+
+**Objetivo:** controlar el stock de **productos terminados** cuantificables, por sucursal.
+
+**Funcionalidades:**
+- **Registrar el stock inicial** de un producto en una sucursal, con su unidad de medida y su stock mínimo (`CreateStockModal`).
+- **Ajustar el stock:** sumar, restar o fijar un valor (`AdjustStockModal`).
+- **Kardex** (`KardexModal`): historial de entradas y salidas con su motivo: `SALE` (venta), `MANUAL_ENTRY` (entrada manual) y `SALE_ANNULMENT` (devolución por anulación).
+- **Alertas de stock bajo** (`StockAlertsModal`): comparan la cantidad actual con el mínimo y se pueden marcar como resueltas. También llegan en tiempo real (sección 9.17).
+
+El Gerente puede ver y filtrar cualquier sucursal; el Administrador, solo la suya. Las ventas descuentan stock y las anulaciones lo devuelven (lo hace el backend).
+
+### 9.7 Insumos y recetas (`features/supplies`) — `/ingredients`, Gerente y Administrador
+
+Es la contraparte del Inventario para la **materia prima**. Tiene tres pestañas:
+
+1. **Insumos:** catálogo de ingredientes con su unidad (kg, lb, arroba o unidad).
+2. **Stock de insumos:**
+   - Mismo esquema que Inventario: alta, ajustes, kardex y alertas.
+   - Además registra el **costo unitario** de cada compra, lo que permite costear.
+   - Motivos del kardex: `PURCHASE` (compra), `SALE_CONSUMPTION` (consumo por venta), `ADJUSTMENT` (ajuste), `WASTE` (**merma**) y `SALE_ANNULMENT` (anulación de venta).
+3. **Recetas:**
+   - Vinculan un producto con los insumos (y cantidades) que consume **por unidad vendida**.
+   - Al crear una receta, se registra stock en 0 de esos insumos en todas las sucursales donde se vende el producto.
+   - Gracias a esto, cada venta descuenta automáticamente los insumos.
+
+### 9.8 Punto de Venta — POS (`features/pos`) — `/pos`, solo Cajero
+
+**Objetivo:** vender rápido en el mostrador.
+
+**Flujo de estados:** `idle → review → payment → success`.
+
+1. **Turno obligatorio:** sin un turno abierto, la pantalla queda bloqueada por un modal (`ShiftModal`) donde se registra el **monto inicial de caja** (`POST /shifts/open`).
+2. **Menú visual:** pestañas por categoría (`CategoryTabs`) y tarjetas con imagen, nombre, marca y precio (`ProductGrid`). El menú sale de `GET /products/menu`; solo se agregan productos disponibles.
+3. **Carrito** (`CartPanel`, `useCartStore`):
+   - Cada línea tiene **varias unidades** y **cada unidad lleva sus propios modificadores y notas** (`CartItemEditModal`).
+   - Las líneas se reordenan arrastrándolas (dnd-kit) y se puede editar la cantidad.
+   - **Tipo de pedido:** Presencial (canal en tienda), Para llevar (en tienda) o Delivery (en línea).
+4. **Revisión** (`ReviewOrderModal`):
+   - Resumen agrupado por producto con sus modificadores.
+   - Datos del cliente según el tipo: Delivery exige nombre, teléfono y dirección; Para llevar exige nombre.
+   - Se puede **cancelar** el pedido con un motivo obligatorio.
+5. **Pago** (`PaymentModal`):
+   - Métodos: **Efectivo**, **QR** o **Tarjeta** (en la API, la tarjeta es `BANK_TRANSFER`).
+   - Admite descuento.
+   - En efectivo calcula el **cambio** en tiempo real y envía `receivedAmount`.
+6. **Éxito e impresión** (`OrderSuccessModal`, `TicketPrint`): muestra el código del ticket y el detalle, e **imprime automáticamente** un ticket de 80 mm con el tipo de pedido y el método de pago.
+7. **Venta sin conexión:** si no hay conexión, el mismo flujo registra una venta offline (sección 9.16).
+
+> La **facturación electrónica** quedó para la **Fase 2**. Su código está comentado y marcado con `FASE 2 - Facturación` (sección 15).
+
+### 9.9 Pedidos (`features/pos/page/order`) — `/orders`, Gerente, Administrador y Cajero
+
+**Objetivo:** consultar y dar seguimiento a los pedidos.
+
+- **Filtros:** búsqueda, estado, tipo y canal. El Gerente filtra además por sucursal y fecha.
+- **Estados** (`OrderStatusEnum`): `PENDING → CONFIRMED → PREPARING → READY → (DELIVERED) → PAID`, o `CANCELLED`.
+- **Cobro diferido:** el cajero abre un pedido pendiente de pago (p. ej. un delivery que se paga al entregar) y lo cobra con el mismo flujo de revisión, pago y éxito del POS.
+- **Cancelación:** exige escribir un motivo (máx. 500 caracteres), que se envía como `reason` y luego se ve en el detalle del pedido (`cancellationReason`).
+
+### 9.10 Ventas (`features/sales`) — `/sales`, Gerente, Administrador y Cajero
+
+**Objetivo:** consultar y auditar las ventas. Una venta nace al cobrar un pedido.
+
+- Cada venta registra subtotal, descuento, total, monto recibido, cambio, método de pago y estado (`OPEN`, `CLOSED` o `ANNULLED`), con el detalle de ítems agrupados por producto.
+- El Cajero y el Administrador ven su sucursal. El Gerente ve todas y filtra por sucursal, método de pago y cajero.
+- El detalle permite **reimprimir el ticket**.
+- **Anulación de venta** (`PUT /sales/:id/annul`, `AnnulSaleModal`):
+  - Exige un motivo (máx. 500 caracteres).
+  - **Devuelve el stock de productos e insumos** (kardex `SALE_ANNULMENT`) y deja el pedido cancelado.
+  - Es irreversible. Si no se permite anular (por ejemplo, porque el turno ya cerró), el botón se deshabilita y explica el motivo.
+- Las ventas offline sincronizadas se distinguen con un indicador propio (`OfflineChip`).
+
+### 9.11 Pedidos de WhatsApp (`features/whatsapp`) — `/whatsapp-orders`, Cajero, Administrador y Gerente
+
+**Objetivo:** atender en tiempo real los pedidos que los clientes arman por WhatsApp. El bot conversacional vive en el backend.
+
+**Sincronización** (`useWhatsappOrdersStream`, montado en el layout):
+1. Carga inicial con `GET /whatsapp/orders`: pedidos activos (ni pagados ni cancelados), del más antiguo al más nuevo.
+2. Abre el stream `GET /whatsapp/orders/stream`:
+   - `whatsapp-order`: agrega el pedido, emite un **aviso sonoro** (dos tonos generados con Web Audio, que se habilita tras la primera interacción del usuario porque el navegador bloquea el audio hasta entonces) y muestra un aviso con el botón **Ver**.
+   - `order-status`: actualiza el estado del pedido. Si quedó pagado o cancelado, lo quita de la bandeja. Si el sistema lo canceló porque nadie lo aprobó a tiempo (`automatic: true`), avisa del vencimiento.
+   - Si llega un cambio de estado de un pedido desconocido, recarga la bandeja.
+3. En cada reconexión vuelve a hacer la consulta inicial.
+4. La bandeja vive en `useWhatsappOrdersStore`, indexada por `order.id` para no duplicar lo que llega por la consulta y por el stream. Al cerrar sesión se vacía.
+
+**Pantalla:**
+- **Pestañas:** *Pendientes* (`PENDING`), *En curso* (`CONFIRMED`, `PREPARING`) y *Listos* (`READY`, `DELIVERED`), cada una con su contador.
+- **Columnas:** código (primeros 8 caracteres del id), espera, cliente, tipo, total, preferencia de pago (Efectivo o QR) y acción.
+- **Columna "Espera"** (`WaitTime`):
+  - En pedidos pendientes con plazo, muestra una **cuenta regresiva** hasta `expiresAt`, en verde (más de 10 min), amarillo (5 a 10 min) o rojo (menos de 5 min). Al llegar a 0 muestra "Venciendo…": el frontend no cancela, espera el evento del backend.
+  - En los demás estados muestra el tiempo transcurrido ("hace 18 min").
+- **Detalle lateral** (`WhatsappOrderDrawer`): ítems agrupados, dirección (con los enlaces de Google Maps separados) y acceso directo al chat del cliente (`wa.me`).
+
+**Acciones según el estado** (`order-actions.ts`):
+
+| Estado | Acción principal |
+|---|---|
+| `PENDING` | **Aprobar** → `CONFIRMED`. Al aprobar, el backend envía la confirmación y el QR al cliente. Cancelar equivale a *rechazar*. |
+| `CONFIRMED` | **Preparar** → `PREPARING` |
+| `PREPARING` | **Listo** → `READY` |
+| `READY` (delivery) | **Entregado** → `DELIVERED` |
+| `READY` / `DELIVERED` | **Cobrar** (solo Cajero) |
+| `PENDING` a `READY` | **Cancelar** con motivo (`CancelOrderModal`) |
+
+**Permisos:** el Cajero cambia estados y cobra; el Administrador cambia estados pero no cobra; el Gerente solo consulta. Al cobrar se propone el método de pago que eligió el cliente.
+
+**Concurrencia:** si otro cajero ya movió el pedido (el backend responde 409 o 400), se recarga ese pedido con `GET /orders/:id` y se actualiza la bandeja.
+
+### 9.12 Turnos de caja (`features/shifts`) — `/shifts`
+
+**Ciclo de vida:** `OPEN → (el cajero cierra y declara) → PENDING → (el administrador aprueba) → CLOSED`. Solo puede haber un turno `OPEN` por sucursal; un turno `PENDING` no impide abrir el siguiente.
+
+**Cajero — pantalla "Caja":**
+- Ve su turno activo y su resumen (`GET /shifts/active/summary`).
+- **Cierre ciego:** el resumen llega con todos los montos en `null` y la pantalla solo muestra cantidades (ventas por método, anuladas, egresos, nómina y pedidos pendientes).
+- **Declaración:** el cajero declara el efectivo contado (`declaredCash`), el total de la app del QR (`declaredQr`) y el total del datáfono (`declaredBankTransfer`), con una nota opcional.
+- **El primer envío es definitivo:** el turno pasa a `PENDING` con lo declarado, haya o no diferencia.
+- Después del cierre, la respuesta ya no es ciega: muestra el cuadre por método (declarado / esperado / diferencia) y **se imprime automáticamente el comprobante de cierre** (80 mm, con ventas por método, egresos y nómina detallados, cuadre, conciliación y línea de firma). Se puede reimprimir.
+- Si quedan pedidos sin cobrar ni cancelar, no se puede cerrar (`SHIFT_HAS_PENDING_ORDERS`).
+
+**Administrador y Gerente — "Turnos de caja":**
+- Historial paginado (`GET /shifts/page`) con filtros de estado y fechas. El Gerente filtra además por sucursal.
+- **El Administrador aprueba** los cierres pendientes (`POST /shifts/:id/approve`). El comentario es obligatorio si hay diferencia en cualquier método (`hasDifference`). El Gerente solo consulta.
+- El detalle (`ShiftDetailModal`) muestra el arqueo por método y los movimientos. Desde ahí se reimprime el comprobante (`GET /shifts/:id/receipt`).
+
+**Arqueo:**
+- Efectivo esperado = monto inicial + ventas en efectivo − egresos − nómina.
+- QR y tarjeta: el esperado es lo vendido por ese medio.
+
+### 9.13 Egresos (`features/finances/expenses`) — `/expenses`
+
+**Objetivo:** registrar los gastos pagados desde la caja.
+
+- **Datos:** categoría (servicios, personal, insumos, mantenimiento u otros), descripción (máx. 500 caracteres), monto y URL del comprobante (opcional).
+- Cada egreso queda **vinculado al turno** en que se registró.
 
 | Acción | Cajero | Administrador | Gerente |
 |---|---|---|---|
-| Registrar egreso | Sí (solo con turno abierto) | No | No |
-| Ver listado | Su sucursal | Su sucursal | Elige sucursal |
-| Ver detalle / editar / eliminar | No (el backend responde 403) | Sí | Sí |
-| Reporte por período | No | Su sucursal | Elige sucursal |
+| Registrar | Sí (solo con turno abierto) | No | No |
+| Ver listado | Su turno activo | Su sucursal | Elige la sucursal |
+| Editar o eliminar | No | Sí, si el turno sigue `OPEN` | Sí, si el turno sigue `OPEN` |
+| Reporte por categoría | No | Su sucursal | Elige la sucursal |
 
-- **Registro**: el cajero no envía sucursal ni turno; el backend los resuelve a partir del token y del turno abierto. Sin turno abierto, el botón "Registrar" queda deshabilitado (y el backend responde 409 `NO_ACTIVE_SHIFT`).
-- **Edición y eliminación**: solo mientras el turno del egreso siga `OPEN`. Si ya está `PENDING` o `CLOSED`, el backend responde 409 `SHIFT_CLOSED` (cambiarlo alteraría el arqueo declarado) y el modal pasa a solo lectura con la explicación. Si el backend envía `shift.status` en el egreso, el bloqueo se aplica antes de intentar guardar.
-- **Edición**: se hace con `PUT` completo — el backend no acepta actualización parcial, así que siempre se envían los cuatro campos. La eliminación es definitiva (*hard delete*).
-- **Listado**: tabla paginada con filtros de categoría, rango de fechas y búsqueda; el orden lo fija el backend (más reciente primero). Solo existe un endpoint por sucursal, por lo que el Gerente debe elegir una sucursal antes de ver datos. El Cajero solo ve los egresos de su **turno abierto**: lo fuerza el backend (ignora cualquier `shiftId` y, sin turno, devuelve la lista vacía), y la pantalla lo indica en el subtítulo y en el estado vacío.
-- **Reporte** (`ExpenseReportView`): total de egresos, cantidad y desglose por categoría para un rango de fechas. Requiere sucursal + fechas; el backend responde `LOCATION_ID_REQUIRED` si falta la sucursal.
+**Reglas:**
+- Sin turno abierto, el botón de registrar se deshabilita (`NO_ACTIVE_SHIFT`).
+- Si el turno ya está `PENDING` o `CLOSED`, el egreso queda en solo lectura (`SHIFT_CLOSED`), porque cambiarlo alteraría el arqueo declarado.
+- La edición es un `PUT` completo; la eliminación es definitiva.
 
-### 8.9 Nómina (`features/finances/payroll`) — ruta `/payroll`, Gerente + Administrador + Cajero
+### 9.14 Nómina (`features/finances/payroll`) — `/payroll`
 
-Registro de los **pagos de sueldo** a trabajadores, que en este negocio se pagan **por día** desde la caja. Cada pago guarda nombre del empleado (y su `id` si es un usuario del sistema), descripción del cargo, monto, notas, sucursal, turno y quién lo registró. Además, cada pago **genera automáticamente un egreso** de categoría "Personal" (el DTO devuelve el `expense` asociado), de modo que la nómina se refleja también en el reporte de egresos.
+**Objetivo:** pagar los **sueldos diarios** desde la caja.
 
-Componentes principales:
+- **Sueldos** (`PayrollWagesView`, Administrador y Gerente): sueldo diario por trabajador **y por sucursal** (`PATCH /users/:id/locations/:locationId/wage`).
+- **Hoja de pago:** trabajadores activos con su sueldo, sus cargos y si ya cobraron hoy (es informativo, no bloquea).
+- **Pago masivo** (`BatchPayrollModal`, Cajero):
+  - Todos los trabajadores aparecen marcados, con el monto sugerido igual a su sueldo.
+  - El cajero desmarca a quien no trabajó y ajusta los montos.
+  - Se envía en **una sola transacción** de hasta 200 pagos: si uno falla, se revierte todo.
+- **Pago individual** (`CreatePayrollModal`, Cajero): incluso a personas que no son usuarios del sistema.
+- **Cada pago genera automáticamente un egreso** de categoría "Personal".
+- **Listado:**
+  - El Cajero ve los pagos de su turno activo.
+  - El Administrador y el Gerente ven una tabla paginada con búsqueda y fechas; el Gerente puede elegir una sucursal o todas.
+- **Reporte:** total y desglose por empleado. El Gerente puede pedir el consolidado de todas las sucursales.
 
-- **Hoja de pago** (`pay-sheet`): lista de trabajadores activos de la sucursal con su **sueldo diario** configurado, sus cargos y si ya se les pagó hoy (informativo, no bloquea un segundo pago).
-- **Pago masivo** (`BatchPayrollModal`, Cajero): parte de la hoja de pago, con todos los trabajadores marcados y el monto sugerido igual al sueldo diario; el cajero desmarca a quien no trabajó y ajusta montos. Se envía en una sola transacción (hasta 200 pagos): si un pago falla, se revierte todo el lote.
-- **Pago individual** (`CreatePayrollModal`, Cajero): para pagos sueltos, incluso a personas que no son usuarios del sistema (solo nombre).
-- **Sueldos** (`PayrollWagesView`, Administrador/Gerente): edición del sueldo diario de cada trabajador en una sucursal (`PATCH /users/:id/locations/:locationId/wage`). El sueldo es por sucursal: un mismo usuario puede tener sueldos distintos en distintas sucursales.
-- **Listado**: el Cajero ve los pagos del **turno activo** (lo garantiza el backend, igual que en egresos); Administrador y Gerente ven una tabla paginada con búsqueda y rango de fechas (el Gerente puede filtrar por sucursal o ver todas, con la sucursal en cada fila).
-- **Reporte** (Administrador/Gerente): total pagado y desglose por empleado en un período. A diferencia de egresos, el Gerente puede omitir la sucursal y obtener el consolidado de todas.
+### 9.15 Reportes (`features/finances/reports`) — `/reports`, solo Gerente
 
-### 8.10 Turnos de caja (`features/shifts`) — ruta `/shifts`
+**Objetivo:** analizar el negocio por período y sucursal.
 
-Ciclo de vida: `OPEN → (cajero cierra y declara) → PENDING → (admin aprueba) → CLOSED`. Solo un turno `OPEN` por sucursal; un turno `PENDING` no bloquea abrir el siguiente.
+- **Filtros:**
+  - Período: últimos 7 días, este mes (por defecto) o mes pasado. El rango se calcula en días locales (`report-period.ts`).
+  - Sucursal: una o todas.
+- **Tres pestañas.** Cada una consulta solo su endpoint `GET /finances/reports/{tipo}`, con caché por parámetros:
 
-- **Apertura** (Cajero): desde el POS, con monto inicial (`POST /shifts/open`).
-- **Caja** (Cajero): muestra el turno activo y su resumen (`GET /shifts/active/summary`) y permite cerrarlo (`POST /shifts/close`). El **cierre es ciego para todos los métodos**: el resumen llega con todos los montos en `null` y la pantalla solo muestra cantidades (ventas por método, anuladas, egresos, nómina, pedidos pendientes). El cajero declara tres montos: efectivo contado en caja (`declaredCash`), total de la app del QR (`declaredQr`) y total del tarjetero (`declaredBankTransfer`); 0 si no hubo ventas por ese medio. La nota es opcional. **El primer envío es definitivo**: el cierre siempre pasa a `PENDING` con lo declarado, haya o no diferencia, así que el cajero no puede probar montos hasta que el cierre "cuadre". Como los montos ya quedaron fijos, la respuesta del cierre **no es ciega**: trae el turno completo más su comprobante (`receipt`). La pantalla muestra entonces el cuadre por método (declarado / esperado / diferencia), imprime automáticamente el **comprobante de cierre** (80 mm, con ventas por método, egresos y nómina detallados, cuadre del cajón, conciliación y línea de firma) y permite reimprimirlo. La justificación de una diferencia la exige el admin al aprobar. Con pedidos sin cobrar ni cancelar, el botón de cierre se deshabilita (`SHIFT_HAS_PENDING_ORDERS`).
-- **Turnos de caja** (Administrador/Gerente): historial paginado (`GET /shifts/page`) con filtro de estado y fechas (el Gerente además por sucursal). El Administrador entra a su bandeja de pendientes y aprueba cierres (`POST /shifts/:id/approve`); el comentario es obligatorio si `hasDifference` es `true` (cualquier método con diferencia). El Gerente solo consulta. Desde el detalle de un turno ya cerrado (`PENDING` o `CLOSED`) se puede **imprimir el comprobante** (`GET /shifts/:id/receipt`, siempre fresco: tras la aprobación trae el estado `CLOSED` y la revisión del admin). El detalle muestra el arqueo por método como tabla Declarado / Esperado / Diferencia (`reconciliation`) y los movimientos con montos (`GET /shifts/:id` y `/summary`). El esperado de efectivo incluye el monto inicial y resta egresos y nómina; el de QR y tarjeta es lo vendido por ese medio. Los turnos anteriores a este cambio solo arquearon el efectivo. En el historial, la columna **Arqueo** indica si el cierre cuadra en todos los métodos; `declaredAmount`, `systemAmount` y `difference` son solo del efectivo.
+| Pestaña | Contenido |
+|---|---|
+| **Ventas** | Total bruto, descuentos, neto, cantidad de ventas y ticket promedio; ventas por día (incluye los días sin ventas); distribución por método de pago con porcentaje; **top 10 de productos** por ingreso |
+| **Egresos y nómina** | Total y desglose de egresos por categoría; total pagado y desglose por empleado |
+| **Insumos** | Por insumo: **comprado, consumido, mermado y restante**, más el costo total |
 
-Contrato completo de API: `CONTRATO_TURNOS_CAJA.md` del backend.
+### 9.16 Venta sin conexión (`features/offline`) — Cajero
 
-### 8.11 Módulos pendientes
+**Objetivo:** que el POS **siga vendiendo si se cae internet** y que las ventas lleguen al backend cuando vuelva la conexión.
 
-La facturación del POS (sección 8.6) sigue sin conectar a un endpoint real.
+**Piezas:**
+
+| Pieza | Responsabilidad |
+|---|---|
+| `public/sw.js` (Service Worker) | Guarda los archivos de la aplicación para que el POS abra sin internet |
+| `offline-cache.ts` | Copia en localStorage del **menú** y del **turno activo**, por usuario y sucursal. Se actualiza en cada respuesta exitosa y se usa como respaldo cuando una petición falla por red. También genera el identificador del equipo (`deviceId`) y pide almacenamiento persistente. |
+| `connectivity.ts` | Comprueba si hay conexión consultando el backend. Cualquier respuesta, incluso un 401, cuenta como conexión. |
+| `offline-queue.ts` | Cola de ventas en **IndexedDB** (`buen-asador-pos` / `offline-sales`), con índice por usuario. Avisa a las demás pestañas con `BroadcastChannel`. |
+| `offline-sale.builder.ts` | Valida si la venta puede hacerse offline, genera el código del ticket y arma la venta |
+| `offline-sync.service.ts` | Envía la cola a `POST /sales/offline-sync` |
+| `useOfflineSync` | Orquesta todo: al iniciar sesión, al volver la conexión y cada 20 s mientras haya ventas pendientes o falte conexión |
+| `OfflineStatusBadge`, `OfflineQueueModal`, `OfflineChip` | Interfaz: indicador en la barra superior, revisión de la cola y marca de venta offline |
+
+**Reglas de la venta offline:**
+- Solo **Presencial** o **Para llevar** (Delivery se deshabilita) y solo **Efectivo** o **Tarjeta**.
+- Requiere un turno abierto guardado en el equipo: sin conexión no se puede abrir turno.
+- Máximo 100 unidades por venta.
+- Código de ticket con la marca `OFF`: `PREF-AAAAMMDD-OFF-XXXXXXXX`.
+- Cada venta lleva un **UUID como clave de idempotencia**, para que una misma venta no se registre dos veces.
+- Se guarda la hora real de la venta (`occurredAt`).
+- El ticket impreso indica que la venta aún no está sincronizada.
+
+**Sincronización:**
+- Lotes de 50 ventas, con una pausa de 600 ms entre lotes. Ante un 429 (demasiadas solicitudes) espera y reintenta una vez.
+- **Solo una sincronización a la vez**, también entre pestañas (`navigator.locks`).
+- Resultado por venta:
+  - `CREATED` o `DUPLICATE`: sale de la cola.
+  - `REJECTED` reintentable: se queda en la cola y suma un intento.
+  - `REJECTED` no reintentable: pasa a **"con conflicto"**. El cajero la revisa en `OfflineQueueModal` y puede descartarla.
+- Si el lote falla sin respuesta o con un error 5xx, la cola queda intacta para el próximo intento.
+- Se informa el resultado con advertencias: precio distinto al del catálogo, producto desactivado, código de ticket regenerado u hora ajustada.
+- Al sincronizar, se actualizan ventas, turnos e inventario.
+
+**Seguridad de los datos:**
+- La cola **sobrevive a recargas y al cierre de sesión**.
+- Cada venta guarda el `userId` del cajero y solo se sincroniza con su sesión.
+- Al cerrar sesión con ventas pendientes se pide confirmación.
+
+### 9.17 Notificaciones de stock (`features/notifications`) — Gerente y Administrador
+
+**Objetivo:** avisar en tiempo real cuando un producto o un insumo baja de su stock mínimo.
+
+- `useStockAlertsStream` escucha `/notifications/stream`. Por cada evento `alert`:
+  - Muestra un aviso ("Stock bajo: X" o "Insumo bajo: X", con "Quedan N (mínimo M)" o "Sin stock disponible") con el botón **Ver**, que lleva a Inventario o a la pestaña de stock de Insumos.
+  - Actualiza las alertas, el stock y el dashboard.
+  - Usa el id de la alerta para no repetir el aviso si el evento llega dos veces.
+- **Campana** (`StockAlertsBell`): el conteo sale de las consultas de alertas, no de sumar eventos, para coincidir siempre con el servidor.
+- Al reconectar, vuelve a consultar alertas y stock.
+- El Cajero no recibe este stream (el backend responde 403).
 
 ---
 
-## 9. Convenciones transversales relevantes para la documentación
+## 10. Matriz de acceso por rol
 
-- **Envelope de API uniforme**: toda respuesta del backend sigue la forma `{ code, message, data?, meta? }` (`ApiResponse<T>`), y los errores `{ code, errorCode, message, errors[], timestamp, path }` (`ApiErrorResponse`), lo que permite que el interceptor de errores y los hooks genéricos traten cualquier endpoint de la misma manera.
-- **Auditoría uniforme**: las entidades relevantes incluyen un bloque `audit` (`createdAt`, `updatedAt`, `createdBy`, `updatedBy`), reutilizado en toda la UI para mostrar "última actualización".
-- **Manejo de errores de dominio**: el backend puede enviar códigos de error específicos de negocio (p. ej. `INSUFFICIENT_STOCK`, `ALERT_WRONG_LOCATION`, `LOCATION_ID_REQUIRED`), que el frontend traduce a mensajes curados en español en vez de mostrar el mensaje técnico crudo.
-- **Internacionalización parcial**: existe un diccionario en español (`src/locales/es`) usado sobre todo para mensajes de validación de formularios, organizado por dominio (auth, users, catalog, inventory, supplies, etc.).
-- **Confirmaciones de doble clic**: las acciones destructivas o sensibles (desactivar sucursal, desactivar usuario, marcar un delivery como pagado) usan un patrón de confirmación por doble clic con expiración corta, en vez de un modal de confirmación aparte. **Cancelar un pedido** es distinto: exige escribir un motivo (máx. 500 caracteres) que se envía como `reason` y luego se muestra en el detalle del pedido cancelado (`cancellationReason`).
+| Módulo / acción | Gerente | Administrador | Cajero |
+|---|:-:|:-:|:-:|
+| Dashboard | ✅ todas o una sucursal | ✅ su sucursal | — |
+| Usuarios | ✅ | — | — |
+| Sucursales | ✅ | — | — |
+| Reportes | ✅ | — | — |
+| Catálogo | ✅ | ✅ (su sucursal) | — |
+| Inventario e insumos | ✅ | ✅ (su sucursal) | — |
+| Alertas de stock en tiempo real | ✅ | ✅ | — |
+| POS (vender, cobrar) | — | — | ✅ |
+| Venta offline | — | — | ✅ |
+| Pedidos | ✅ consulta | ✅ | ✅ cobra |
+| Pedidos de WhatsApp | ✅ consulta | ✅ cambia estados | ✅ cambia estados y cobra |
+| Ventas: consultar | ✅ | ✅ | ✅ |
+| Ventas: anular | ✅ | ✅ | ✅ |
+| Egresos | ✅ edita y consulta | ✅ edita y consulta | ✅ registra |
+| Nómina: pagar | — | — | ✅ |
+| Nómina: sueldos y reporte | ✅ | ✅ | — |
+| Turnos: abrir y cerrar | — | — | ✅ |
+| Turnos: aprobar cierre | — | ✅ | — |
+| Turnos: historial | ✅ | ✅ | — |
+| Cambiar de sucursal | — | ✅ | ✅ (sin turno abierto) |
+
+> La anulación de ventas depende además de reglas del backend (por ejemplo, el estado del turno). La interfaz muestra el motivo cuando no está permitida.
 
 ---
 
-## 10. Estado actual y observaciones técnicas
+## 11. Casos de uso
 
-### 10.1 Resumen de avance por módulo
+### 11.1 Actores
+
+| Actor | Descripción |
+|---|---|
+| **Gerente** | Dueño o encargado general. Supervisa todas las sucursales. |
+| **Administrador** | Responsable de una sucursal. |
+| **Cajero** | Atiende la caja de una sucursal. |
+| **Cliente de WhatsApp** | Actor externo: arma su pedido por WhatsApp a través del bot del backend. |
+| **Sistema (backend)** | Actor secundario: vence pedidos no aprobados, emite alertas de stock y envía correos. |
+
+### 11.2 Catálogo de casos de uso
+
+| ID | Caso de uso | Actor principal | Módulo |
+|---|---|---|---|
+| CU-01 | Iniciar sesión | Todos | Autenticación |
+| CU-02 | Seleccionar sucursal | Todos | Autenticación |
+| CU-03 | Cambiar contraseña temporal | Todos | Autenticación |
+| CU-04 | Cambiar de sucursal | Administrador, Cajero | Autenticación |
+| CU-05 | Cerrar sesión | Todos | Autenticación |
+| CU-06 | Gestionar usuarios | Gerente | Usuarios |
+| CU-07 | Restablecer contraseña de un usuario | Gerente | Usuarios |
+| CU-08 | Gestionar sucursales | Gerente | Sucursales |
+| CU-09 | Asignar usuarios y roles a una sucursal | Gerente | Sucursales |
+| CU-10 | Gestionar categorías | Gerente, Administrador | Catálogo |
+| CU-11 | Activar o desactivar una categoría completa | Gerente, Administrador | Catálogo |
+| CU-12 | Gestionar modificadores | Gerente, Administrador | Catálogo |
+| CU-13 | Gestionar productos | Gerente, Administrador | Catálogo |
+| CU-14 | Cambiar la disponibilidad de un producto | Gerente, Administrador | Catálogo |
+| CU-15 | Registrar stock inicial de un producto | Gerente, Administrador | Inventario |
+| CU-16 | Ajustar stock de un producto | Gerente, Administrador | Inventario |
+| CU-17 | Consultar kardex | Gerente, Administrador | Inventario / Insumos |
+| CU-18 | Resolver alertas de stock | Gerente, Administrador | Inventario / Insumos |
+| CU-19 | Gestionar insumos | Gerente, Administrador | Insumos |
+| CU-20 | Registrar compra o merma de insumos | Gerente, Administrador | Insumos |
+| CU-21 | Gestionar recetas | Gerente, Administrador | Insumos |
+| CU-22 | Abrir turno de caja | Cajero | POS / Turnos |
+| CU-23 | Registrar venta en el POS | Cajero | POS |
+| CU-24 | Registrar venta sin conexión | Cajero | Offline |
+| CU-25 | Sincronizar ventas offline | Cajero / Sistema | Offline |
+| CU-26 | Cobrar pedido pendiente | Cajero | Pedidos |
+| CU-27 | Cancelar pedido | Cajero, Administrador | Pedidos / WhatsApp |
+| CU-28 | Consultar pedidos | Todos | Pedidos |
+| CU-29 | Atender pedido de WhatsApp | Cajero, Administrador | WhatsApp |
+| CU-30 | Cobrar pedido de WhatsApp | Cajero | WhatsApp |
+| CU-31 | Consultar ventas y reimprimir ticket | Todos | Ventas |
+| CU-32 | Anular venta | Según permisos | Ventas |
+| CU-33 | Registrar egreso de caja | Cajero | Egresos |
+| CU-34 | Editar o eliminar egreso | Administrador, Gerente | Egresos |
+| CU-35 | Configurar sueldo diario | Administrador, Gerente | Nómina |
+| CU-36 | Registrar pago masivo de nómina | Cajero | Nómina |
+| CU-37 | Registrar pago individual de nómina | Cajero | Nómina |
+| CU-38 | Cerrar turno de caja (arqueo ciego) | Cajero | Turnos |
+| CU-39 | Aprobar cierre de caja | Administrador | Turnos |
+| CU-40 | Consultar historial de turnos | Administrador, Gerente | Turnos |
+| CU-41 | Consultar dashboard del día | Gerente, Administrador | Dashboard |
+| CU-42 | Consultar reportes por período | Gerente | Reportes |
+| CU-43 | Recibir alerta de stock en tiempo real | Gerente, Administrador | Notificaciones |
+
+### 11.3 Diagrama de casos de uso (resumen)
+
+```
+                 ┌──────────────────────── Sistema Buen Asador ────────────────────────┐
+                 │                                                                     │
+  Gerente ───────┼── CU-06..09 Usuarios y sucursales                                   │
+     │           ├── CU-42 Reportes        CU-40 Historial de turnos                   │
+     │           ├── CU-41 Dashboard       CU-43 Alertas de stock ◄──── Sistema        │
+     ▼ (hereda)  │                                                                     │
+  Administrador ─┼── CU-10..21 Catálogo, inventario, insumos y recetas                 │
+     │           ├── CU-29 Atender pedido de WhatsApp ◄──── Cliente de WhatsApp        │
+     │           ├── CU-34 Editar egreso   CU-35 Sueldos   CU-39 Aprobar cierre        │
+                 │                                                                     │
+  Cajero ────────┼── CU-22 Abrir turno ──► CU-23 Venta POS ──«extend»── CU-24 Offline  │
+                 ├── CU-26 Cobrar pedido   CU-30 Cobrar WhatsApp                       │
+                 ├── CU-33 Egreso          CU-36/37 Nómina                             │
+                 ├── CU-38 Cerrar turno ──► (CU-39 lo aprueba el Administrador)        │
+                 │                                                                     │
+  Todos ─────────┼── CU-01..05 Sesión      CU-28 Pedidos   CU-31 Ventas                │
+                 └─────────────────────────────────────────────────────────────────────┘
+```
+
+> La herencia Gerente → Administrador es conceptual (el Gerente supervisa lo que gestiona el Administrador). En el sistema, algunas acciones operativas son exclusivas del Administrador (aprobar cierres) o del Cajero (cobrar).
+
+### 11.4 Especificación de los casos de uso principales
+
+#### CU-01 / CU-02 — Iniciar sesión y seleccionar sucursal
+
+| Campo | Descripción |
+|---|---|
+| **Actor** | Gerente, Administrador o Cajero |
+| **Precondición** | El usuario está activo y tiene al menos una sucursal asignada |
+| **Postcondición** | Sesión completa con access token y refresh token; el usuario está en la pantalla de inicio de su rol |
+
+**Flujo principal:**
+1. El usuario ingresa su usuario o correo y su contraseña.
+2. El sistema valida las credenciales y muestra las sucursales disponibles con el rol en cada una.
+3. El usuario elige una sucursal.
+4. El sistema crea la sesión, limpia los datos en caché y redirige: el Cajero al POS; el Administrador y el Gerente al Dashboard.
+
+**Flujos alternativos:**
+- **2a.** Credenciales incorrectas: el sistema muestra el error y no avanza.
+- **2b.** El usuario es Gerente en todas sus sucursales: el sistema omite el paso 3 y entra con vista consolidada.
+- **4a.** El usuario tiene una contraseña temporal: el sistema lo lleva a CU-03.
+
+#### CU-03 — Cambiar contraseña temporal
+
+| Campo | Descripción |
+|---|---|
+| **Actor** | Cualquier usuario con `mustChangePassword` |
+| **Precondición** | Sesión iniciada con una contraseña temporal |
+| **Postcondición** | Contraseña nueva guardada; acceso completo al sistema |
+
+**Flujo principal:**
+1. El sistema muestra la pantalla de cambio de contraseña y bloquea el resto.
+2. El usuario ingresa la contraseña actual, la nueva y su confirmación.
+3. El sistema valida y guarda.
+4. El sistema redirige a la pantalla de inicio del rol.
+
+**Flujo alternativo:**
+- **3a.** La contraseña actual es incorrecta o la nueva es igual a la actual: se muestra el error.
+
+#### CU-07 — Restablecer contraseña de un usuario
+
+| Campo | Descripción |
+|---|---|
+| **Actor** | Gerente |
+| **Precondición** | El usuario existe y tiene correo |
+| **Postcondición** | Se generó una contraseña temporal nueva y se envió por correo; la anterior deja de servir |
+
+**Flujo principal:**
+1. El Gerente pulsa "Restablecer contraseña" en la fila del usuario.
+2. El sistema genera la contraseña temporal y muestra el estado del correo como *Pendiente*.
+3. El sistema consulta el estado hasta que cambia a *Enviado*.
+
+**Flujo alternativo:**
+- **3a.** El estado pasa a *Fallido*: el Gerente puede reintentar.
+
+#### CU-22 — Abrir turno de caja
+
+| Campo | Descripción |
+|---|---|
+| **Actor** | Cajero |
+| **Precondición** | No hay un turno `OPEN` en la sucursal |
+| **Postcondición** | Turno `OPEN` vinculado al cajero; el POS queda habilitado |
+
+**Flujo principal:**
+1. El cajero entra al POS y el sistema muestra el modal de apertura.
+2. El cajero ingresa el monto inicial de caja.
+3. El sistema abre el turno y desbloquea el POS.
+
+**Flujos alternativos:**
+- **3a.** Ya hay un turno abierto en la sucursal (`SHIFT_ALREADY_OPEN`): se muestra el error.
+- **1a.** No hay conexión: no se puede abrir turno.
+
+#### CU-23 — Registrar venta en el POS
+
+| Campo | Descripción |
+|---|---|
+| **Actor** | Cajero |
+| **Precondición** | Turno abierto; hay productos disponibles en la sucursal |
+| **Postcondición** | Pedido y venta registrados; stock de productos e insumos descontado; ticket impreso |
+
+**Flujo principal:**
+1. El cajero elige productos del menú por categoría.
+2. Para cada unidad, opcionalmente agrega modificadores y notas.
+3. El cajero elige el tipo de pedido (Presencial, Para llevar o Delivery).
+4. El cajero revisa el pedido e ingresa los datos del cliente si corresponde.
+5. El cajero elige el método de pago, aplica un descuento si hay, y en efectivo ingresa el monto recibido.
+6. El sistema muestra el cambio, registra la venta e imprime el ticket.
+7. El cajero inicia un nuevo pedido.
+
+**Flujos alternativos:**
+- **4a.** Faltan datos obligatorios del cliente (Delivery: nombre, teléfono y dirección; Para llevar: nombre): el sistema no permite continuar.
+- **4b.** El cajero cancela el pedido indicando un motivo.
+- **5a.** El monto recibido en efectivo es menor que el total: no se permite confirmar.
+- **6a.** Stock insuficiente (`INSUFFICIENT_STOCK`): se muestra el error y la venta no se registra.
+- **6b.** Sin conexión: continúa en CU-24.
+
+#### CU-24 / CU-25 — Registrar y sincronizar venta sin conexión
+
+| Campo | Descripción |
+|---|---|
+| **Actor** | Cajero; Sistema (sincronización automática) |
+| **Precondición** | El POS detectó que no hay conexión; hay un turno abierto guardado en el equipo |
+| **Postcondición** | La venta queda en la cola local y, al volver la conexión, registrada en el backend |
+
+**Flujo principal:**
+1. El sistema muestra el indicador "Sin conexión".
+2. El cajero arma la venta (solo Presencial o Para llevar) y cobra en Efectivo o Tarjeta.
+3. El sistema genera un código de ticket con la marca `OFF`, guarda la venta en el equipo e imprime el ticket.
+4. Cuando vuelve la conexión, el sistema envía la cola por lotes.
+5. El sistema informa cuántas ventas se sincronizaron y con qué advertencias.
+
+**Flujos alternativos:**
+- **2a.** Venta de tipo Delivery, más de 100 unidades o sin turno guardado: el sistema avisa el motivo y no permite la venta offline.
+- **4a.** Una venta es rechazada de forma definitiva: queda "con conflicto" y el cajero la revisa o descarta.
+- **4b.** El servidor no responde: la cola queda intacta y se reintenta cada 20 s.
+
+#### CU-29 / CU-30 — Atender y cobrar un pedido de WhatsApp
+
+| Campo | Descripción |
+|---|---|
+| **Actor** | Cajero (atiende y cobra), Administrador (solo atiende); Cliente de WhatsApp |
+| **Precondición** | El cliente confirmó un pedido en el bot de WhatsApp |
+| **Postcondición** | Pedido pagado (sale de la bandeja) o cancelado |
+
+**Flujo principal:**
+1. El sistema recibe el pedido en tiempo real, emite un sonido y muestra un aviso.
+2. El usuario revisa el detalle y pulsa **Aprobar**. El cliente recibe la confirmación y el QR.
+3. El usuario avanza el pedido: **Preparar** → **Listo** (→ **Entregado** si es delivery).
+4. El cajero pulsa **Cobrar**. El sistema propone el método que eligió el cliente, registra la venta y quita el pedido de la bandeja.
+
+**Flujos alternativos:**
+- **2a.** Nadie aprueba antes del vencimiento: el sistema cancela el pedido automáticamente y avisa.
+- **2b.** El usuario rechaza o cancela el pedido indicando un motivo.
+- **3a.** Otro cajero ya movió el pedido (409): el sistema recarga su estado.
+- **4a.** El usuario es Administrador: el sistema indica que solo el cajero puede cobrar.
+
+#### CU-32 — Anular venta
+
+| Campo | Descripción |
+|---|---|
+| **Actor** | Usuario con permiso de anulación |
+| **Precondición** | La venta está cobrada y la regla de negocio permite anularla |
+| **Postcondición** | Venta `ANNULLED`; pedido cancelado; stock de productos e insumos devuelto |
+
+**Flujo principal:**
+1. El usuario abre el detalle de la venta y pulsa **Anular venta**.
+2. El sistema advierte que la acción es irreversible y pide el motivo.
+3. El usuario confirma y el sistema anula la venta y devuelve el stock.
+
+**Flujo alternativo:**
+- **1a.** La venta no se puede anular: el botón está deshabilitado y explica el motivo.
+
+#### CU-36 — Registrar pago masivo de nómina
+
+| Campo | Descripción |
+|---|---|
+| **Actor** | Cajero |
+| **Precondición** | Turno abierto; trabajadores con sueldo diario configurado |
+| **Postcondición** | Un pago y su egreso "Personal" por cada trabajador marcado |
+
+**Flujo principal:**
+1. El cajero abre "Pago masivo".
+2. El sistema muestra la hoja de pago con todos los trabajadores marcados y su sueldo sugerido.
+3. El cajero desmarca a quien no trabajó y ajusta montos.
+4. El sistema registra todos los pagos en una sola transacción.
+
+**Flujo alternativo:**
+- **4a.** Un pago falla: se revierte el lote completo y se muestra el error.
+
+#### CU-38 — Cerrar turno de caja (arqueo ciego)
+
+| Campo | Descripción |
+|---|---|
+| **Actor** | Cajero |
+| **Precondición** | Turno `OPEN` del cajero, sin pedidos pendientes |
+| **Postcondición** | Turno `PENDING` con los montos declarados; comprobante impreso |
+
+**Flujo principal:**
+1. El cajero abre "Caja" y ve las cantidades de su turno, sin montos esperados.
+2. El cajero declara el efectivo contado, el total de QR y el total de tarjeta, con una nota opcional.
+3. El sistema registra el cierre (definitivo) y muestra el cuadre por método.
+4. El sistema imprime el comprobante de cierre.
+
+**Flujo alternativo:**
+- **1a.** Hay pedidos sin cobrar ni cancelar: el botón de cierre está deshabilitado.
+
+#### CU-39 — Aprobar cierre de caja
+
+| Campo | Descripción |
+|---|---|
+| **Actor** | Administrador |
+| **Precondición** | Turno `PENDING` de su sucursal |
+| **Postcondición** | Turno `CLOSED` con la revisión del administrador |
+
+**Flujo principal:**
+1. El Administrador abre la bandeja de cierres pendientes.
+2. El Administrador revisa el arqueo por método (declarado / esperado / diferencia).
+3. El Administrador aprueba, con comentario opcional.
+
+**Flujo alternativo:**
+- **3a.** Hay diferencia en algún método: el comentario es obligatorio (`SHIFT_REVIEW_NOTES_REQUIRED`).
+
+#### CU-42 — Consultar reportes por período
+
+| Campo | Descripción |
+|---|---|
+| **Actor** | Gerente |
+| **Precondición** | Sesión de Gerente |
+| **Postcondición** | Ninguna (consulta) |
+
+**Flujo principal:**
+1. El Gerente elige el período y la sucursal (o todas).
+2. El Gerente elige una pestaña: Ventas, Egresos y nómina, o Insumos.
+3. El sistema muestra los indicadores, las tablas y los gráficos del período.
+
+#### CU-43 — Recibir alerta de stock en tiempo real
+
+| Campo | Descripción |
+|---|---|
+| **Actor** | Sistema (emite); Gerente o Administrador (recibe) |
+| **Precondición** | Sesión de Gerente o Administrador; stock mínimo configurado |
+| **Postcondición** | Alerta visible en la campana; tablas y dashboard actualizados |
+
+**Flujo principal:**
+1. Una venta o un ajuste deja un producto o insumo por debajo del mínimo.
+2. El sistema emite la alerta y el usuario ve el aviso con la cantidad restante.
+3. El usuario pulsa **Ver** y llega a la pantalla de stock correspondiente.
+
+**Flujo alternativo:**
+- **2a.** Se perdió la conexión: al reconectar, el sistema vuelve a consultar alertas y stock.
+
+---
+
+## 12. Pruebas y automatización
+
+> **Estado:** en desarrollo. Esta sección describe la situación actual y la estrategia que se va a implementar. Se actualizará a medida que se agreguen las pruebas.
+
+### 12.1 Situación actual
+
+| Aspecto | Estado |
+|---|---|
+| Verificación de tipos (`tsc -b`) | ✅ Sin errores. Se ejecuta en cada `npm run build`. |
+| Análisis estático (`eslint .`) | ⚠️ 8 errores y 13 advertencias, ninguno funcional (sección 14.2) |
+| Pruebas unitarias | ❌ No hay |
+| Pruebas de componentes | ❌ No hay |
+| Pruebas de extremo a extremo (E2E) | ❌ No hay |
+| Integración continua (CI) | ❌ No hay pipeline configurado |
+| Pruebas manuales | ✅ Se validaron los flujos de cada módulo contra el backend durante el desarrollo |
+
+### 12.2 Estrategia propuesta (pirámide de pruebas)
+
+| Nivel | Herramienta | Qué se prueba |
+|---|---|---|
+| **Unitarias** | Vitest | Funciones puras: mappers DTO ⇄ modelo, `zodToFormik` y esquemas Zod, `getProductAvailability`, `getCategoryAvailability`, `getReportPeriodRange`, `getOrderActions`, `getOfflineIneligibility`, `generateOfflineTicketCode`, `splitAddress`, el parser SSE (`parseBlock`), formato de dinero y fechas |
+| **Stores** | Vitest | `useCartStore` (agregar, quitar, modificadores por unidad), `useWhatsappOrdersStore` (`upsert`, `applyStatus`, salida de estados finales), `useAuthStore` (`setSession`, `logout`) |
+| **Componentes** | Vitest + React Testing Library + MSW (simula el backend) | Formularios con validación (login, producto, egreso), `PaymentModal` (cálculo del cambio), protecciones de ruta por rol, `WaitTime` (colores de la cuenta regresiva) |
+| **Integración HTTP** | Vitest + MSW | Interceptor de errores: renovación ante `TOKEN_EXPIRED` y repetición de la petición, `MUST_CHANGE_PASSWORD`, detección offline; sincronización offline (CREATED, DUPLICATE, REJECTED, 429) con `fake-indexeddb` |
+| **Extremo a extremo** | Playwright | Flujos críticos en el navegador: login → venta en el POS → ticket; cierre de caja → aprobación; venta offline → sincronización; bandeja de WhatsApp |
+
+### 12.3 Automatización propuesta
+
+- **Scripts** en `package.json`: `test` (Vitest), `test:coverage` y `test:e2e` (Playwright).
+- **Pipeline de CI** (GitHub Actions) en cada *push* y *pull request* a `develop` y `main`: `npm ci` → `npm run lint` → `tsc -b` → `npm test` → `npm run build`.
+- **Meta de cobertura inicial:** 70 % en `lib/`, `mappers/`, `utils/` y `stores/`.
+
+### 12.4 Casos de prueba funcionales (base para pruebas manuales y E2E)
+
+| ID | Caso de uso | Escenario | Resultado esperado |
+|---|---|---|---|
+| CP-01 | CU-01 | Credenciales válidas | Se muestran las sucursales del usuario con su rol |
+| CP-02 | CU-01 | Contraseña incorrecta | Mensaje de error; no avanza |
+| CP-03 | CU-02 | Gerente en todas sus sucursales | Entra directo al Dashboard con "Todas las sucursales" |
+| CP-04 | CU-03 | Usuario con contraseña temporal | Solo puede ver `/change-password`; tras cambiarla accede a su inicio |
+| CP-05 | — | El token vence durante el uso | La petición se repite sola con un token nuevo; el usuario no lo nota |
+| CP-06 | — | Cajero entra a `/users` escribiendo la URL | Es redirigido a `/pos` |
+| CP-07 | CU-04 | Cajero con turno abierto intenta cambiar de sucursal | El botón está deshabilitado |
+| CP-08 | CU-07 | Restablecer contraseña | El estado del correo pasa de *Pendiente* a *Enviado* |
+| CP-09 | CU-11 | Desactivar una categoría en una sucursal | Sus productos dejan de aparecer en el POS de esa sucursal |
+| CP-10 | CU-14 | Producto desactivado globalmente | El interruptor por sucursal está deshabilitado y explica el motivo |
+| CP-11 | CU-16 | Ajuste "restar" mayor que el stock | Error de stock insuficiente |
+| CP-12 | CU-21 | Crear receta | Aparece stock en 0 de los insumos en las sucursales del producto |
+| CP-13 | CU-22 | Entrar al POS sin turno | Modal de apertura que bloquea la venta |
+| CP-14 | CU-23 | Venta en efectivo con monto recibido mayor que el total | Muestra el cambio correcto, registra la venta e imprime el ticket |
+| CP-15 | CU-23 | Delivery sin dirección | No permite pasar al pago |
+| CP-16 | CU-23 | 3 unidades del mismo producto con modificadores distintos | El ticket refleja cada unidad con sus extras |
+| CP-17 | CU-23 | Venta que deja el stock bajo el mínimo | El Gerente y el Administrador reciben la alerta en tiempo real |
+| CP-18 | CU-24 | Cortar la red y vender "para llevar" en efectivo | Ticket con código `-OFF-`; la venta aparece en la cola |
+| CP-19 | CU-24 | Sin red, elegir Delivery | La opción está deshabilitada |
+| CP-20 | CU-25 | Restaurar la red | La venta se sincroniza y aparece en Ventas |
+| CP-21 | CU-25 | Venta offline rechazada de forma definitiva | Queda "con conflicto" y se puede descartar |
+| CP-22 | CU-29 | Llega un pedido de WhatsApp | Suena, aparece el aviso y sube el contador del botón |
+| CP-23 | CU-29 | El pedido vence sin aprobarse | Desaparece de la bandeja con aviso de vencimiento |
+| CP-24 | CU-29 | Dos cajeros aprueban el mismo pedido | El segundo recibe el estado actualizado sin duplicar |
+| CP-25 | CU-30 | Administrador intenta cobrar | Se le indica que solo el cajero cobra |
+| CP-26 | CU-32 | Anular una venta | Estado anulado y stock devuelto (visible en el kardex) |
+| CP-27 | CU-33 | Registrar egreso sin turno | El botón está deshabilitado |
+| CP-28 | CU-34 | Editar un egreso de un turno cerrado | El modal está en solo lectura |
+| CP-29 | CU-36 | Pago masivo con un pago inválido | Ningún pago se registra |
+| CP-30 | CU-38 | Cerrar turno con pedidos pendientes | El botón de cierre está deshabilitado |
+| CP-31 | CU-38 | Declarar montos con diferencia | El turno pasa a `PENDING`, muestra la diferencia e imprime el comprobante |
+| CP-32 | CU-39 | Aprobar un cierre con diferencia sin comentario | No se permite |
+| CP-33 | CU-41 | Registrar una venta con el Dashboard abierto | Los indicadores se actualizan en 60 s o menos |
+| CP-34 | CU-42 | Reporte "Mes pasado" | El rango va del primer al último día del mes anterior |
+
+---
+
+## 13. Convenciones transversales
+
+- **Contrato de API uniforme** (sección 6.3): permite que el interceptor y los hooks genéricos traten cualquier endpoint de la misma forma.
+- **Auditoría uniforme:** las entidades incluyen un bloque `audit` (`createdAt`, `updatedAt`, `createdBy`, `updatedBy`).
+- **Errores de dominio traducidos:** los códigos de negocio del backend se convierten en mensajes curados en español.
+- **Confirmación por doble clic** para acciones sensibles (desactivar una sucursal o un usuario, marcar un delivery como pagado). Las acciones irreversibles con impacto contable (**cancelar un pedido**, **anular una venta**) exigen escribir un motivo.
+- **Avisos sin duplicados:** los avisos de eventos en tiempo real usan un `id` estable (id de la alerta o del pedido), así un evento repetido no genera dos avisos.
+- **Fechas en hora boliviana:** los rangos se envían como `YYYY-MM-DD` y se formatean sin pasar por `Date`, para evitar desfases de zona horaria.
+- **Códigos de pedido cortos:** se usan los primeros 8 caracteres del UUID en mayúsculas (`shortOrderId`).
+- **Marcas de fases:** el código postergado se comenta con la etiqueta `FASE 2 - <funcionalidad>`, para encontrarlo con una sola búsqueda.
+
+---
+
+## 14. Estado actual y observaciones técnicas
+
+### 14.1 Avance por módulo
 
 | Módulo | Ruta | Estado |
 |---|---|---|
-| Login + selección/cambio de sucursal | `/login` | Implementado |
-| Usuarios | `/users` | Implementado |
-| Sucursales | `/locations` | Implementado |
-| Catálogo (productos, categorías, modificadores) | `/catalog/*` | Implementado |
-| Inventario | `/inventory` | Implementado |
-| Insumos y recetas | `/ingredients` | Implementado |
-| POS (turno, carrito, pago, ticket) | `/pos` | Implementado (factura pendiente) |
-| Pedidos | `/orders` | Implementado |
-| Ventas | `/sales` | Implementado |
-| Egresos | `/expenses` | Implementado |
-| Nómina | `/payroll` | Implementado |
-| Dashboard | `/dashboard` | Implementado |
-| Reportes | `/reports` | Implementado |
-| Caja y turnos (cierre, arqueo, aprobación) | `/shifts` | Implementado |
+| Login, selección y cambio de sucursal, cambio de contraseña | `/login`, `/change-password` | ✅ Implementado |
+| Renovación de sesión (refresh token con rotación) | — | ✅ Implementado |
+| Usuarios (con credenciales por correo) | `/users` | ✅ Implementado |
+| Sucursales | `/locations` | ✅ Implementado |
+| Catálogo (productos, categorías, modificadores, disponibilidad) | `/catalog/*` | ✅ Implementado |
+| Inventario | `/inventory` | ✅ Implementado |
+| Insumos y recetas | `/ingredients` | ✅ Implementado |
+| POS (turno, carrito, pago, ticket) | `/pos` | ✅ Implementado |
+| Venta sin conexión | — | ✅ Implementado |
+| Pedidos | `/orders` | ✅ Implementado |
+| Pedidos de WhatsApp | `/whatsapp-orders` | ✅ Implementado |
+| Ventas (con anulación) | `/sales` | ✅ Implementado |
+| Caja y turnos (cierre ciego, arqueo, aprobación, comprobante) | `/shifts` | ✅ Implementado |
+| Egresos | `/expenses` | ✅ Implementado |
+| Nómina | `/payroll` | ✅ Implementado |
+| Dashboard | `/dashboard` | ✅ Implementado |
+| Reportes | `/reports` | ✅ Implementado |
+| Alertas de stock en tiempo real | — | ✅ Implementado |
+| Facturación electrónica | — | ⏸️ Fase 2 (código comentado) |
+| Pruebas automatizadas y CI | — | 🚧 En desarrollo (sección 12) |
 
-### 10.2 Observaciones detectadas en el código
+### 14.2 Observaciones detectadas en la revisión
 
-- **Restos de la plantilla de Vite**: `src/App.tsx`, `src/App.css` y el `README.md` son los de la plantilla inicial y no se usan (la entrada real es `main.tsx` → `AppRouter`).
-- **Dependencias sin uso**: `react-hook-form` y `@hookform/resolvers` siguen en `package.json` aunque el proyecto usa Formik + Zod. Conviven además dos librerías de fechas (`react-datepicker` y `react-day-picker`).
-- **Archivo con errata**: `features/catalog/categories/dto/cateogory.dto.ts` y `forms/category.fom.ts` tienen el nombre mal escrito.
-- **Sin tests**: el proyecto no tiene pruebas automatizadas ni script `test`.
+- **Dos `<Toaster>` montados**, uno en `main.tsx` y otro en `AppLayout.tsx`, en la misma posición. Es probable que cada aviso se dibuje dos veces. Se recomienda dejar uno solo.
+- **ESLint, 8 errores y 13 advertencias.** Ninguno afecta el funcionamiento en producción:
+  - 5 de la regla `react-refresh/only-export-components` (`badge.tsx`, `button.tsx`, `form.tsx`, `Router.tsx`), que solo afecta la recarga en caliente durante el desarrollo.
+  - 1 variable usada solo como tipo en `use-toast.ts`.
+  - 2 de `setState` dentro de `useEffect` en `ImageUploader` y `MoneyInput`.
+  - Las advertencias son dependencias de hooks (`exhaustive-deps`).
+- **Restos de la plantilla de Vite:** `src/App.tsx` y `src/App.css` no se usan (la entrada real es `main.tsx`).
+- **Dependencias poco usadas:**
+  - `react-hook-form` y `@hookform/resolvers` solo los usa el componente generado `ui/form.tsx`; el proyecto usa Formik.
+  - Conviven dos librerías de fechas (`react-datepicker` y `react-day-picker`).
+- **Nombres de archivo con erratas:** `catalog/categories/dto/cateogory.dto.ts` y `forms/category.fom.ts`.
+- **Rol `EMPLOYEE`** definido pero sin pantallas.
+- **Comentario desactualizado** en `useOfflineSync.ts`: dice "cada 30 s", pero el intervalo real es de 20 s.
 
 ---
 
-## 11. Resumen de valor para la memoria del proyecto
+## 15. Trabajo futuro (Fase 2)
 
-Este frontend ejemplifica varios principios de arquitectura de software aplicables a la documentación de un proyecto de grado:
+### 15.1 Facturación electrónica
 
-- **Arquitectura por dominio (feature-based)** en lugar de por capa técnica, facilitando la escalabilidad y el mantenimiento independiente de cada módulo de negocio.
-- **Separación estricta de responsabilidades** entre transporte de datos (DTO), modelo de dominio de UI (model) y transformación explícita (mapper), lo que aísla el resto de la aplicación de cambios en el contrato del backend.
-- **Control de acceso en dos niveles** (autenticación + autorización por rol) implementado como *guards* de enrutamiento declarativos, reutilizables y combinables.
-- **Modelo multi-sucursal como eje transversal**: casi todas las entidades de negocio (stock, ventas, pedidos, turnos) están particionadas por sucursal, y el propio modelo de sesión refleja que el rol de un usuario puede variar según la sucursal en la que trabaje.
-- **Consistencia de patrones** (hooks de datos, validación, componentes de formulario, manejo de errores) que reduce la duplicación de código y facilita la incorporación de nuevas funcionalidades siguiendo las convenciones ya establecidas.
+El código existe pero está **comentado** con la marca `FASE 2 - Facturación`:
+
+| Archivo | Contenido comentado |
+|---|---|
+| `features/pos/components/InvoiceOffcanvas.tsx` | Panel de emisión (NIT/CI + nombre o razón social, validado con Zod) |
+| `features/pos/components/reviewAndPayment/OrderSuccessModal.tsx` | Botón "Emitir factura" y propiedad `onEmitInvoice` |
+| `features/pos/page/Pos.tsx` | Vista `"invoice"`, `handleEmitInvoice` y montaje del panel |
+| `features/pos/page/order/Orders.tsx` | `handleEmitInvoice` |
+| `features/sales/page/Sales.tsx`, `ManagerSales.tsx`, `features/whatsapp/pages/WhatsappOrders.tsx` | Propiedad `onEmitInvoice` |
+| `constants/enums/invoice.enum.ts` (+ `index.ts`) | `InvoiceStatusEnum` (`PENDING`, `ISSUED`, `CANCELLED`) |
+| `constants/queryKeys/query-keys.ts` | `INVOICES` |
+
+**Para reactivarla:**
+1. Buscar `FASE 2 - Facturación` y descomentar.
+2. Crear el hook de emisión contra el endpoint del backend.
+3. Integrarlo con el servicio de facturación del ente tributario (SIN).
+
+### 15.2 Otras mejoras sugeridas
+
+- Implementar la estrategia de pruebas y CI (sección 12).
+- Resolver las observaciones de la sección 14.2.
+- Definir las pantallas del rol `EMPLOYEE` o retirarlo.
 
 ---
 
-*Documento generado a partir del análisis del código fuente del repositorio (rama `develop`, commit `056eadd`), actualizado en octubre de 2026.*
+## 16. Resumen de valor para la memoria del proyecto
+
+- **Arquitectura por dominio (feature-based)** en lugar de por capa técnica: cada módulo de negocio crece y se mantiene de forma independiente.
+- **Separación estricta de responsabilidades** entre el transporte de datos (DTO), el modelo de interfaz (model) y la transformación explícita (mapper), lo que aísla la aplicación de los cambios en el contrato del backend.
+- **Seguridad de sesión robusta:** login en dos pasos, contraseña temporal con cambio obligatorio, access token de vida corta con refresh token rotativo, renovación preventiva y reactiva, y sincronización entre pestañas para evitar falsos positivos de robo de token.
+- **Control de acceso en dos niveles** (autenticación y autorización por rol) con protecciones de ruta declarativas y combinables, reforzado por el backend.
+- **Modelo multi-sucursal como eje transversal:** stock, ventas, pedidos y turnos se separan por sucursal, y el rol de un usuario puede variar según la sucursal.
+- **Tiempo real** con Server-Sent Events autenticados (alertas de stock y pedidos de WhatsApp), con reconexión, vigilante de inactividad y recuperación de eventos perdidos.
+- **Resiliencia operativa (offline-first en el POS):** Service Worker, copia local de datos críticos, cola persistente en IndexedDB, idempotencia por UUID y sincronización por lotes coordinada entre pestañas.
+- **Control financiero:** arqueo de caja ciego por método de pago, cierre definitivo, aprobación con justificación obligatoria ante diferencias, y trazabilidad de egresos y nómina por turno.
+- **Trazabilidad del inventario:** kardex de productos e insumos, descuento automático por receta, registro de mermas y devolución de stock al anular una venta.
+- **Consistencia de patrones** (hooks de datos, validación, formularios, manejo de errores) que reduce la duplicación y facilita agregar funcionalidades nuevas.
+
+---
+
+*Documento generado a partir del análisis del código fuente del repositorio (rama `develop`, commit `2b3db5c`, más la Fase 2 de facturación comentada). Actualizado en noviembre de 2026.*
