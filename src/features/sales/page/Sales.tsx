@@ -114,7 +114,8 @@ function CashierAdminSales() {
         <OrderSuccessModal
           sale={sale}
           customerName={sale.customerName}
-          onEmitInvoice={() => console.log("Emitir factura")}
+          // FASE 2 - Facturación
+          // onEmitInvoice={() => console.log("Emitir factura")}
           showDetails
           onAnnul={() => setOpenAnnulModal(true)}
           onClose={() => {

@@ -4,7 +4,8 @@ import {
   Ban,
   CheckCircle,
   Plus,
-  Receipt,
+  // FASE 2 - Facturación: icono del botón "Emitir factura"
+  // Receipt,
   TicketCheck,
   WifiOff,
   X,
@@ -22,7 +23,8 @@ interface OrderSuccessModalProps {
   sale: Sale;
   customerName?: string | null;
   showDetails?: boolean;
-  onEmitInvoice: () => void;
+  // FASE 2 - Facturación
+  // onEmitInvoice: () => void;
   onClose: () => void;
   /** Si se define, muestra el botón "Anular venta" (solo en vista de detalle). */
   onAnnul?: () => void;
@@ -37,7 +39,8 @@ export function OrderSuccessModal({
   sale,
   customerName,
   showDetails = false,
-  onEmitInvoice,
+  // FASE 2 - Facturación
+  // onEmitInvoice,
   onClose,
   onAnnul,
   closeLabel,
@@ -222,6 +225,7 @@ export function OrderSuccessModal({
 
         {/* Acciones */}
         <div className="px-5 pb-5 flex flex-col gap-2 border-t border-surface pt-4">
+          {/* FASE 2 - Facturación: botón "Emitir factura"
           <button
             type="button"
             disabled
@@ -232,6 +236,7 @@ export function OrderSuccessModal({
             <Receipt size={13} />
             Emitir factura
           </button>
+          */}
           {showDetails && onAnnul && (
             <button
               type="button"

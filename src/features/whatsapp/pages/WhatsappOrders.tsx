@@ -345,7 +345,8 @@ export function WhatsappOrders() {
           sale={sale}
           customerName={paidCustomer}
           closeLabel="Cerrar"
-          onEmitInvoice={() => setPaidCustomer(undefined)}
+          // FASE 2 - Facturación
+          // onEmitInvoice={() => setPaidCustomer(undefined)}
           onClose={() => setPaidCustomer(undefined)}
         />
       )}

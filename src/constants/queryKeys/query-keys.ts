@@ -135,7 +135,8 @@ export const QUERY_KEYS = {
     "payroll",
     params,
   ],
-  INVOICES: ["finances", "invoices"],
+  // FASE 2 - Facturación
+  // INVOICES: ["finances", "invoices"],
   REPORTS: ["finances", "reports"],
   // Reportes del gerente (pantalla Reportes): ["reports", "sales", params]
   REPORT: (

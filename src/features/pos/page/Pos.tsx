@@ -29,7 +29,9 @@ import {
   mapQueuedSaleToSaleModel,
 } from "@/features/offline/utils/offline-sale.builder";
 
-export type PosView = "idle" | "review" | "payment" | "success" | "invoice";
+// FASE 2 - Facturación: agregar la vista "invoice"
+// export type PosView = "idle" | "review" | "payment" | "success" | "invoice";
+export type PosView = "idle" | "review" | "payment" | "success";
 
 export const Pos = () => {
   const {
@@ -232,10 +234,10 @@ export const Pos = () => {
     }
   }
 
-  // 4. Emitir factura
-  function handleEmitInvoice() {
-    setView("invoice");
-  }
+  // 4. Emitir factura — FASE 2 - Facturación
+  // function handleEmitInvoice() {
+  //   setView("invoice");
+  // }
 
   // 6. Nuevo pedido
   function handleNewOrder() {
@@ -336,12 +338,13 @@ export const Pos = () => {
         <OrderSuccessModal
           sale={displayedSale}
           customerName={orderSnapshot?.customerName ?? null}
-          onEmitInvoice={handleEmitInvoice}
+          // FASE 2 - Facturación
+          // onEmitInvoice={handleEmitInvoice}
           onClose={handleNewOrder}
         />
       )}
 
-      {/* Offcanvas: factura */}
+      {/* Offcanvas: factura — FASE 2 - Facturación */}
       {/* {paidOrder && (
         <InvoiceOffcanvas
           order={paidOrder}

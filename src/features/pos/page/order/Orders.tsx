@@ -121,9 +121,10 @@ function CashierAdminOrders() {
     );
   }
 
-  function handleEmitInvoice() {
-    setView("invoice");
-  }
+  // FASE 2 - Facturación
+  // function handleEmitInvoice() {
+  //   setView("invoice");
+  // }
 
   function handleUpdateDiscount(discount: number) {
     setUpdateDiscount(discount);
@@ -192,7 +193,8 @@ function CashierAdminOrders() {
         <OrderSuccessModal
           sale={sale}
           customerName={selectedOrder?.customerName ?? null}
-          onEmitInvoice={handleEmitInvoice}
+          // FASE 2 - Facturación
+          // onEmitInvoice={handleEmitInvoice}
           onClose={() => {
             // Solo el cajero tiene POS; el admin se queda en Pedidos.
             if (isCashier) navigate(PATHS.POS);
