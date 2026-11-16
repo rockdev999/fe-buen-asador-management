@@ -1,5 +1,7 @@
+import { useState } from "react";
+import { flushSync } from "react-dom";
 import { useFormik } from "formik";
-import { Archive } from "lucide-react";
+import { Archive, Printer } from "lucide-react";
 import { AppModal } from "@/components/shared/Overlay/AppModal";
 import { PanelHeader } from "@/components/shared/Overlay/PanelHeader";
 import { PanelFooter } from "@/components/shared/Overlay/PanelFooter";
@@ -10,11 +12,14 @@ import { cn, formatMoney } from "@/lib/utils";
 import { formatLocalDateTime } from "@/lib/formatters";
 import {
   useApproveShift,
+  useFetchShiftReceipt,
   useShiftById,
   useShiftSummaryById,
 } from "@/features/pos/hooks/useShift";
+import { usePrintTicket } from "@/features/pos/hooks/usePrintTicket";
+import { ShiftReceiptPrint } from "../../components/ShiftReceiptPrint";
 import { ShiftApproveForm } from "@/features/pos/forms/shift.form";
-import { Shift, ShiftSummary } from "@/features/pos/models/shift";
+import { Shift, ShiftReceipt, ShiftSummary } from "@/features/pos/models/shift";
 import { PAYMENT_LABELS } from "@/utils/generalStatus/sale-display";
 import { differenceTone } from "@/utils/generalStatus/shift-display";
 import { ShiftStatusBadge } from "../../components/ShiftStatusBadge";
@@ -48,6 +53,30 @@ export function ShiftDetailModal({
   const { data: shift, status: shiftStatus } = useShiftById(shiftId);
   const { data: summary } = useShiftSummaryById(shiftId);
   const { mutate: approve, status: approveStatus } = useApproveShift();
+
+  // Reimpresión: al pulsar se pide el comprobante (GET /shifts/:id/receipt,
+  // siempre fresco: tras aprobar trae CLOSED y review), se renderiza de forma
+  // síncrona (flushSync) y recién entonces se imprime.
+  const fetchReceipt = useFetchShiftReceipt();
+  const [receipt, setReceipt] = useState<ShiftReceipt | null>(null);
+  const [isPreparingReceipt, setIsPreparingReceipt] = useState(false);
+  const { ticketRef, print } = usePrintTicket();
+
+  async function handlePrintReceipt() {
+    setIsPreparingReceipt(true);
+    try {
+      const data = await fetchReceipt(shiftId);
+      flushSync(() => setReceipt(data));
+      print();
+    } catch {
+      // El interceptor ya mostró el error (p. ej. SHIFT_NOT_CLOSED).
+    } finally {
+      setIsPreparingReceipt(false);
+    }
+  }
+
+  // El comprobante existe desde que el cajero cierra (PENDING o CLOSED).
+  const canPrint = !!shift && shift.status !== ShiftStatusEnum.OPEN;
 
   // El backend exige comentario si cualquier método no cuadra.
   const hasDifference = shift?.hasDifference === true;
@@ -227,20 +256,40 @@ export function ShiftDetailModal({
         )}
       </div>
 
-      <PanelFooter align="right">
-        <Button type="button" variant="outline" onClick={onClose}>
-          Cerrar
-        </Button>
-        {showApprove && (
+      {receipt && (
+        <div style={{ position: "absolute", left: "-9999px", top: 0 }}>
+          <ShiftReceiptPrint ref={ticketRef} receipt={receipt} />
+        </div>
+      )}
+
+      <PanelFooter align={canPrint ? "between" : "right"}>
+        {canPrint && (
           <Button
-            type="submit"
-            form="approve-shift-form"
-            isLoading={approveStatus === "pending"}
-            loadingText="Aprobando..."
+            type="button"
+            variant="outline"
+            onClick={handlePrintReceipt}
+            isLoading={isPreparingReceipt}
+            loadingText="Preparando..."
           >
-            Aprobar cierre
+            <Printer size={13} />
+            Imprimir comprobante
           </Button>
         )}
+        <div className="flex gap-2">
+          <Button type="button" variant="outline" onClick={onClose}>
+            Cerrar
+          </Button>
+          {showApprove && (
+            <Button
+              type="submit"
+              form="approve-shift-form"
+              isLoading={approveStatus === "pending"}
+              loadingText="Aprobando..."
+            >
+              Aprobar cierre
+            </Button>
+          )}
+        </div>
       </PanelFooter>
     </AppModal>
   );

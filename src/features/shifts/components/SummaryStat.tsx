@@ -8,7 +8,12 @@ interface SummaryStatProps {
   className?: string;
 }
 
-export function SummaryStat({ label, value, hint, className }: SummaryStatProps) {
+export function SummaryStat({
+  label,
+  value,
+  hint,
+  className,
+}: SummaryStatProps) {
   return (
     <div
       className={cn(

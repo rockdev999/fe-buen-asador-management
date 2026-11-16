@@ -38,8 +38,12 @@ export function ShiftsHistory() {
     ? { status: ShiftStatusEnum.PENDING }
     : {};
 
-  const { page, filters, handleApply: applyFilters, handlePageChange } =
-    useTableState();
+  const {
+    page,
+    filters,
+    handleApply: applyFilters,
+    handlePageChange,
+  } = useTableState();
   const activeFilters = Object.keys(filters).length ? filters : initialFilters;
 
   const { data: locations, status: locationsStatus } = useGetLocationSimple();
@@ -62,13 +66,14 @@ export function ShiftsHistory() {
     dateTo: activeFilters.dateTo ?? "",
   });
 
-  const locationOptions: AsyncDropdownOption<{ id: string; name: string }>[] =
-    (locations ?? []).map((loc) => ({
-      id: loc.id,
-      data: loc,
-      searchText: loc.name,
-      render: (item) => <span>{item.name}</span>,
-    }));
+  const locationOptions: AsyncDropdownOption<{ id: string; name: string }>[] = (
+    locations ?? []
+  ).map((loc) => ({
+    id: loc.id,
+    data: loc,
+    searchText: loc.name,
+    render: (item) => <span>{item.name}</span>,
+  }));
 
   function handleApply(newFilters: Record<string, string>) {
     applyFilters(newFilters, refetch);

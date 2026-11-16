@@ -80,6 +80,66 @@ export interface ShiftSummaryDTO {
   expectedCash: number | null;
 }
 
+export interface ShiftReceiptAmountsDTO {
+  declared: number | null;
+  expected: number | null;
+  difference: number | null;
+}
+
+// Comprobante de cierre: en la respuesta de POST /shifts/close (`receipt`) y en
+// GET /shifts/:id/receipt (reimpresión). Turnos anteriores al arqueo por
+// método traen QR/tarjeta y `totals` en null.
+export interface ShiftReceiptDTO {
+  shiftId: UUID;
+  generatedAt: ISODateTimeString;
+  location: { id: UUID; name: string; address: string | null };
+  cashier: UserShortDTO;
+  status: ShiftStatusEnum;
+  openedAt: ISODateTimeString;
+  closedAt: ISODateTimeString | null;
+  sales: {
+    count: number;
+    total: number;
+    byPaymentMethod: { method: PaymentMethodEnum; count: number; total: number }[];
+    annulled: { count: number; total: number };
+  };
+  expenses: {
+    count: number;
+    total: number;
+    /** category = valor del enum (SERVICES, PERSONNEL, ...). */
+    items: {
+      description: string;
+      category: string;
+      amount: number;
+      createdAt: ISODateTimeString;
+    }[];
+  };
+  payroll: {
+    count: number;
+    total: number;
+    items: {
+      employeeName: string;
+      roleDescription: string | null;
+      amount: number;
+      createdAt: ISODateTimeString;
+    }[];
+  };
+  cashDrawer: {
+    initialAmount: number;
+    cashSales: number;
+    expenses: number;
+    payroll: number;
+  } & ShiftReceiptAmountsDTO;
+  reconciliation: ({ method: PaymentMethodEnum } & ShiftReceiptAmountsDTO)[];
+  totals: ShiftReceiptAmountsDTO;
+  hasDifference: boolean;
+  notes: string | null;
+  review: ShiftReviewDTO | null;
+}
+
+/** POST /shifts/close: el turno (ya no ciego) más su comprobante. */
+export type ShiftCloseResponseDTO = ShiftDTO & { receipt: ShiftReceiptDTO };
+
 export interface ShiftPageParams {
   page: number;
   limit: number;

@@ -57,9 +57,9 @@ export const KNOWN_ERROR_CODES = {
   SHIFT_STILL_OPEN: "SHIFT_STILL_OPEN",
   SHIFT_NOT_OWNED: "SHIFT_NOT_OWNED",
   SHIFT_CLOSED: "SHIFT_CLOSED",
-  SHIFT_NOTES_REQUIRED: "SHIFT_NOTES_REQUIRED",
   SHIFT_NOT_PENDING: "SHIFT_NOT_PENDING",
   SHIFT_REVIEW_NOTES_REQUIRED: "SHIFT_REVIEW_NOTES_REQUIRED",
+  SHIFT_NOT_CLOSED: "SHIFT_NOT_CLOSED",
 } as const;
 
 export type KnownErrorCode =
@@ -83,9 +83,9 @@ export const KNOWN_ERROR_MESSAGES: Record<KnownErrorCode, string> = {
   SHIFT_NOT_OWNED: "Este turno lo abrió otro cajero.",
   SHIFT_CLOSED:
     "El turno de caja ya fue cerrado; sus movimientos ya no se pueden modificar.",
-  SHIFT_NOTES_REQUIRED:
-    "El monto no coincide con el esperado. Explica la diferencia.",
   SHIFT_NOT_PENDING: "Este cierre no está pendiente de aprobación.",
   SHIFT_REVIEW_NOTES_REQUIRED:
     "El cierre tiene diferencia. Deja un comentario para aprobarlo.",
+  SHIFT_NOT_CLOSED:
+    "El turno sigue abierto: el comprobante se genera al cerrarlo.",
 };

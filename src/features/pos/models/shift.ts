@@ -34,6 +34,9 @@ export interface Shift {
   updatedAt: ISODateTimeString;
 }
 
+// El comprobante se usa tal cual llega (solo se imprime/muestra).
+export type { ShiftReceiptDTO as ShiftReceipt } from "../dto/shift.dto";
+
 export interface ShiftSummaryCount {
   count: number;
   total: number | null;

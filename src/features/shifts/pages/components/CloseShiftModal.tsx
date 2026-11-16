@@ -12,7 +12,7 @@ import { FormTextarea } from "@/components/shared/Form/FormTextarea";
 import { useCloseShift } from "@/features/pos/hooks/useShift";
 import { ShiftCloseForm } from "@/features/pos/forms/shift.form";
 import { mapShiftCloseFormToDTO } from "@/features/pos/mappers/shift.mapper";
-import { Shift } from "@/features/pos/models/shift";
+import { Shift, ShiftReceipt } from "@/features/pos/models/shift";
 
 const NOTES_MAX = 500;
 const AMOUNT_MAX = 100_000_000;
@@ -47,15 +47,15 @@ const AMOUNT_FIELDS: {
 
 interface CloseShiftModalProps {
   onClose: () => void;
-  onSuccess: (shift: Shift) => void;
+  onSuccess: (result: { shift: Shift; receipt: ShiftReceipt }) => void;
 }
 
 /**
  * Cierre ciego por método de pago: el cajero declara efectivo, QR y tarjeta
  * sin ver lo esperado. El primer envío es definitivo: el cierre siempre pasa
- * (queda PENDING) y el backend no indica si hubo diferencia, para que no se
- * pueda probar montos hasta acertar. La justificación la exige el admin al
- * aprobar; aquí la nota es opcional.
+ * (queda PENDING), así que no se pueden probar montos hasta acertar. Recién
+ * después de cerrar se muestra el cuadre y su comprobante. La justificación
+ * la exige el admin al aprobar; aquí la nota es opcional.
  */
 export function CloseShiftModal({ onClose, onSuccess }: CloseShiftModalProps) {
   const { mutate: closeShift, status } = useCloseShift();
@@ -81,7 +81,7 @@ export function CloseShiftModal({ onClose, onSuccess }: CloseShiftModalProps) {
     },
     onSubmit: (values) => {
       closeShift(mapShiftCloseFormToDTO(values), {
-        onSuccess: (shift) => onSuccess(shift),
+        onSuccess: (result) => onSuccess(result),
       });
     },
   });
@@ -137,10 +137,10 @@ export function CloseShiftModal({ onClose, onSuccess }: CloseShiftModalProps) {
           />
 
           <p className="text-[11px] text-muted-foreground">
-            Si no hubo ventas por un método, ingresa 0. Revisa los montos
-            antes de confirmar: el cierre es definitivo, queda pendiente de
-            aprobación del administrador y ya no podrás registrar ventas,
-            egresos ni pagos en este turno.
+            Si no hubo ventas por un método, ingresa 0. Revisa los montos antes
+            de confirmar: el cierre es definitivo, queda pendiente de aprobación
+            del administrador y ya no podrás registrar ventas, egresos ni pagos
+            en este turno.
           </p>
         </div>
 

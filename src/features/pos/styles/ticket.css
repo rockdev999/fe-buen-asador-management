@@ -1,5 +1,22 @@
+/*
+ * Tickets de venta y comprobantes de cierre: 80 mm de ancho como máximo.
+ * El ancho total (padding incluido) nunca supera 80 mm; el texto largo se
+ * parte en varias líneas en vez de desbordar.
+ */
+
 /* Solo se aplica al imprimir */
+@page {
+  margin: 0;
+}
+
 @media print {
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
   /* Ocultar todo excepto el ticket */
   body > * {
     display: none !important;
@@ -7,12 +24,25 @@
 
   #ticket-print-root {
     display: block !important;
+    width: 80mm;
+    max-width: 80mm;
+    overflow: hidden;
+  }
+
+  .ticket-print {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
   }
 }
 
 /* Estilos del ticket — aplican siempre (para preview) */
 .ticket-print {
+  box-sizing: border-box;
   width: 80mm;
+  max-width: 80mm;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  word-break: break-word;
   padding: 4mm 4mm;
   font-family: "Courier New", Courier, monospace;
   font-size: 11px;
@@ -50,10 +80,22 @@
 .ticket-unit-row {
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
+  gap: 2mm;
   font-size: 9px;
   color: #555;
   padding-left: 8px;
   margin: 1px 0;
+}
+
+.ticket-unit-row > span:first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ticket-unit-row > span:last-child {
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 .ticket-section {
@@ -77,8 +119,22 @@
 .ticket-row {
   display: flex;
   justify-content: space-between;
+  align-items: flex-start;
+  gap: 2mm;
   margin: 1mm 0;
   font-size: 11px;
+}
+
+/* La etiqueta se parte en líneas si es larga; el monto queda entero a la derecha */
+.ticket-row > span:first-child {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.ticket-row > span:last-child {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  text-align: right;
 }
 
 .ticket-total {
@@ -101,4 +157,50 @@
   color: #666;
   font-style: italic;
   padding-left: 3mm;
+}
+
+/* Comprobante de cierre de caja  */
+.ticket-strong {
+  font-weight: 700;
+}
+
+.ticket-indent {
+  padding-left: 3mm;
+  font-size: 10px;
+}
+
+/* Tabla de conciliación: método | declarado | esperado | diferencia.
+   minmax(0, …) evita que un monto largo ensanche la tabla más allá de 80 mm. */
+.ticket-grid4 {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 1.05fr) minmax(0, 1fr) minmax(0, 1fr)
+    minmax(0, 0.85fr);
+  gap: 1mm;
+  font-size: 8.5px;
+  margin: 0.5mm 0;
+}
+
+.ticket-grid4 > span {
+  min-width: 0;
+}
+
+.ticket-grid4 > span:not(:first-child) {
+  text-align: right;
+  white-space: nowrap;
+}
+
+.ticket-grid4-head {
+  font-weight: 700;
+}
+
+.ticket-free {
+  font-size: 10px;
+  margin: 1mm 0;
+  white-space: pre-line;
+}
+
+.ticket-signature {
+  margin: 6mm 0 2mm;
+  font-size: 10px;
 }

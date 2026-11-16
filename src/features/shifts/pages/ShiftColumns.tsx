@@ -8,7 +8,8 @@ import { ShiftStatusBadge } from "../components/ShiftStatusBadge";
 
 export const SHIFTS_TABLE_CONFIG = DATA_TABLE.SHIFTS;
 
-const money = (value: number | null) => (value === null ? "—" : formatMoney(value));
+const money = (value: number | null) =>
+  value === null ? "—" : formatMoney(value);
 
 const BASE_COLUMNS: ColumnDef<Shift>[] = [
   {
@@ -108,5 +109,10 @@ const LOCATION_COLUMN: ColumnDef<Shift> = {
 /** El MANAGER ve todas las sucursales, así que necesita la columna Sucursal. */
 export function getShiftColumns(showLocation: boolean): ColumnDef<Shift>[] {
   if (!showLocation) return BASE_COLUMNS;
-  return [BASE_COLUMNS[0], BASE_COLUMNS[1], LOCATION_COLUMN, ...BASE_COLUMNS.slice(2)];
+  return [
+    BASE_COLUMNS[0],
+    BASE_COLUMNS[1],
+    LOCATION_COLUMN,
+    ...BASE_COLUMNS.slice(2),
+  ];
 }

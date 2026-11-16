@@ -6,7 +6,9 @@ import {
 import {
   ShiftApproveDTO,
   ShiftCloseDTO,
+  ShiftCloseResponseDTO,
   ShiftDTO,
+  ShiftReceiptDTO,
   ShiftOpenDTO,
   ShiftSummaryDTO,
 } from "../dto/shift.dto";
@@ -100,14 +102,18 @@ export const useActiveShiftSummary = (enabled: boolean = true) => {
 };
 
 // POST /shifts/close — el turno queda PENDING (espera aprobación del admin).
+// Devuelve el turno (ya no ciego: los montos quedaron fijos) y su comprobante.
 export const useCloseShift = () => {
   const queryClient = useQueryClient();
 
   return usePostHandler({
     mutationFn: (dto: ShiftCloseDTO) =>
       httpClient
-        .post<ApiResponse<ShiftDTO>>("/shifts/close", dto)
-        .then((r) => mapShiftDTOToModel(r.data.data!)),
+        .post<ApiResponse<ShiftCloseResponseDTO>>("/shifts/close", dto)
+        .then((r) => {
+          const { receipt, ...shift } = r.data.data!;
+          return { shift: mapShiftDTOToModel(shift), receipt };
+        }),
     successMessage: "Turno cerrado; queda pendiente de aprobación",
     onSuccessCallback: () => {
       queryClient.setQueryData(QUERY_KEYS.SHIFT_ACTIVE, null);
@@ -148,7 +154,10 @@ export function useShiftsPage({
     ...toUtcDateRangeParams(dateFrom, dateTo),
   };
 
-  return usePaginatedGetHandler<ShiftDTO, ReturnType<typeof mapShiftDTOToModel>>({
+  return usePaginatedGetHandler<
+    ShiftDTO,
+    ReturnType<typeof mapShiftDTOToModel>
+  >({
     queryKey: QUERY_KEYS.PAGINATION_SHIFTS(params),
     queryFn: () =>
       httpClient
@@ -201,6 +210,25 @@ export function useShiftSummaryById(id: string | null) {
   );
 
   return { ...handler, data };
+}
+
+// GET /shifts/:id/receipt — reimpresión del comprobante. CASHIER (solo sus
+// turnos), ADMIN (su sucursal), MANAGER (todos). 409 SHIFT_NOT_CLOSED si sigue
+// abierto. Tras la aprobación trae status CLOSED y review.
+// Se pide bajo demanda (al pulsar "Imprimir"), siempre fresco.
+export function useFetchShiftReceipt() {
+  const queryClient = useQueryClient();
+
+  return (id: string) =>
+    queryClient.fetchQuery({
+      queryKey: QUERY_KEYS.SHIFT_RECEIPT(id),
+      queryFn: () =>
+        httpClient
+          .get<ApiResponse<ShiftReceiptDTO>>(`/shifts/${id}/receipt`)
+          .then((r) => r.data.data!),
+      staleTime: 0,
+      retry: false,
+    });
 }
 
 // POST /shifts/:id/approve — PENDING → CLOSED. Solo ADMIN.

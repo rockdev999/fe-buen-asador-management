@@ -166,6 +166,7 @@ export const QUERY_KEYS = {
   SHIFT_ACTIVE: ["shifts", "active"],
   SHIFT_ACTIVE_SUMMARY: ["shifts", "active", "summary"],
   SHIFT_SUMMARY: (id: string) => ["shifts", id, "summary"],
+  SHIFT_RECEIPT: (id: string) => ["shifts", id, "receipt"],
   PAGINATION_SHIFTS: (params: Record<string, any>) => [
     "shifts",
     "page",
