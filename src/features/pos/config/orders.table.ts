@@ -27,7 +27,7 @@ export const ORDER_DROPDOWNS: FilterDropdown[] = [
     key: "channel",
     placeholder: "Canal",
     options: [
-      { label: "Tienda", value: "IN_STORE" },
+      { label: "En local", value: "IN_STORE" },
       { label: "WhatsApp", value: "ONLINE" },
     ],
   },

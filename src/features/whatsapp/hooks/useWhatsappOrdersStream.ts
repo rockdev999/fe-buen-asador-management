@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { OrderStatusEventDTO, WhatsappOrderDTO } from "../dto/whatsapp-order.dto";
 import { mapWhatsappOrderDTOToModel } from "../mappers/whatsapp-order.mapper";
 import { useWhatsappOrdersStore } from "../stores/whatsapp-orders.store";
+import { shortOrderId } from "@/lib/order-code";
 import {
   playNotificationSound,
   unlockNotificationSound,
@@ -106,6 +107,14 @@ export function useWhatsappOrdersStream() {
     };
 
     const handleStatus = (event: OrderStatusEventDTO) => {
+      // Cancelado por el sistema: nadie lo aprobó dentro del plazo
+      if (event.status === OrderStatusEnum.CANCELLED && event.automatic) {
+        toast.warning(
+          `Pedido #${shortOrderId(event.orderId)} cancelado: no se confirmó a tiempo`,
+          { id: `wa-expired-${event.orderId}`, duration: TOAST_DURATION_MS },
+        );
+      }
+
       const known = useWhatsappOrdersStore
         .getState()
         .applyStatus(event.orderId, event.status);

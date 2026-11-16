@@ -65,7 +65,17 @@ export const useWhatsappOrdersStore = create<WhatsappOrdersState>()((set, get) =
     if (!current) return false;
     if (isFinalStatus(status)) get().remove(orderId);
     else if (current.status !== status)
-      set((s) => ({ orders: { ...s.orders, [orderId]: { ...current, status } } }));
+      set((s) => ({
+        orders: {
+          ...s.orders,
+          // El plazo de vencimiento solo aplica mientras está PENDING
+          [orderId]: {
+            ...current,
+            status,
+            expiresAt: status === OrderStatusEnum.PENDING ? current.expiresAt : null,
+          },
+        },
+      }));
     return true;
   },
 

@@ -65,6 +65,7 @@ export interface OrderPageItem {
   status: OrderStatusEnum;
   subtotal: number;
   updatedAt: string | null;
+  cancellationReason: string | null;
 }
 
 export interface ManagerOrderPageItem extends OrderPageItem {

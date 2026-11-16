@@ -1,4 +1,4 @@
-import { OrderEnum } from "@/constants";
+import { OrderEnum, OrderStatusEnum } from "@/constants";
 import { OrderDTO, OrderItemDTO } from "@/features/pos/dto/order.dto";
 import { shortOrderId } from "@/lib/order-code";
 import { WhatsappOrderDTO } from "../dto/whatsapp-order.dto";
@@ -60,6 +60,8 @@ export function mapWhatsappOrderDTOToModel(dto: WhatsappOrderDTO): WhatsappOrder
     deliveryAddress: order.deliveryAddress ?? null,
     deliveryReference: order.deliveryReference ?? null,
     paymentPreference: whatsapp.paymentPreference,
+    expiresAt:
+      order.status === OrderStatusEnum.PENDING ? (whatsapp.expiresAt ?? null) : null,
     lines: groupOrderItems(order.items),
     subtotal: Number(order.subtotal),
     total: Number(order.total),
@@ -74,7 +76,11 @@ export function mapWhatsappOrderDTOToModel(dto: WhatsappOrderDTO): WhatsappOrder
 export function mergeOrderDTO(prev: WhatsappOrder, order: OrderDTO): WhatsappOrder {
   return mapWhatsappOrderDTOToModel({
     order,
-    whatsapp: { phone: prev.waPhone, paymentPreference: prev.paymentPreference },
+    whatsapp: {
+      phone: prev.waPhone,
+      paymentPreference: prev.paymentPreference,
+      expiresAt: prev.expiresAt,
+    },
   });
 }
 

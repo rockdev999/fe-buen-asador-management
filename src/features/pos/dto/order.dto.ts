@@ -84,6 +84,8 @@ export interface OrderPageItemDTO {
   status: OrderStatusEnum;
   subtotal: number;
   updatedAt: string | null;
+  /** Motivo si está CANCELLED (los automáticos: "No fue confirmado a tiempo…"). */
+  cancellationReason?: string | null;
 }
 
 export interface ManagerOrderPageItemDTO extends OrderPageItemDTO {

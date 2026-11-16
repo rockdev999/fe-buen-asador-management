@@ -28,6 +28,8 @@ export interface WhatsappOrder {
   deliveryAddress: string | null;
   deliveryReference: string | null;
   paymentPreference: WhatsappPaymentPreferenceEnum;
+  /** Vencimiento de un PENDING sin aprobar; null en otros estados. */
+  expiresAt: ISODateTimeString | null;
   lines: WhatsappOrderLine[];
   subtotal: number;
   total: number;

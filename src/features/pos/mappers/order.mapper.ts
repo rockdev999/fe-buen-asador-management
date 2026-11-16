@@ -193,6 +193,7 @@ export const mapOrderPageItemDTOToModel = (
   status: dto.status,
   subtotal: dto.subtotal,
   updatedAt: dto.updatedAt,
+  cancellationReason: dto.cancellationReason ?? null,
 });
 
 export const mapManagerOrderPageItemDTOToModel = (

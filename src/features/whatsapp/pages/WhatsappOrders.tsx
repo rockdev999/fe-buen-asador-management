@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Loader2, MessageCircle, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/DataTable/PageHeader";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { OrderStatusEnum, PaymentMethodEnum } from "@/constants";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { PaymentModal } from "@/features/pos/components/reviewAndPayment/PaymentModal";
@@ -15,26 +16,50 @@ import { fetchWhatsappOrders, useRefreshWhatsappOrder } from "../hooks/useWhatsa
 import { sortByOldest, useWhatsappOrdersStore } from "../stores/whatsapp-orders.store";
 import { WhatsappOrder } from "../models/whatsapp-order.model";
 import { CancelOrderModal } from "./components/CancelOrderModal";
-import { WhatsappOrderCard } from "./components/WhatsappOrderCard";
+import { WhatsappOrderDrawer } from "./components/WhatsappOrderDrawer";
+import { WhatsappOrderRow } from "./components/WhatsappOrderRow";
 
-const COLUMNS: { title: string; statuses: OrderStatusEnum[]; accent: string }[] = [
-  { title: "Por aprobar", statuses: [OrderStatusEnum.PENDING], accent: "bg-yellow-400" },
-  { title: "Confirmados", statuses: [OrderStatusEnum.CONFIRMED], accent: "bg-blue-500" },
-  { title: "En preparación", statuses: [OrderStatusEnum.PREPARING], accent: "bg-purple-500" },
+type TabKey = "pending" | "active" | "ready";
+
+const TABS: {
+  key: TabKey;
+  title: string;
+  statuses: OrderStatusEnum[];
+  accent: string;
+  empty: string;
+}[] = [
   {
-    title: "Listos / entregados",
+    key: "pending",
+    title: "Pendientes",
+    statuses: [OrderStatusEnum.PENDING],
+    accent: "bg-yellow-400",
+    empty: "No hay pedidos esperando aprobación",
+  },
+  {
+    key: "active",
+    title: "En curso",
+    statuses: [OrderStatusEnum.CONFIRMED, OrderStatusEnum.PREPARING],
+    accent: "bg-blue-500",
+    empty: "No hay pedidos confirmados ni en preparación",
+  },
+  {
+    key: "ready",
+    title: "Listos",
     statuses: [OrderStatusEnum.READY, OrderStatusEnum.DELIVERED],
     accent: "bg-brand",
+    empty: "No hay pedidos listos ni entregados",
   },
 ];
+
+const TABLE_HEADERS = ["Código", "Espera", "Cliente", "Tipo", "Total", "Pago", "Acción"];
 
 const PAYMENT_FROM_PREFERENCE: Record<WhatsappPaymentPreferenceEnum, PaymentMethodEnum> = {
   [WhatsappPaymentPreferenceEnum.CASH]: PaymentMethodEnum.CASH,
   [WhatsappPaymentPreferenceEnum.QR]: PaymentMethodEnum.QR,
 };
 
-/** Reloj que avanza cada 30 s para el tiempo de espera de las tarjetas. */
-function useNow(intervalMs = 30_000) {
+/** Reloj de la cuenta regresiva de la columna "Espera". */
+function useNow(intervalMs = 1_000) {
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), intervalMs);
@@ -47,7 +72,8 @@ const statusOf = (err: unknown) => (err as { status?: number } | null)?.status;
 
 /**
  * Bandeja de pedidos de WhatsApp. La sincronización (GET inicial + SSE) vive
- * en useWhatsappOrdersStream, montado en el layout: aquí solo se lee el store.
+ * en useWhatsappOrdersStream, montado en el layout: aquí solo se lee el store
+ * y se filtra por pestaña en el cliente.
  */
 export function WhatsappOrders() {
   const { isCashier, isAdmin, isManager } = useAuth();
@@ -64,17 +90,34 @@ export function WhatsappOrders() {
   const { isOpen: hasActiveShift } = useActiveShift(isCashier);
   const { mutate: createSale, status: createSaleStatus, data: sale } = useCreateSale();
 
+  const [tab, setTab] = useState<TabKey>("pending");
   const [pending, setPending] = useState<{ id: string; status: OrderStatusEnum } | null>(null);
-  const [cancelTarget, setCancelTarget] = useState<WhatsappOrder | null>(null);
-  const [chargeTarget, setChargeTarget] = useState<WhatsappOrder | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [cancelId, setCancelId] = useState<string | null>(null);
+  const [chargeId, setChargeId] = useState<string | null>(null);
   const [discount, setDiscount] = useState(0);
   const [paidCustomer, setPaidCustomer] = useState<string | null | undefined>(undefined);
   const [isReloading, setIsReloading] = useState(false);
 
-  // Si otro cajero cancela o cobra el pedido mientras está abierto el cobro
-  useEffect(() => {
-    if (chargeTarget && !ordersById[chargeTarget.id]) setChargeTarget(null);
-  }, [chargeTarget, ordersById]);
+  // Se guardan ids y se leen del store: si el pedido cambia o sale de la
+  // bandeja (cobrado, cancelado por otro cajero o por tiempo), el drawer y
+  // los modales lo reflejan o se cierran solos.
+  const selected = selectedId ? (ordersById[selectedId] ?? null) : null;
+  const cancelTarget = cancelId ? (ordersById[cancelId] ?? null) : null;
+  const chargeTarget = chargeId ? (ordersById[chargeId] ?? null) : null;
+
+  const counts = useMemo(
+    () =>
+      Object.fromEntries(
+        TABS.map((t) => [t.key, orders.filter((o) => t.statuses.includes(o.status)).length]),
+      ) as Record<TabKey, number>,
+    [orders],
+  );
+  const activeTab = TABS.find((t) => t.key === tab)!;
+  const visibleOrders = orders.filter((o) => activeTab.statuses.includes(o.status));
+
+  const pendingStatusOf = (orderId: string) =>
+    pending?.id === orderId ? pending.status : null;
 
   function changeStatus(order: WhatsappOrder, status: OrderStatusEnum, reason?: string) {
     setPending({ id: order.id, status });
@@ -82,13 +125,14 @@ export function WhatsappOrders() {
       { id: order.id, status, reason },
       {
         onSuccess: () => {
-          if (status === OrderStatusEnum.CANCELLED) setCancelTarget(null);
+          if (status === OrderStatusEnum.CANCELLED) setCancelId(null);
         },
         onError: (err) => {
-          // 409: otro cajero ya lo movió. El interceptor mostró el mensaje;
-          // se recarga el pedido para mostrar su estado real.
+          // 409: lo canceló el sistema por tiempo, otro cajero ya lo movió o
+          // cambió mientras se procesaba. El interceptor mostró el mensaje;
+          // se recarga para reflejar su estado real (o quitarlo si terminó).
           if (statusOf(err) === 409) {
-            setCancelTarget(null);
+            setCancelId(null);
             void refreshOrder(order.id);
           }
         },
@@ -103,7 +147,7 @@ export function WhatsappOrders() {
       return;
     }
     setDiscount(0);
-    setChargeTarget(order);
+    setChargeId(order.id);
   }
 
   const chargeTotal = chargeTarget
@@ -114,17 +158,13 @@ export function WhatsappOrders() {
     if (!chargeTarget) return;
     const target = chargeTarget;
     createSale(
-      {
-        orderId: target.id,
-        paymentMethod: method,
-        receivedAmount,
-        totalDiscount: discount,
-      },
+      { orderId: target.id, paymentMethod: method, receivedAmount, totalDiscount: discount },
       {
         onSuccess: () => {
           // useCreateSale ya quitó el pedido de la bandeja
           setPaidCustomer(target.customerName);
-          setChargeTarget(null);
+          setChargeId(null);
+          setSelectedId(null);
         },
         onError: (err) => {
           // 400/409: ya no es cobrable o no hay turno; refrescar su estado
@@ -145,15 +185,13 @@ export function WhatsappOrders() {
     }
   }
 
-  const pendingCount = orders.filter((o) => o.status === OrderStatusEnum.PENDING).length;
-
   return (
     <div className="relative flex h-full flex-col overflow-hidden rounded-2xl">
       <PageHeader
         title="Pedidos WhatsApp"
         subtitle={
-          pendingCount > 0
-            ? `${pendingCount} ${pendingCount === 1 ? "pedido espera" : "pedidos esperan"} aprobación`
+          counts.pending > 0
+            ? `${counts.pending} ${counts.pending === 1 ? "pedido espera" : "pedidos esperan"} aprobación`
             : "Los pedidos nuevos aparecen aquí en tiempo real"
         }
         actions={
@@ -169,78 +207,121 @@ export function WhatsappOrders() {
         }
       />
 
-      {loadStatus !== "ready" && orders.length === 0 ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
-          {loadStatus === "error" ? (
-            <>
-              <p>No se pudieron cargar los pedidos.</p>
-              <button type="button" onClick={handleReload} className="text-brand hover:underline">
-                Reintentar
-              </button>
-            </>
+      <Tabs
+        value={tab}
+        onValueChange={(v) => setTab(v as TabKey)}
+        className="flex min-h-0 flex-1 flex-col pt-4"
+      >
+        <TabsList className="h-auto w-fit flex-wrap justify-start gap-1 bg-white p-1 shadow-sm">
+          {TABS.map((t) => (
+            <TabsTrigger
+              key={t.key}
+              value={t.key}
+              className="gap-2 px-3 py-1.5 text-xs data-[state=active]:bg-surface data-[state=active]:text-inkblack"
+            >
+              <span className={cn("h-2 w-2 rounded-full", t.accent)} />
+              {t.title}
+              <span
+                className={cn(
+                  "min-w-5 rounded-full px-1.5 text-[11px] tabular-nums",
+                  t.key === "pending" && counts.pending > 0
+                    ? "bg-yellow-400 font-semibold text-inkblack"
+                    : "bg-surface text-muted-foreground",
+                )}
+              >
+                {counts[t.key]}
+              </span>
+            </TabsTrigger>
+          ))}
+        </TabsList>
+
+        <div className="mt-3 flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-surface bg-white">
+          {loadStatus !== "ready" && orders.length === 0 ? (
+            <div className="flex flex-1 flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
+              {loadStatus === "error" ? (
+                <>
+                  <p>No se pudieron cargar los pedidos.</p>
+                  <button type="button" onClick={handleReload} className="text-brand hover:underline">
+                    Reintentar
+                  </button>
+                </>
+              ) : (
+                <>
+                  <Loader2 size={20} className="animate-spin" />
+                  Cargando pedidos…
+                </>
+              )}
+            </div>
           ) : (
-            <>
-              <Loader2 size={20} className="animate-spin" />
-              Cargando pedidos…
-            </>
+            <div className="flex-1 overflow-auto">
+              <table className="w-full min-w-[760px] border-collapse text-left">
+                <thead className="sticky top-0 z-10 bg-surface">
+                  <tr>
+                    {TABLE_HEADERS.map((h) => (
+                      <th
+                        key={h}
+                        className={cn(
+                          "px-3 py-2 text-[10px] font-semibold uppercase tracking-wider text-muted-foreground first:pl-4 last:pr-4",
+                          h === "Acción" && "text-right",
+                        )}
+                      >
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {visibleOrders.map((order) => (
+                    <WhatsappOrderRow
+                      key={order.id}
+                      order={order}
+                      now={now}
+                      canChangeStatus={canChangeStatus}
+                      canCharge={canCharge}
+                      showLocation={isManager}
+                      pendingStatus={pendingStatusOf(order.id)}
+                      isSelected={order.id === selectedId}
+                      onOpen={() => setSelectedId(order.id)}
+                      onAdvance={(status) => changeStatus(order, status)}
+                      onCancel={() => setCancelId(order.id)}
+                      onCharge={() => openCharge(order)}
+                    />
+                  ))}
+                </tbody>
+              </table>
+              {visibleOrders.length === 0 && (
+                <div className="flex flex-col items-center gap-2 py-14 text-center">
+                  <div className="flex h-11 w-11 items-center justify-center rounded-full bg-green-50 text-green-600">
+                    <MessageCircle size={20} />
+                  </div>
+                  <p className="text-xs text-muted-foreground">{activeTab.empty}</p>
+                </div>
+              )}
+            </div>
           )}
         </div>
-      ) : orders.length === 0 ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-green-50 text-green-600">
-            <MessageCircle size={22} />
-          </div>
-          <p className="text-sm font-medium text-inkblack">No hay pedidos de WhatsApp activos</p>
-          <p className="text-xs text-muted-foreground">
-            Cuando un cliente confirme su pedido, sonará un aviso.
-          </p>
-        </div>
-      ) : (
-        <div className="grid flex-1 grid-cols-1 gap-4 overflow-y-auto pt-4 pb-2 md:grid-cols-2 xl:grid-cols-4 xl:overflow-hidden">
-          {COLUMNS.map((col) => {
-            const items = orders.filter((o) => col.statuses.includes(o.status));
-            return (
-              <section key={col.title} className="flex min-h-0 flex-col rounded-xl bg-surface/60">
-                <h2 className="flex items-center gap-2 px-3 py-2.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  <span className={cn("h-2 w-2 rounded-full", col.accent)} />
-                  {col.title}
-                  <span className="ml-auto rounded-full bg-white px-1.5 text-[11px] tabular-nums">
-                    {items.length}
-                  </span>
-                </h2>
-                <div className="flex flex-1 flex-col gap-3 px-2.5 pb-2.5 xl:overflow-y-auto">
-                  {items.length === 0 ? (
-                    <p className="py-6 text-center text-[11px] text-muted-foreground/70">Sin pedidos</p>
-                  ) : (
-                    items.map((order) => (
-                      <WhatsappOrderCard
-                        key={order.id}
-                        order={order}
-                        now={now}
-                        canChangeStatus={canChangeStatus}
-                        canCharge={canCharge}
-                        showLocation={isManager}
-                        pendingStatus={pending?.id === order.id ? pending.status : null}
-                        onAdvance={(status) => changeStatus(order, status)}
-                        onCancel={() => setCancelTarget(order)}
-                        onCharge={() => openCharge(order)}
-                      />
-                    ))
-                  )}
-                </div>
-              </section>
-            );
-          })}
-        </div>
-      )}
+      </Tabs>
+
+      <WhatsappOrderDrawer
+        order={selected}
+        now={now}
+        canChangeStatus={canChangeStatus}
+        canCharge={canCharge}
+        showLocation={isManager}
+        pendingStatus={selected ? pendingStatusOf(selected.id) : null}
+        onClose={() => setSelectedId(null)}
+        onAdvance={(status) => selected && changeStatus(selected, status)}
+        onCancel={() => selected && setCancelId(selected.id)}
+        onCharge={() => selected && openCharge(selected)}
+      />
 
       {cancelTarget && (
         <CancelOrderModal
           shortId={cancelTarget.shortId}
           isReject={cancelTarget.status === OrderStatusEnum.PENDING}
-          isLoading={pending?.id === cancelTarget.id && pending.status === OrderStatusEnum.CANCELLED}
+          isLoading={pendingStatusOf(cancelTarget.id) === OrderStatusEnum.CANCELLED}
           onConfirm={(reason) => changeStatus(cancelTarget, OrderStatusEnum.CANCELLED, reason)}
-          onClose={() => setCancelTarget(null)}
+          onClose={() => setCancelId(null)}
         />
       )}
 
@@ -254,7 +335,7 @@ export function WhatsappOrders() {
           onUpdateDiscount={setDiscount}
           defaultMethod={PAYMENT_FROM_PREFERENCE[chargeTarget.paymentPreference]}
           onConfirm={confirmCharge}
-          onClose={() => setChargeTarget(null)}
+          onClose={() => setChargeId(null)}
           isLoading={createSaleStatus === "pending"}
         />
       )}

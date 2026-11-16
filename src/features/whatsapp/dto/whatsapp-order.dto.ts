@@ -18,6 +18,11 @@ export interface WhatsappOrderDTO {
     /** wa_id sin "+", ej. "59171234567". */
     phone: string;
     paymentPreference: WhatsappPaymentPreferenceEnum;
+    /**
+     * Cuándo lo cancela el sistema si nadie lo aprueba (ISO UTC). Solo en
+     * PENDING; null fuera de PENDING o con el plazo desactivado.
+     */
+    expiresAt: ISODateTimeString | null;
   };
 }
 
@@ -25,8 +30,11 @@ export interface WhatsappOrderDTO {
 export interface OrderStatusEventDTO {
   orderId: UUID;
   locationId: UUID;
+  previousStatus: OrderStatusEnum;
   status: OrderStatusEnum;
-  /** Solo en algunos eventos, p. ej. al anular una venta: 'PAID'. */
-  previousStatus?: OrderStatusEnum;
+  /** Motivo, solo en CANCELLED. */
+  reason: string | null;
+  /** true = lo canceló el sistema porque nadie lo aprobó a tiempo. */
+  automatic: boolean;
   changedAt: ISODateTimeString;
 }

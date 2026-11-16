@@ -3,19 +3,17 @@ import { ColumnDef } from "@/components/shared/DataTable/types";
 import {
   DATA_TABLE,
   OrderEnum,
-  OrderStatusEnum,
   OrderTypeEnum,
 } from "@/constants";
 import { formatMoney } from "@/lib/utils";
-import { shortOrderId } from "@/lib/order-code";
 
 import { ManagerOrderPageItem, OrderPageItem } from "../../models/order";
 import {
   ChannelBadge,
-  StatusBadge,
   TypeBadge,
 } from "@/components/shared/OrderBadges";
 import { formatLocalDateTime } from "@/lib/formatters";
+import { OrderCode, OrderStatusCell } from "./OrderCells";
 
 export const ORDERS_TABLE_CONFIG = DATA_TABLE.ORDERS;
 
@@ -24,11 +22,7 @@ export const ORDERS_COLUMNS: ColumnDef<OrderPageItem>[] = [
     key: "id",
     label: "Pedido",
     // width: "120px",
-    render: (row) => (
-      <span className="text-xs font-medium text-inkblack font-mono">
-        #{shortOrderId(row.id)}
-      </span>
-    ),
+    render: (row) => <OrderCode row={row} />,
   },
   {
     key: "customerName",
@@ -61,7 +55,7 @@ export const ORDERS_COLUMNS: ColumnDef<OrderPageItem>[] = [
     label: "Estado",
     sortable: true,
     // width: "120px",
-    render: (row) => <StatusBadge status={row.status as OrderStatusEnum} />,
+    render: (row) => <OrderStatusCell row={row} />,
   },
   {
     key: "subtotal",
@@ -95,7 +89,7 @@ export const MANAGER_ORDERS_COLUMNS: ColumnDef<ManagerOrderPageItem>[] = [
     key: "status",
     label: "Estado",
     sortable: true,
-    render: (row) => <StatusBadge status={row.status as OrderStatusEnum} />,
+    render: (row) => <OrderStatusCell row={row} />,
   },
   {
     key: "customerName",
@@ -156,10 +150,6 @@ export const MANAGER_ORDERS_COLUMNS: ColumnDef<ManagerOrderPageItem>[] = [
     key: "id",
     label: "Pedido",
     sortable: false,
-    render: (row) => (
-      <span className="text-xs font-medium text-inkblack/50 font-mono">
-        #{shortOrderId(row.id)}
-      </span>
-    ),
+    render: (row) => <OrderCode row={row} muted />,
   },
 ];
