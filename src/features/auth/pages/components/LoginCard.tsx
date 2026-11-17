@@ -11,7 +11,12 @@ import { useState } from "react";
 
 const trans = t.auth.login;
 
-export function LoginCard() {
+interface LoginCardProps {
+  /** Mantiene el botón en carga tras el login (p. ej. mientras se entra como MANAGER). */
+  isFinishing?: boolean;
+}
+
+export function LoginCard({ isFinishing = false }: LoginCardProps) {
   const { mutate: login, status } = useLogin();
   // No hay autoservicio: el gerente restablece la contraseña desde Usuarios.
   const [showForgotHelp, setShowForgotHelp] = useState(false);
@@ -92,7 +97,7 @@ export function LoginCard() {
           </p>
         )}
       </div>
-      <Button type="submit" isLoading={status === "pending"} className="w-full">
+      <Button type="submit" isLoading={status === "pending" || isFinishing} className="w-full">
         {trans.submit}
       </Button>
     </form>

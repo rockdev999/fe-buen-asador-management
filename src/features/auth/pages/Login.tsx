@@ -4,14 +4,11 @@ import { useEffect, useRef } from "react";
 import { PATHS } from "@/routes";
 import { t } from "@/locales/es";
 import { RoleEnum } from "@/constants";
-import { Loader2 } from "lucide-react";
 import { AuthLayout } from "./components/AuthLayout";
 import { getInitials } from "@/lib/utils";
 import { SelectLocationCard } from "./components/SelectLocationCard";
 import { LoginCard } from "./components/LoginCard";
 import { useSelectLocation } from "../hooks/useSelectLocation";
-
-const trans = t.auth.selectLocation;
 
 export const Login = () => {
   const navigate = useNavigate();
@@ -36,7 +33,8 @@ export const Login = () => {
     }
   }, [isTempAuth, isManagerOnly]);
 
-  if (isTempAuth) {
+  // Solo quien debe elegir sucursal ve el paso 2.
+  if (isTempAuth && !isManagerOnly) {
     return (
       <AuthLayout
         step={2}
@@ -45,28 +43,19 @@ export const Login = () => {
         userName={user?.name}
         userEmail={user?.email}
         userInitials={user ? getInitials(user.name) : undefined}
-        card={
-          isManagerOnly ? (
-            <div className="flex flex-col items-center justify-center gap-3 py-10">
-              <Loader2 className="h-5 w-5 animate-spin text-brand" />
-              <p className="text-sm text-muted-foreground">
-                {trans.submitting}
-              </p>
-            </div>
-          ) : (
-            <SelectLocationCard />
-          )
-        }
+        card={<SelectLocationCard />}
       />
     );
   }
 
+  // El MANAGER se queda en el paso 1 con el botón cargando mientras se envía
+  // location null: así no parpadea una pantalla intermedia antes del dashboard.
   return (
     <AuthLayout
       step={1}
       title={t.auth.login.brand.tagline}
       description={t.auth.login.brand.description}
-      card={<LoginCard />}
+      card={<LoginCard isFinishing={isTempAuth && isManagerOnly} />}
     />
   );
 };
