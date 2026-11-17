@@ -158,6 +158,80 @@ Al entrar al área autenticada, `AppLayout` monta **una sola vez** cuatro proces
 | `useWhatsappOrdersStream` | Mantiene sincronizada la bandeja de WhatsApp |
 | `useOfflineSync` | Detecta la conexión y sincroniza las ventas offline (Cajero) |
 
+### 2.4 Diagrama de componentes
+
+Muestra las capas del frontend y cómo se comunican con el backend y con el almacenamiento local del navegador.
+
+```mermaid
+flowchart TB
+  subgraph Browser["Navegador"]
+    subgraph UI["Capa de presentación"]
+      Router["Enrutador y guards<br/>(routes)"]
+      Pages["Páginas y modales<br/>(features/*/pages)"]
+      Shared["Sistema de diseño<br/>(components/shared, ui)"]
+    end
+    subgraph State["Capa de estado"]
+      RQ["React Query<br/>(estado del servidor)"]
+      Zus["Zustand<br/>(sesión, carrito, WhatsApp, offline)"]
+    end
+    subgraph Data["Capa de datos"]
+      Hooks["Hooks de dominio<br/>(features/*/hooks)"]
+      Mappers["Mappers DTO ⇄ Modelo"]
+      Http["Cliente Axios<br/>+ interceptores"]
+      SSE["Cliente SSE"]
+      Offline["Módulo offline<br/>(cola, sincronización, conectividad)"]
+    end
+    subgraph Local["Almacenamiento local"]
+      LS[("localStorage<br/>sesión, menú, turno")]
+      IDB[("IndexedDB<br/>cola de ventas")]
+      SW["Service Worker<br/>archivos de la app"]
+    end
+  end
+  API["Backend REST<br/>(NestJS)"]
+  Printer["Impresora térmica 80 mm"]
+
+  Router --> Pages
+  Pages --> Shared
+  Pages --> Hooks
+  Pages --> Zus
+  Hooks --> Mappers
+  Hooks --> RQ
+  RQ --> Http
+  Http -->|"HTTPS + JWT"| API
+  SSE -->|"SSE + JWT"| API
+  SSE --> Zus
+  SSE --> RQ
+  Offline --> IDB
+  Offline --> Http
+  Zus --> LS
+  RQ --> LS
+  Pages -->|"window.print()"| Printer
+```
+
+### 2.5 Diagrama de despliegue
+
+```mermaid
+flowchart LR
+  subgraph Cliente["Equipo del usuario"]
+    Browser["Navegador web<br/>SPA React + Service Worker"]
+    Printer["Impresora térmica<br/>80 mm"]
+  end
+  subgraph Servidor["Servidor"]
+    Static["Servidor web<br/>archivos estáticos (dist/)"]
+    Nest["API NestJS<br/>REST + SSE"]
+    DB[("PostgreSQL 16")]
+  end
+  WA["WhatsApp<br/>(clientes)"]
+  Mail["Servicio de correo"]
+
+  Browser -->|"HTTPS: descarga la app"| Static
+  Browser -->|"HTTPS: /api (REST + SSE)"| Nest
+  Browser -->|"USB / red"| Printer
+  Nest --> DB
+  WA <-->|"Bot de pedidos"| Nest
+  Nest -->|"Contraseñas temporales"| Mail
+```
+
 ---
 
 ## 3. Enrutamiento y navegación
@@ -273,6 +347,59 @@ La sesión se guarda en `useAuthStore` (Zustand persistido en localStorage con l
 | **Rotación del refresh token** | Cada renovación entrega un refresh token nuevo. La sesión se sincroniza entre pestañas con el evento `storage`: antes de renovar, se relee el estado guardado y, si otra pestaña ya renovó, se reutiliza su token. Así se evita que el backend detecte una "reutilización" (indicio de robo) y revoque la sesión. |
 | **Fin de sesión** | Si el refresh es rechazado (`REFRESH_TOKEN_INVALID`, `_EXPIRED`, `_REVOKED`, `_REUSED` o `SESSION_NO_LONGER_VALID`), se cierra la sesión con un aviso. Un error de red durante el refresh **no** cierra la sesión. |
 | **Cierre de sesión** (`logoutSession`) | Avisa al backend (`POST /auth/logout`) para revocar el refresh token sin esperar la respuesta, limpia el store y el caché y vuelve a `/login`. |
+
+### 4.5 Diagramas de secuencia de la sesión
+
+**Inicio de sesión en dos pasos (CU-01 / CU-02):**
+
+```mermaid
+sequenceDiagram
+  actor U as Usuario
+  participant FE as Frontend
+  participant API as Backend
+  U->>FE: Usuario o correo y contraseña
+  FE->>API: POST /auth/login
+  API-->>FE: tempToken + sucursales con su rol
+  alt Gerente en todas sus sucursales
+    FE->>API: POST /auth/select-location (locationId: null)
+  else Debe elegir sucursal
+    U->>FE: Selecciona la sucursal
+    FE->>API: POST /auth/select-location (locationId)
+  end
+  API-->>FE: accessToken, expiresIn, refreshToken y usuario
+  FE->>FE: Guarda la sesión (useAuthStore) y limpia el caché
+  alt mustChangePassword = true
+    FE-->>U: Redirige a /change-password
+  else
+    FE-->>U: Redirige al inicio del rol (/pos o /dashboard)
+  end
+```
+
+**Renovación reactiva del token:**
+
+```mermaid
+sequenceDiagram
+  participant C as Componente
+  participant I as Interceptor Axios
+  participant S as refreshSession
+  participant API as Backend
+  C->>I: Petición
+  I->>API: GET /recurso (token vencido)
+  API-->>I: 401 TOKEN_EXPIRED
+  I->>S: refreshSession()
+  Note over S: Una sola promesa compartida<br/>por todas las peticiones que fallaron
+  S->>API: POST /auth/refresh (refreshToken)
+  alt Refresh válido
+    API-->>S: accessToken y refreshToken nuevos
+    S-->>I: Token nuevo
+    I->>API: Repite GET /recurso
+    API-->>I: 200 OK
+    I-->>C: Datos (el usuario no nota nada)
+  else Refresh rechazado (inválido, vencido, revocado o reutilizado)
+    API-->>S: 401 REFRESH_TOKEN_*
+    S-->>C: Cierra la sesión y redirige a /login
+  end
+```
 
 ---
 
@@ -516,6 +643,36 @@ Es la contraparte del Inventario para la **materia prima**. Tiene tres pestañas
 
 > La **facturación electrónica** quedó para la **Fase 2**. Su código está comentado y marcado con `FASE 2 - Facturación` (sección 15).
 
+**Diagrama de secuencia — venta en el POS con conexión (CU-23):**
+
+```mermaid
+sequenceDiagram
+  actor C as Cajero
+  participant POS as POS (Pos.tsx)
+  participant Cart as useCartStore
+  participant API as Backend
+  participant P as Impresora
+  C->>POS: Agrega productos y modificadores
+  POS->>Cart: addItem / updateItem
+  C->>POS: Revisar pedido
+  POS-->>C: ReviewOrderModal (resumen y datos del cliente)
+  C->>POS: Confirmar
+  POS->>API: POST /orders
+  API-->>POS: Pedido creado
+  POS-->>C: PaymentModal (método, descuento, cambio)
+  C->>POS: Confirmar pago
+  POS->>API: POST /sales
+  alt Venta registrada
+    API-->>POS: Venta con código de ticket
+    POS->>P: Imprime el ticket de 80 mm
+    POS->>Cart: clearCart()
+    POS-->>C: OrderSuccessModal
+  else Error de negocio (p. ej. INSUFFICIENT_STOCK)
+    API-->>POS: 4xx con errorCode
+    POS-->>C: Aviso con el mensaje en español
+  end
+```
+
 ### 9.9 Pedidos (`features/pos/page/order`) — `/orders`, Gerente, Administrador y Cajero
 
 **Objetivo:** consultar y dar seguimiento a los pedidos.
@@ -524,6 +681,25 @@ Es la contraparte del Inventario para la **materia prima**. Tiene tres pestañas
 - **Estados** (`OrderStatusEnum`): `PENDING → CONFIRMED → PREPARING → READY → (DELIVERED) → PAID`, o `CANCELLED`.
 - **Cobro diferido:** el cajero abre un pedido pendiente de pago (p. ej. un delivery que se paga al entregar) y lo cobra con el mismo flujo de revisión, pago y éxito del POS.
 - **Cancelación:** exige escribir un motivo (máx. 500 caracteres), que se envía como `reason` y luego se ve en el detalle del pedido (`cancellationReason`).
+
+**Diagrama de estados del pedido:**
+
+```mermaid
+stateDiagram-v2
+  [*] --> PENDING: Se crea el pedido
+  PENDING --> CONFIRMED: Aprobar
+  CONFIRMED --> PREPARING: Preparar
+  PREPARING --> READY: Listo
+  READY --> DELIVERED: Entregado (solo delivery)
+  READY --> PAID: Cobrar (Cajero)
+  DELIVERED --> PAID: Cobrar (Cajero)
+  PENDING --> CANCELLED: Rechazar o vencer
+  CONFIRMED --> CANCELLED: Cancelar con motivo
+  PREPARING --> CANCELLED: Cancelar con motivo
+  READY --> CANCELLED: Cancelar con motivo
+  PAID --> [*]
+  CANCELLED --> [*]
+```
 
 ### 9.10 Ventas (`features/sales`) — `/sales`, Gerente, Administrador y Cajero
 
@@ -594,6 +770,44 @@ Es la contraparte del Inventario para la **materia prima**. Tiene tres pestañas
 **Arqueo:**
 - Efectivo esperado = monto inicial + ventas en efectivo − egresos − nómina.
 - QR y tarjeta: el esperado es lo vendido por ese medio.
+
+**Diagrama de estados del turno:**
+
+```mermaid
+stateDiagram-v2
+  [*] --> OPEN: El cajero abre el turno con el monto inicial
+  OPEN --> OPEN: Ventas, egresos y pagos de nómina
+  OPEN --> PENDING: El cajero declara los montos (cierre ciego)
+  PENDING --> CLOSED: El administrador aprueba
+  CLOSED --> [*]
+  note right of OPEN
+    Solo un turno OPEN por sucursal.
+    No se puede cerrar con pedidos pendientes.
+  end note
+  note right of PENDING
+    Comentario obligatorio si hay diferencia.
+  end note
+```
+
+**Diagrama de actividad — cierre y aprobación de caja (CU-38 / CU-39):**
+
+```mermaid
+flowchart TD
+  A([Cajero abre la pantalla Caja]) --> B{¿Hay pedidos<br/>sin cobrar ni cancelar?}
+  B -- Sí --> B1[Botón de cierre deshabilitado] --> B2[Cobrar o cancelar los pedidos] --> B
+  B -- No --> C[Ve el resumen ciego:<br/>solo cantidades, sin montos]
+  C --> D[Declara efectivo, QR y tarjeta]
+  D --> E[POST /shifts/close]
+  E --> F[Turno pasa a PENDING]
+  F --> G[Se muestra el cuadre y se imprime el comprobante]
+  G --> H[El administrador revisa el cierre]
+  H --> I{¿Hay diferencia<br/>en algún método?}
+  I -- Sí --> J[Escribe un comentario obligatorio]
+  I -- No --> K[Comentario opcional]
+  J --> L[POST /shifts/:id/approve]
+  K --> L
+  L --> M([Turno CLOSED])
+```
 
 ### 9.13 Egresos (`features/finances/expenses`) — `/expenses`
 
@@ -687,6 +901,50 @@ Es la contraparte del Inventario para la **materia prima**. Tiene tres pestañas
 - La cola **sobrevive a recargas y al cierre de sesión**.
 - Cada venta guarda el `userId` del cajero y solo se sincroniza con su sesión.
 - Al cerrar sesión con ventas pendientes se pide confirmación.
+
+**Diagrama de estados de una venta en la cola offline:**
+
+```mermaid
+stateDiagram-v2
+  [*] --> PENDING: Venta registrada sin conexión (IndexedDB)
+  PENDING --> Sincronizada: CREATED o DUPLICATE
+  PENDING --> PENDING: REJECTED reintentable (suma un intento) o error de red / 5xx
+  PENDING --> CONFLICT: REJECTED no reintentable
+  CONFLICT --> Descartada: El cajero la descarta
+  Sincronizada --> [*]: Sale de la cola
+  Descartada --> [*]: Sale de la cola
+```
+
+**Diagrama de secuencia — venta sin conexión y sincronización (CU-24 / CU-25):**
+
+```mermaid
+sequenceDiagram
+  actor C as Cajero
+  participant POS as POS
+  participant Q as Cola (IndexedDB)
+  participant Sync as useOfflineSync
+  participant API as Backend
+  Note over POS: Se cae la conexión (markOffline)
+  C->>POS: Venta para llevar o presencial
+  POS->>POS: getOfflineIneligibility() y buildOfflineSale()
+  POS->>Q: Guarda la venta (UUID de idempotencia)
+  POS-->>C: Ticket con código -OFF-
+  Note over Sync: Vuelve la conexión o pasan 20 s
+  Sync->>Sync: navigator.locks (una sincronización a la vez)
+  Sync->>Q: Lee ventas PENDING del usuario
+  loop Lotes de 50 ventas (600 ms entre lotes)
+    Sync->>API: POST /sales/offline-sync
+    API-->>Sync: Resultado por venta
+    alt CREATED o DUPLICATE
+      Sync->>Q: Elimina la venta
+    else REJECTED reintentable
+      Sync->>Q: Suma un intento
+    else REJECTED no reintentable
+      Sync->>Q: Marca CONFLICT
+    end
+  end
+  Sync->>POS: Invalida ventas, turnos e inventario
+```
 
 ### 9.17 Notificaciones de stock (`features/notifications`) — Gerente y Administrador
 
@@ -793,24 +1051,51 @@ Es la contraparte del Inventario para la **materia prima**. Tiene tres pestañas
 
 ### 11.3 Diagrama de casos de uso (resumen)
 
-```
-                 ┌──────────────────────── Sistema Buen Asador ────────────────────────┐
-                 │                                                                     │
-  Gerente ───────┼── CU-06..09 Usuarios y sucursales                                   │
-     │           ├── CU-42 Reportes        CU-40 Historial de turnos                   │
-     │           ├── CU-41 Dashboard       CU-43 Alertas de stock ◄──── Sistema        │
-     ▼ (hereda)  │                                                                     │
-  Administrador ─┼── CU-10..21 Catálogo, inventario, insumos y recetas                 │
-     │           ├── CU-29 Atender pedido de WhatsApp ◄──── Cliente de WhatsApp        │
-     │           ├── CU-34 Editar egreso   CU-35 Sueldos   CU-39 Aprobar cierre        │
-                 │                                                                     │
-  Cajero ────────┼── CU-22 Abrir turno ──► CU-23 Venta POS ──«extend»── CU-24 Offline  │
-                 ├── CU-26 Cobrar pedido   CU-30 Cobrar WhatsApp                       │
-                 ├── CU-33 Egreso          CU-36/37 Nómina                             │
-                 ├── CU-38 Cerrar turno ──► (CU-39 lo aprueba el Administrador)        │
-                 │                                                                     │
-  Todos ─────────┼── CU-01..05 Sesión      CU-28 Pedidos   CU-31 Ventas                │
-                 └─────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart LR
+  Gerente(["Gerente"])
+  Admin(["Administrador"])
+  Cajero(["Cajero"])
+  ClienteWA(["Cliente de WhatsApp"])
+  Sistema(["Sistema (backend)"])
+
+  subgraph SB["Sistema Buen Asador"]
+    direction TB
+    UC_S(["CU-01..05 Sesión"])
+    UC_U(["CU-06..09 Usuarios y sucursales"])
+    UC_R(["CU-42 Reportes"])
+    UC_D(["CU-41 Dashboard"])
+    UC_T(["CU-40 Historial de turnos"])
+    UC_A(["CU-43 Alertas de stock"])
+    UC_C(["CU-10..21 Catálogo, inventario,<br/>insumos y recetas"])
+    UC_W(["CU-29 Atender pedido de WhatsApp"])
+    UC_EE(["CU-34 Editar egreso"])
+    UC_SU(["CU-35 Configurar sueldos"])
+    UC_AP(["CU-39 Aprobar cierre"])
+    UC_AT(["CU-22 Abrir turno"])
+    UC_V(["CU-23 Venta en el POS"])
+    UC_OFF(["CU-24 Venta sin conexión"])
+    UC_SY(["CU-25 Sincronizar ventas offline"])
+    UC_CP(["CU-26 Cobrar pedido"])
+    UC_CW(["CU-30 Cobrar pedido de WhatsApp"])
+    UC_E(["CU-33 Registrar egreso"])
+    UC_N(["CU-36/37 Pagar nómina"])
+    UC_CT(["CU-38 Cerrar turno"])
+    UC_P(["CU-28 Consultar pedidos"])
+    UC_VE(["CU-31/32 Ventas"])
+  end
+
+  Gerente --- UC_U & UC_R & UC_D & UC_T & UC_A & UC_C
+  Admin --- UC_D & UC_T & UC_A & UC_C & UC_W & UC_EE & UC_SU & UC_AP
+  Cajero --- UC_AT & UC_V & UC_CP & UC_W & UC_CW & UC_E & UC_N & UC_CT
+  Gerente & Admin & Cajero --- UC_S & UC_P & UC_VE
+  ClienteWA --- UC_W
+  Sistema --- UC_A & UC_SY
+
+  UC_OFF -.->|«extend»| UC_V
+  UC_SY -.->|«include»| UC_OFF
+  UC_V -.->|requiere| UC_AT
+  UC_CT -.->|lo aprueba| UC_AP
 ```
 
 > La herencia Gerente → Administrador es conceptual (el Gerente supervisa lo que gestiona el Administrador). En el sistema, algunas acciones operativas son exclusivas del Administrador (aprobar cierres) o del Cajero (cobrar).
@@ -1082,48 +1367,100 @@ Se priorizó la lógica crítica que se ejecuta solo en el navegador: cálculos 
   - `npm test`: ejecuta las pruebas una vez.
   - `npm run test:watch`: modo observación durante el desarrollo.
   - `npm run test:coverage`: pruebas con reporte de cobertura (carpeta `coverage/`, excluida del repositorio).
+  - `npm run analyze`: build de producción que abre `stats.html` con el treemap del tamaño del bundle.
+- **Guía de métricas:** `docs/GUIA_GRAFICOS_METRICAS.md` explica cómo obtener los gráficos de cobertura, Lighthouse, bundle y usabilidad (SUS). Los diagramas Mermaid también están como archivos sueltos en `docs/diagramas/`.
 - **Pipeline de CI** (`.github/workflows/ci.yml`): `npm ci` → `npm run lint` → `npm run test:coverage` → `npm run build` (incluye `tsc -b`). Si un paso falla, el *push* o *pull request* queda marcado en rojo.
 
 ### 12.4 Casos de prueba funcionales
 
-Se ejecutan manualmente contra el backend. La columna **Automatizado** indica los casos cuya lógica también está cubierta por una prueba unitaria. La columna **Estado** se completa al ejecutar la prueba (✅ aprobado · ❌ fallido · ⏳ pendiente).
+Se ejecutan manualmente contra el backend. La columna **Automatizado** indica los casos cuya lógica también está cubierta por una prueba unitaria. La columna **Técnica** indica la técnica de caja negra con que se diseñó (sección 12.6). La columna **Estado** se completa al ejecutar la prueba (✅ aprobado · ❌ fallido · ⏳ pendiente).
 
-| ID | Caso de uso | Escenario | Resultado esperado | Automatizado | Estado |
-|---|---|---|---|---|---|
-| CP-01 | CU-01 | Credenciales válidas | Se muestran las sucursales del usuario con su rol | — | ⏳ |
-| CP-02 | CU-01 | Contraseña incorrecta | Mensaje de error; no avanza | — | ⏳ |
-| CP-03 | CU-02 | Gerente en todas sus sucursales | Entra directo al Dashboard con "Todas las sucursales" | — | ⏳ |
-| CP-04 | CU-03 | Usuario con contraseña temporal | Solo puede ver `/change-password`; tras cambiarla accede a su inicio | — | ⏳ |
-| CP-05 | — | El token vence durante el uso | La petición se repite sola con un token nuevo; el usuario no lo nota | — | ⏳ |
-| CP-06 | — | Cajero entra a `/users` escribiendo la URL | Es redirigido a `/pos` | — | ⏳ |
-| CP-07 | CU-04 | Cajero con turno abierto intenta cambiar de sucursal | El botón está deshabilitado | — | ⏳ |
-| CP-08 | CU-07 | Restablecer contraseña | El estado del correo pasa de *Pendiente* a *Enviado* | — | ⏳ |
-| CP-09 | CU-11 | Desactivar una categoría en una sucursal | Sus productos dejan de aparecer en el POS de esa sucursal | — | ⏳ |
-| CP-10 | CU-14 | Producto desactivado globalmente | El interruptor por sucursal está deshabilitado y explica el motivo | ✅ product-availability | ⏳ |
-| CP-11 | CU-16 | Ajuste "restar" mayor que el stock | Error de stock insuficiente | — | ⏳ |
-| CP-12 | CU-21 | Crear receta | Aparece stock en 0 de los insumos en las sucursales del producto | — | ⏳ |
-| CP-13 | CU-22 | Entrar al POS sin turno | Modal de apertura que bloquea la venta | — | ⏳ |
-| CP-14 | CU-23 | Venta en efectivo con monto recibido mayor que el total | Muestra el cambio correcto, registra la venta e imprime el ticket | ✅ cart.store, money | ⏳ |
-| CP-15 | CU-23 | Delivery sin dirección | No permite pasar al pago | — | ⏳ |
-| CP-16 | CU-23 | 3 unidades del mismo producto con modificadores distintos | El ticket refleja cada unidad con sus extras | ✅ cart.store | ⏳ |
-| CP-17 | CU-23 | Venta que deja el stock bajo el mínimo | El Gerente y el Administrador reciben la alerta en tiempo real | — | ⏳ |
-| CP-18 | CU-24 | Cortar la red y vender "para llevar" en efectivo | Ticket con código `-OFF-`; la venta aparece en la cola | ✅ offline-sale.builder | ⏳ |
-| CP-19 | CU-24 | Sin red, elegir Delivery | La opción está deshabilitada | ✅ offline-sale.builder | ⏳ |
-| CP-20 | CU-25 | Restaurar la red | La venta se sincroniza y aparece en Ventas | — | ⏳ |
-| CP-21 | CU-25 | Venta offline rechazada de forma definitiva | Queda "con conflicto" y se puede descartar | — | ⏳ |
-| CP-22 | CU-29 | Llega un pedido de WhatsApp | Suena, aparece el aviso y sube el contador del botón | — | ⏳ |
-| CP-23 | CU-29 | El pedido vence sin aprobarse | Desaparece de la bandeja con aviso de vencimiento | — | ⏳ |
-| CP-24 | CU-29 | Dos cajeros aprueban el mismo pedido | El segundo recibe el estado actualizado sin duplicar | — | ⏳ |
-| CP-25 | CU-30 | Administrador intenta cobrar | Se le indica que solo el cajero cobra | ✅ order-actions | ⏳ |
-| CP-26 | CU-32 | Anular una venta | Estado anulado y stock devuelto (visible en el kardex) | — | ⏳ |
-| CP-27 | CU-33 | Registrar egreso sin turno | El botón está deshabilitado | — | ⏳ |
-| CP-28 | CU-34 | Editar un egreso de un turno cerrado | El modal está en solo lectura | — | ⏳ |
-| CP-29 | CU-36 | Pago masivo con un pago inválido | Ningún pago se registra | — | ⏳ |
-| CP-30 | CU-38 | Cerrar turno con pedidos pendientes | El botón de cierre está deshabilitado | — | ⏳ |
-| CP-31 | CU-38 | Declarar montos con diferencia | El turno pasa a `PENDING`, muestra la diferencia e imprime el comprobante | — | ⏳ |
-| CP-32 | CU-39 | Aprobar un cierre con diferencia sin comentario | No se permite | — | ⏳ |
-| CP-33 | CU-41 | Registrar una venta con el Dashboard abierto | Los indicadores se actualizan en 60 s o menos | — | ⏳ |
-| CP-34 | CU-42 | Reporte "Mes pasado" | El rango va del primer al último día del mes anterior | ✅ report-period | ⏳ |
+| ID | Caso de uso | Técnica | Escenario | Resultado esperado | Automatizado | Estado |
+|---|---|---|---|---|---|---|
+| CP-01 | CU-01 | PE | Credenciales válidas | Se muestran las sucursales del usuario con su rol | — | ⏳ |
+| CP-02 | CU-01 | PE | Contraseña incorrecta | Mensaje de error; no avanza | — | ⏳ |
+| CP-03 | CU-02 | TD | Gerente en todas sus sucursales | Entra directo al Dashboard con "Todas las sucursales" | — | ⏳ |
+| CP-04 | CU-03 | TE | Usuario con contraseña temporal | Solo puede ver `/change-password`; tras cambiarla accede a su inicio | — | ⏳ |
+| CP-05 | — | TE | El token vence durante el uso | La petición se repite sola con un token nuevo; el usuario no lo nota | — | ⏳ |
+| CP-06 | — | TD | Cajero entra a `/users` escribiendo la URL | Es redirigido a `/pos` | — | ⏳ |
+| CP-07 | CU-04 | TD | Cajero con turno abierto intenta cambiar de sucursal | El botón está deshabilitado | — | ⏳ |
+| CP-08 | CU-07 | TE | Restablecer contraseña | El estado del correo pasa de *Pendiente* a *Enviado* | — | ⏳ |
+| CP-09 | CU-11 | ES | Desactivar una categoría en una sucursal | Sus productos dejan de aparecer en el POS de esa sucursal | — | ⏳ |
+| CP-10 | CU-14 | TD | Producto desactivado globalmente | El interruptor por sucursal está deshabilitado y explica el motivo | ✅ product-availability | ⏳ |
+| CP-11 | CU-16 | VL | Ajuste "restar" mayor que el stock | Error de stock insuficiente | — | ⏳ |
+| CP-12 | CU-21 | ES | Crear receta | Aparece stock en 0 de los insumos en las sucursales del producto | — | ⏳ |
+| CP-13 | CU-22 | TE | Entrar al POS sin turno | Modal de apertura que bloquea la venta | — | ⏳ |
+| CP-14 | CU-23 | VL | Venta en efectivo con monto recibido mayor que el total | Muestra el cambio correcto, registra la venta e imprime el ticket | ✅ cart.store, money | ⏳ |
+| CP-15 | CU-23 | PE | Delivery sin dirección | No permite pasar al pago | — | ⏳ |
+| CP-16 | CU-23 | PE | 3 unidades del mismo producto con modificadores distintos | El ticket refleja cada unidad con sus extras | ✅ cart.store | ⏳ |
+| CP-17 | CU-23 | VL | Venta que deja el stock bajo el mínimo | El Gerente y el Administrador reciben la alerta en tiempo real | — | ⏳ |
+| CP-18 | CU-24 | PE | Cortar la red y vender "para llevar" en efectivo | Ticket con código `-OFF-`; la venta aparece en la cola | ✅ offline-sale.builder | ⏳ |
+| CP-19 | CU-24 | PE | Sin red, elegir Delivery | La opción está deshabilitada | ✅ offline-sale.builder | ⏳ |
+| CP-20 | CU-25 | TE | Restaurar la red | La venta se sincroniza y aparece en Ventas | — | ⏳ |
+| CP-21 | CU-25 | TE | Venta offline rechazada de forma definitiva | Queda "con conflicto" y se puede descartar | — | ⏳ |
+| CP-22 | CU-29 | ES | Llega un pedido de WhatsApp | Suena, aparece el aviso y sube el contador del botón | — | ⏳ |
+| CP-23 | CU-29 | TE | El pedido vence sin aprobarse | Desaparece de la bandeja con aviso de vencimiento | — | ⏳ |
+| CP-24 | CU-29 | ES | Dos cajeros aprueban el mismo pedido | El segundo recibe el estado actualizado sin duplicar | — | ⏳ |
+| CP-25 | CU-30 | TD | Administrador intenta cobrar | Se le indica que solo el cajero cobra | ✅ order-actions | ⏳ |
+| CP-26 | CU-32 | TE | Anular una venta | Estado anulado y stock devuelto (visible en el kardex) | — | ⏳ |
+| CP-27 | CU-33 | TE | Registrar egreso sin turno | El botón está deshabilitado | — | ⏳ |
+| CP-28 | CU-34 | TE | Editar un egreso de un turno cerrado | El modal está en solo lectura | — | ⏳ |
+| CP-29 | CU-36 | PE | Pago masivo con un pago inválido | Ningún pago se registra | — | ⏳ |
+| CP-30 | CU-38 | TE | Cerrar turno con pedidos pendientes | El botón de cierre está deshabilitado | — | ⏳ |
+| CP-31 | CU-38 | TE | Declarar montos con diferencia | El turno pasa a `PENDING`, muestra la diferencia e imprime el comprobante | — | ⏳ |
+| CP-32 | CU-39 | TD | Aprobar un cierre con diferencia sin comentario | No se permite | — | ⏳ |
+| CP-33 | CU-41 | ES | Registrar una venta con el Dashboard abierto | Los indicadores se actualizan en 60 s o menos | — | ⏳ |
+| CP-34 | CU-42 | VL | Reporte "Mes pasado" | El rango va del primer al último día del mes anterior | ✅ report-period | ⏳ |
+
+### 12.5 Pruebas de caja blanca
+
+Las pruebas de caja blanca se diseñan conociendo el código: su objetivo es recorrer las sentencias y las ramas (`if`, `switch`, condiciones) de la lógica crítica. Se implementaron como las pruebas unitarias de la sección 12.2 y se midieron con el reporte de cobertura de Vitest (`npm run test:coverage`).
+
+| Módulo | Sentencias | Ramas | Funciones | Líneas |
+|---|---:|---:|---:|---:|
+| `money-input.utils.ts` (entrada de montos) | 100 % | 100 % | 100 % | 100 % |
+| `product-availability.ts` (disponibilidad) | 100 % | 100 % | 100 % | 100 % |
+| `order-actions.ts` (acciones de WhatsApp) | 100 % | 93,8 % | 100 % | 100 % |
+| `cart.store.ts` (carrito del POS) | 87,3 % | 63,6 % | 83,3 % | 86,7 % |
+| `report-period.ts` (períodos de reportes) | 84,6 % | 100 % | 66,7 % | 84,6 % |
+| `money.ts` (utilidades de dinero) | 82,4 % | 80,0 % | 66,7 % | 78,6 % |
+| `offline-sale.builder.ts` (venta offline) | 78,1 % | 55,6 % | 69,2 % | 76,3 % |
+| **Total** | **87,6 %** | **76,8 %** | **80,3 %** | **86,3 %** |
+
+Lo que queda sin cubrir son funciones de formato de presentación (`formatMoney`, `formatReportDayShort`) y la conversión de la venta en cola al modelo del ticket (`mapQueuedSaleToSaleModel`), que no contienen reglas de negocio. El reporte detallado, línea por línea, se genera en `coverage/index.html`.
+
+### 12.6 Pruebas de caja negra
+
+Las pruebas de caja negra se diseñan **sin mirar el código**, solo a partir de los requisitos: se dan entradas y se comparan las salidas con el resultado esperado. Son los casos funcionales de la sección 12.4, ejecutados manualmente sobre la aplicación. Cada caso indica la técnica con que se diseñó:
+
+| Sigla | Técnica | En qué consiste | Ejemplo en el sistema |
+|---|---|---|---|
+| **PE** | Partición de equivalencia | Las entradas se dividen en clases válidas e inválidas y se prueba un representante de cada clase | Tipo de pedido offline: Presencial / Para llevar (válidas) frente a Delivery (inválida) |
+| **VL** | Valores límite | Se prueban los bordes de cada clase, donde suelen estar los errores | Monto recibido igual al total y 0,01 por debajo; 100 y 101 unidades offline |
+| **TD** | Tabla de decisión | Se combinan condiciones (rol, estado) y se verifica la acción resultante | Rol × acción sobre un pedido de WhatsApp (tabla de abajo) |
+| **TE** | Transición de estados | Se recorren las transiciones válidas e inválidas de un diagrama de estados | Pedido, turno y venta offline (diagramas de las secciones 9.9, 9.12 y 9.16) |
+| **ES** | Escenario de caso de uso | Se recorre el flujo principal o un flujo alternativo de un caso de uso | Llega un pedido de WhatsApp y suena el aviso |
+
+**Tabla de decisión — acciones sobre un pedido de WhatsApp:**
+
+| Condición / acción | R1 | R2 | R3 | R4 | R5 | R6 |
+|---|:-:|:-:|:-:|:-:|:-:|:-:|
+| Rol | Cajero | Cajero | Cajero | Administrador | Administrador | Gerente |
+| Estado del pedido | `PENDING` | `READY` | `PAID` | `PENDING` | `READY` | cualquiera |
+| **Puede avanzar el estado** | ✅ Aprobar | ✅ (delivery: Entregado) | — | ✅ Aprobar | ✅ (delivery: Entregado) | — |
+| **Puede cobrar** | — | ✅ | — | — | — (aviso "solo el cajero cobra") | — |
+| **Puede cancelar** | ✅ (rechazar) | ✅ | — | ✅ (rechazar) | ✅ | — |
+
+**Casos adicionales de valores límite** (se suman a la tabla de la sección 12.4):
+
+| ID | Caso de uso | Técnica | Escenario | Resultado esperado | Automatizado | Estado |
+|---|---|---|---|---|---|---|
+| CP-35 | CU-23 | VL | Efectivo: monto recibido igual al total | Permite confirmar; cambio 0 | — | ⏳ |
+| CP-36 | CU-23 | VL | Efectivo: monto recibido 0,01 por debajo del total | Botón de confirmar deshabilitado; muestra cuánto falta | — | ⏳ |
+| CP-37 | CU-23 | VL | Escribir un monto con 11 dígitos enteros o 3 decimales | Se recorta a 10 dígitos enteros y 2 decimales | ✅ money-input.utils | ⏳ |
+| CP-38 | CU-24 | VL | Venta offline con 100 unidades y luego con 101 | 100 se permite; 101 se rechaza con mensaje | ✅ offline-sale.builder | ⏳ |
+| CP-39 | CU-27 | VL | Motivo de cancelación con 500 y con 501 caracteres | 500 se acepta; 501 no se permite | — | ⏳ |
+| CP-40 | CU-42 | VL | Reporte "Mes pasado" consultado en enero | El rango es diciembre del año anterior | ✅ report-period | ⏳ |
 
 ---
 
@@ -1171,6 +1508,7 @@ Se ejecutan manualmente contra el backend. La columna **Automatizado** indica lo
 
 - **Dos `<Toaster>` montados**, uno en `main.tsx` y otro en `AppLayout.tsx`, en la misma posición. Es probable que cada aviso se dibuje dos veces. Se recomienda dejar uno solo.
 - **ESLint: 0 errores y 11 advertencias.** Las advertencias son dependencias de hooks (`exhaustive-deps`) que se dejaron sin cambiar porque corregirlas puede alterar el comportamiento. Los 8 errores anteriores se resolvieron: `setState` dentro de `useEffect` en `ImageUploader` y `MoneyInput` se reemplazó por sincronización durante el render, y la regla `react-refresh/only-export-components` se desactivó puntualmente en los componentes de shadcn y en `Router.tsx`.
+- **Bundle en un único archivo:** el build genera un solo JavaScript de 1,6 MB (443 kB comprimido con gzip), por encima de los 500 kB que recomienda Vite. Se puede reducir con carga diferida por ruta (`React.lazy` en `Router.tsx`).
 - **Restos de la plantilla de Vite:** `src/App.tsx` y `src/App.css` no se usan (la entrada real es `main.tsx`).
 - **Dependencias poco usadas:**
   - `react-hook-form` y `@hookform/resolvers` solo los usa el componente generado `ui/form.tsx`; el proyecto usa Formik.

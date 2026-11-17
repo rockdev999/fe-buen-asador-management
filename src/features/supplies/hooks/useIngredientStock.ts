@@ -38,7 +38,8 @@ export const useIngredientStockHandler = (
   });
 
   const data = useMemo(
-    () => (handler.data ? handler.data.map(mapIngredientStockDTOToModel) : null),
+    () =>
+      handler.data ? handler.data.map(mapIngredientStockDTOToModel) : null,
     [handler.data],
   );
 
@@ -52,9 +53,13 @@ export const useAdjustIngredientStock = (
   const handler = usePostHandler({
     mutationFn: (dto: AdjustIngredientStockDTO) =>
       httpClient
-        .post<ApiResponse<IngredientStockDTO>>("/ingredients/stock/adjust", dto, {
-          params: locationId ? { locationId } : {},
-        })
+        .post<ApiResponse<IngredientStockDTO>>(
+          "/ingredients/stock/adjust",
+          dto,
+          {
+            params: locationId ? { locationId } : {},
+          },
+        )
         .then((r) => r.data.data!),
     // El listado de stock (INGREDIENT_STOCK) se refresca manualmente con
     // refetch() desde quien llama — invalidarlo aquí duplicaría la petición.
@@ -102,24 +107,21 @@ export const useIngredientKardexHandler = (
     queryKey: QUERY_KEYS.INGREDIENT_KARDEX(ingredientId ?? ""),
     queryFn: () =>
       httpClient
-        .get<
-          ApiResponse<IngredientKardexDTO[]>
-        >(`/ingredients/kardex/${ingredientId}`, {
-          params: locationId ? { locationId } : {},
-        })
+        .get<ApiResponse<IngredientKardexDTO[]>>(
+          `/ingredients/kardex/${ingredientId}`,
+          {
+            params: locationId ? { locationId } : {},
+          },
+        )
         .then((r) => r.data.data!),
     enabled: !!ingredientId && (options?.enabled ?? true),
     staleTime: 0, // no caching, always fetch fresh movements
-    // 404 = el producto/insumo no existe; reintentar solo duplicaría el error.
-    // Ojo: el error.interceptor rechaza con { message, fields, status, errorCode },
-    // no con ApiErrorResponse, así que el código HTTP viene en `status`.
-    retry: (failureCount, error) =>
-      (error as unknown as { status?: number } | null)?.status !== 404 &&
-      failureCount < 1,
+    // Reintentos: política global (shouldRetryQuery); un 404 no se repite.
   });
 
   const data = useMemo(
-    () => (handler.data ? handler.data.map(mapIngredientKardexDTOToModel) : null),
+    () =>
+      handler.data ? handler.data.map(mapIngredientKardexDTOToModel) : null,
     [handler.data],
   );
 
@@ -135,16 +137,20 @@ export const useIngredientStockAlertsHandler = (
     queryKey: [...QUERY_KEYS.INGREDIENT_STOCK_ALERTS, locationId, all],
     queryFn: () =>
       httpClient
-        .get<ApiResponse<IngredientStockAlertDTO[]>>("/ingredients/alerts/all", {
-          params: { ...(locationId && { locationId }), all },
-        })
+        .get<ApiResponse<IngredientStockAlertDTO[]>>(
+          "/ingredients/alerts/all",
+          {
+            params: { ...(locationId && { locationId }), all },
+          },
+        )
         .then((r) => r.data.data!),
     enabled,
     staleTime: 0, // no caching, always fetch fresh alerts
   });
 
   const data = useMemo(
-    () => (handler.data ? handler.data.map(mapIngredientStockAlertDTOToModel) : null),
+    () =>
+      handler.data ? handler.data.map(mapIngredientStockAlertDTOToModel) : null,
     [handler.data],
   );
 
@@ -155,9 +161,10 @@ export const useResolveIngredientStockAlert = () => {
   const handler = usePutHandler({
     mutationFn: (alertId: string) =>
       httpClient
-        .put<
-          ApiResponse<IngredientStockAlertDTO>
-        >(`/ingredients/alerts/${alertId}/resolve`, {})
+        .put<ApiResponse<IngredientStockAlertDTO>>(
+          `/ingredients/alerts/${alertId}/resolve`,
+          {},
+        )
         .then((r) => r.data.data!),
     invalidateKeys: [QUERY_KEYS.INGREDIENT_STOCK_ALERTS],
     successMessage: "Alerta resuelta exitosamente",

@@ -4,7 +4,6 @@ import { cn } from "@/lib/utils";
 import { Topbar } from "./Topbar";
 import { Outlet } from "react-router-dom";
 import { GlobalErrorToast } from "../shared/GlobalErrorToast";
-import { Toaster } from "../ui/sonner";
 import { useStockAlertsStream } from "@/features/notifications/hooks/useStockAlertsStream";
 import { useSessionKeepAlive } from "@/features/auth/hooks/useSessionKeepAlive";
 import { useWhatsappOrdersStream } from "@/features/whatsapp/hooks/useWhatsappOrdersStream";
@@ -31,7 +30,6 @@ export function AppLayout() {
         </main>
       </div>
       <GlobalErrorToast />
-      <Toaster position="top-right" richColors />
     </div>
   );
 }

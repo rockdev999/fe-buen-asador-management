@@ -1,0 +1,44 @@
+flowchart LR
+  Gerente(["Gerente"])
+  Admin(["Administrador"])
+  Cajero(["Cajero"])
+  ClienteWA(["Cliente de WhatsApp"])
+  Sistema(["Sistema (backend)"])
+
+  subgraph SB["Sistema Buen Asador"]
+    direction TB
+    UC_S(["CU-01..05 Sesión"])
+    UC_U(["CU-06..09 Usuarios y sucursales"])
+    UC_R(["CU-42 Reportes"])
+    UC_D(["CU-41 Dashboard"])
+    UC_T(["CU-40 Historial de turnos"])
+    UC_A(["CU-43 Alertas de stock"])
+    UC_C(["CU-10..21 Catálogo, inventario,<br/>insumos y recetas"])
+    UC_W(["CU-29 Atender pedido de WhatsApp"])
+    UC_EE(["CU-34 Editar egreso"])
+    UC_SU(["CU-35 Configurar sueldos"])
+    UC_AP(["CU-39 Aprobar cierre"])
+    UC_AT(["CU-22 Abrir turno"])
+    UC_V(["CU-23 Venta en el POS"])
+    UC_OFF(["CU-24 Venta sin conexión"])
+    UC_SY(["CU-25 Sincronizar ventas offline"])
+    UC_CP(["CU-26 Cobrar pedido"])
+    UC_CW(["CU-30 Cobrar pedido de WhatsApp"])
+    UC_E(["CU-33 Registrar egreso"])
+    UC_N(["CU-36/37 Pagar nómina"])
+    UC_CT(["CU-38 Cerrar turno"])
+    UC_P(["CU-28 Consultar pedidos"])
+    UC_VE(["CU-31/32 Ventas"])
+  end
+
+  Gerente --- UC_U & UC_R & UC_D & UC_T & UC_A & UC_C
+  Admin --- UC_D & UC_T & UC_A & UC_C & UC_W & UC_EE & UC_SU & UC_AP
+  Cajero --- UC_AT & UC_V & UC_CP & UC_W & UC_CW & UC_E & UC_N & UC_CT
+  Gerente & Admin & Cajero --- UC_S & UC_P & UC_VE
+  ClienteWA --- UC_W
+  Sistema --- UC_A & UC_SY
+
+  UC_OFF -.->|«extend»| UC_V
+  UC_SY -.->|«include»| UC_OFF
+  UC_V -.->|requiere| UC_AT
+  UC_CT -.->|lo aprueba| UC_AP

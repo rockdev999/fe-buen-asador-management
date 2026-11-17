@@ -1,0 +1,43 @@
+flowchart TB
+  subgraph Browser["Navegador"]
+    subgraph UI["Capa de presentación"]
+      Router["Enrutador y guards<br/>(routes)"]
+      Pages["Páginas y modales<br/>(features/*/pages)"]
+      Shared["Sistema de diseño<br/>(components/shared, ui)"]
+    end
+    subgraph State["Capa de estado"]
+      RQ["React Query<br/>(estado del servidor)"]
+      Zus["Zustand<br/>(sesión, carrito, WhatsApp, offline)"]
+    end
+    subgraph Data["Capa de datos"]
+      Hooks["Hooks de dominio<br/>(features/*/hooks)"]
+      Mappers["Mappers DTO ⇄ Modelo"]
+      Http["Cliente Axios<br/>+ interceptores"]
+      SSE["Cliente SSE"]
+      Offline["Módulo offline<br/>(cola, sincronización, conectividad)"]
+    end
+    subgraph Local["Almacenamiento local"]
+      LS[("localStorage<br/>sesión, menú, turno")]
+      IDB[("IndexedDB<br/>cola de ventas")]
+      SW["Service Worker<br/>archivos de la app"]
+    end
+  end
+  API["Backend REST<br/>(NestJS)"]
+  Printer["Impresora térmica 80 mm"]
+
+  Router --> Pages
+  Pages --> Shared
+  Pages --> Hooks
+  Pages --> Zus
+  Hooks --> Mappers
+  Hooks --> RQ
+  RQ --> Http
+  Http -->|"HTTPS + JWT"| API
+  SSE -->|"SSE + JWT"| API
+  SSE --> Zus
+  SSE --> RQ
+  Offline --> IDB
+  Offline --> Http
+  Zus --> LS
+  RQ --> LS
+  Pages -->|"window.print()"| Printer

@@ -125,6 +125,16 @@ export function requirePasswordChange() {
   navigateTo(PATHS.CHANGE_PASSWORD);
 }
 
+/**
+ * El backend respondió TOKEN_TEMPORARY: la sesión solo tiene el token
+ * temporal del login. Si sigue guardado, se vuelve al login para que la
+ * tarjeta de sucursales termine el ingreso; si no, se cierra sesión.
+ */
+export function requireLocationSelection() {
+  if (useAuthStore.getState().tempToken) navigateTo(PATHS.LOGIN);
+  else endSession({ notifyBackend: false });
+}
+
 // Import dinámico para no crear un ciclo services → routes → páginas → services.
 function navigateTo(path: string) {
   if (window.location.pathname.startsWith(path)) return;

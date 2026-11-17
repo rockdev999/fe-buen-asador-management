@@ -14,7 +14,7 @@ import {
 } from "../dto/sale.dto";
 import { ApiResponse } from "@/types/api.types";
 import { DATA_TABLE, QUERY_KEYS } from "@/constants";
-import { httpClient } from "@/services/http.client";
+import { httpClient, NO_TIMEOUT } from "@/services/http.client";
 import { useMemo } from "react";
 import {
   mapManagerSalePageItemDTOToModel,
@@ -66,9 +66,10 @@ export function useSalesPage({
     queryKey: QUERY_KEYS.PAGINATION_SALES(params),
     queryFn: () =>
       httpClient
-        .get<
-          ApiResponse<SalePageItemDTO[]>
-        >(`/sales/${locationId}/page-by-location`, { params })
+        .get<ApiResponse<SalePageItemDTO[]>>(
+          `/sales/${locationId}/page-by-location`,
+          { params },
+        )
         .then((r) => r.data),
     select: mapSalePageItemDTOToModel,
     params,
@@ -143,7 +144,7 @@ export const useCreateSale = () => {
   const handler = usePostHandler({
     mutationFn: (dto: CreateSaleDTO) =>
       httpClient
-        .post<ApiResponse<SaleDTO>>("/sales", dto)
+        .post<ApiResponse<SaleDTO>>("/sales", dto, NO_TIMEOUT)
         .then((r) => r.data.data!),
 
     // El pedido pasa a PAID: también se refrescan pedidos (y su detalle).

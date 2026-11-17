@@ -3,7 +3,6 @@ import { env } from "@/config/env";
 import axios from "axios";
 import { authInterceptor } from "./interceptors/auth.interceptor";
 import { errorInterceptor } from "./interceptors/error.interceptor";
-import { setupRetryInterceptor } from "./interceptors/retry.interceptor";
 import { markOnline } from "@/features/offline/stores/offline.store";
 
 export const httpClient = axios.create({
@@ -15,6 +14,13 @@ export const httpClient = axios.create({
   },
 });
 
+/**
+ * Para operaciones que no deben cortarse del lado del cliente: si se cancela
+ * por timeout, el servidor pudo haberla completado igual y la UI quedaría
+ * mostrando un error falso. Uso: `httpClient.post(url, body, NO_TIMEOUT)`.
+ */
+export const NO_TIMEOUT = { timeout: 0 } as const;
+
 httpClient.interceptors.request.use(authInterceptor);
 httpClient.interceptors.response.use(
   (response) => {
@@ -24,4 +30,3 @@ httpClient.interceptors.response.use(
   },
   (error) => errorInterceptor(error, httpClient),
 );
-setupRetryInterceptor(httpClient);

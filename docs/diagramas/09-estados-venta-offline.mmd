@@ -1,0 +1,8 @@
+stateDiagram-v2
+  [*] --> PENDING: Venta registrada sin conexión (IndexedDB)
+  PENDING --> Sincronizada: CREATED o DUPLICATE
+  PENDING --> PENDING: REJECTED reintentable (suma un intento) o error de red / 5xx
+  PENDING --> CONFLICT: REJECTED no reintentable
+  CONFLICT --> Descartada: El cajero la descarta
+  Sincronizada --> [*]: Sale de la cola
+  Descartada --> [*]: Sale de la cola

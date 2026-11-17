@@ -1,0 +1,15 @@
+flowchart TD
+  A([Cajero abre la pantalla Caja]) --> B{¿Hay pedidos<br/>sin cobrar ni cancelar?}
+  B -- Sí --> B1[Botón de cierre deshabilitado] --> B2[Cobrar o cancelar los pedidos] --> B
+  B -- No --> C[Ve el resumen ciego:<br/>solo cantidades, sin montos]
+  C --> D[Declara efectivo, QR y tarjeta]
+  D --> E[POST /shifts/close]
+  E --> F[Turno pasa a PENDING]
+  F --> G[Se muestra el cuadre y se imprime el comprobante]
+  G --> H[El administrador revisa el cierre]
+  H --> I{¿Hay diferencia<br/>en algún método?}
+  I -- Sí --> J[Escribe un comentario obligatorio]
+  I -- No --> K[Comentario opcional]
+  J --> L[POST /shifts/:id/approve]
+  K --> L
+  L --> M([Turno CLOSED])

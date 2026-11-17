@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { usePostHandler } from "@/hooks/api.handlers";
-import { httpClient } from "@/services/http.client";
+import { httpClient, NO_TIMEOUT } from "@/services/http.client";
 import { useAuthStore } from "@/stores/auth.store";
 import { getHomePath } from "@/routes/home-path";
 import { t } from "@/locales/es";
@@ -15,10 +15,14 @@ export function useChangePassword() {
     // actual, errores por campo) los muestra el interceptor.
     mutationFn: (form: ChangePasswordForm) =>
       httpClient
-        .post<void>("/users/change-password", {
-          currentPassword: form.currentPassword,
-          newPassword: form.newPassword,
-        } satisfies ChangePasswordRequestDTO)
+        .post<void>(
+          "/users/change-password",
+          {
+            currentPassword: form.currentPassword,
+            newPassword: form.newPassword,
+          } satisfies ChangePasswordRequestDTO,
+          NO_TIMEOUT,
+        )
         .then(() => undefined),
     retry: false,
     successMessage: t.auth.changePassword.success,

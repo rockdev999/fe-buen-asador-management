@@ -1,0 +1,14 @@
+stateDiagram-v2
+  [*] --> PENDING: Se crea el pedido
+  PENDING --> CONFIRMED: Aprobar
+  CONFIRMED --> PREPARING: Preparar
+  PREPARING --> READY: Listo
+  READY --> DELIVERED: Entregado (solo delivery)
+  READY --> PAID: Cobrar (Cajero)
+  DELIVERED --> PAID: Cobrar (Cajero)
+  PENDING --> CANCELLED: Rechazar o vencer
+  CONFIRMED --> CANCELLED: Cancelar con motivo
+  PREPARING --> CANCELLED: Cancelar con motivo
+  READY --> CANCELLED: Cancelar con motivo
+  PAID --> [*]
+  CANCELLED --> [*]

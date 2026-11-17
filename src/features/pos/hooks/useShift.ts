@@ -12,7 +12,7 @@ import {
   ShiftOpenDTO,
   ShiftSummaryDTO,
 } from "../dto/shift.dto";
-import { httpClient } from "@/services/http.client";
+import { httpClient, NO_TIMEOUT } from "@/services/http.client";
 import {
   mapShiftDTOToModel,
   mapShiftSummaryDTOToModel,
@@ -49,7 +49,7 @@ export const useOpenShiftHandler = () => {
   return usePostHandler({
     mutationFn: (dto: ShiftOpenDTO) =>
       httpClient
-        .post<ApiResponse<ShiftDTO>>("/shifts/open", dto)
+        .post<ApiResponse<ShiftDTO>>("/shifts/open", dto, NO_TIMEOUT)
         .then((r) => r.data.data!),
     onSuccessCallback: (shift) => {
       queryClient.setQueryData<ShiftDTO | null>(QUERY_KEYS.SHIFT_ACTIVE, shift);
@@ -121,7 +121,11 @@ export const useCloseShift = () => {
   return usePostHandler({
     mutationFn: (dto: ShiftCloseDTO) =>
       httpClient
-        .post<ApiResponse<ShiftCloseResponseDTO>>("/shifts/close", dto)
+        .post<ApiResponse<ShiftCloseResponseDTO>>(
+          "/shifts/close",
+          dto,
+          NO_TIMEOUT,
+        )
         .then((r) => {
           const { receipt, ...shift } = r.data.data!;
           return { shift: mapShiftDTOToModel(shift), receipt };

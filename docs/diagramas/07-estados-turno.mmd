@@ -1,0 +1,13 @@
+stateDiagram-v2
+  [*] --> OPEN: El cajero abre el turno con el monto inicial
+  OPEN --> OPEN: Ventas, egresos y pagos de nómina
+  OPEN --> PENDING: El cajero declara los montos (cierre ciego)
+  PENDING --> CLOSED: El administrador aprueba
+  CLOSED --> [*]
+  note right of OPEN
+    Solo un turno OPEN por sucursal.
+    No se puede cerrar con pedidos pendientes.
+  end note
+  note right of PENDING
+    Comentario obligatorio si hay diferencia.
+  end note

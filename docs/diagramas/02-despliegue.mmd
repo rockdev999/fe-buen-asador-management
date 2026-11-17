@@ -1,0 +1,19 @@
+flowchart LR
+  subgraph Cliente["Equipo del usuario"]
+    Browser["Navegador web<br/>SPA React + Service Worker"]
+    Printer["Impresora térmica<br/>80 mm"]
+  end
+  subgraph Servidor["Servidor"]
+    Static["Servidor web<br/>archivos estáticos (dist/)"]
+    Nest["API NestJS<br/>REST + SSE"]
+    DB[("PostgreSQL 16")]
+  end
+  WA["WhatsApp<br/>(clientes)"]
+  Mail["Servicio de correo"]
+
+  Browser -->|"HTTPS: descarga la app"| Static
+  Browser -->|"HTTPS: /api (REST + SSE)"| Nest
+  Browser -->|"USB / red"| Printer
+  Nest --> DB
+  WA <-->|"Bot de pedidos"| Nest
+  Nest -->|"Contraseñas temporales"| Mail

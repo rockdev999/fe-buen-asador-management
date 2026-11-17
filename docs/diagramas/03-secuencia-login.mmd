@@ -1,0 +1,20 @@
+sequenceDiagram
+  actor U as Usuario
+  participant FE as Frontend
+  participant API as Backend
+  U->>FE: Usuario o correo y contraseña
+  FE->>API: POST /auth/login
+  API-->>FE: tempToken + sucursales con su rol
+  alt Gerente en todas sus sucursales
+    FE->>API: POST /auth/select-location (locationId: null)
+  else Debe elegir sucursal
+    U->>FE: Selecciona la sucursal
+    FE->>API: POST /auth/select-location (locationId)
+  end
+  API-->>FE: accessToken, expiresIn, refreshToken y usuario
+  FE->>FE: Guarda la sesión (useAuthStore) y limpia el caché
+  alt mustChangePassword = true
+    FE-->>U: Redirige a /change-password
+  else
+    FE-->>U: Redirige al inicio del rol (/pos o /dashboard)
+  end

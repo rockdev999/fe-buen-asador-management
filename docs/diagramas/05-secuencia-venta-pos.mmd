@@ -1,0 +1,25 @@
+sequenceDiagram
+  actor C as Cajero
+  participant POS as POS (Pos.tsx)
+  participant Cart as useCartStore
+  participant API as Backend
+  participant P as Impresora
+  C->>POS: Agrega productos y modificadores
+  POS->>Cart: addItem / updateItem
+  C->>POS: Revisar pedido
+  POS-->>C: ReviewOrderModal (resumen y datos del cliente)
+  C->>POS: Confirmar
+  POS->>API: POST /orders
+  API-->>POS: Pedido creado
+  POS-->>C: PaymentModal (método, descuento, cambio)
+  C->>POS: Confirmar pago
+  POS->>API: POST /sales
+  alt Venta registrada
+    API-->>POS: Venta con código de ticket
+    POS->>P: Imprime el ticket de 80 mm
+    POS->>Cart: clearCart()
+    POS-->>C: OrderSuccessModal
+  else Error de negocio (p. ej. INSUFFICIENT_STOCK)
+    API-->>POS: 4xx con errorCode
+    POS-->>C: Aviso con el mensaje en español
+  end

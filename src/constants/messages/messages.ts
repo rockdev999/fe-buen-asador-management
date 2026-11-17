@@ -1,9 +1,18 @@
 export const MESSAGES = {
   ERROR: {
     // Network
-    OFFLINE: "Sin conexión al servidor. Verifica tu red.",
+    OFFLINE: "Sin conexión a internet. Verifica tu red.",
+    SERVER_UNREACHABLE:
+      "No se pudo conectar con el servidor. Intenta de nuevo en unos momentos.",
+    SERVER_UNAVAILABLE:
+      "El servidor no está disponible en este momento. Intenta en unos minutos.",
     TIMEOUT: "La solicitud tardó demasiado. Intenta de nuevo.",
+    TIMEOUT_MUTATION:
+      "El servidor tardó demasiado en responder. La operación pudo haberse completado: verifica antes de volver a intentarlo.",
     CANCELED: "La solicitud fue cancelada.",
+
+    // Validación
+    VALIDATION: "Revisa los datos ingresados",
 
     // Auth
     SESSION_EXPIRED: "Tu sesión expiró. Inicia sesión nuevamente.",
@@ -16,6 +25,9 @@ export const MESSAGES = {
     CONFLICT: "Ya existe un registro con esos datos.",
     UNPROCESSABLE: "Los datos enviados no son válidos.",
     SERVER_ERROR: "Error interno del servidor. Intenta más tarde.",
+    PAYLOAD_TOO_LARGE: "El archivo o los datos enviados son demasiado grandes.",
+    TOO_MANY_REQUESTS:
+      "Demasiadas solicitudes. Espera unos segundos e intenta de nuevo.",
 
     // Generic
     GENERIC: "Ocurrió un error inesperado. Intenta de nuevo.",

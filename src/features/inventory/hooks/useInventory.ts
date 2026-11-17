@@ -21,7 +21,10 @@ import {
   StockProductDTO,
 } from "../dto/inventory.dto";
 
-export const useStockHandler = (locationId: string, enabled: boolean = true) => {
+export const useStockHandler = (
+  locationId: string,
+  enabled: boolean = true,
+) => {
   const handler = useGetHandler({
     queryKey: QUERY_KEYS.STOCK(locationId),
     queryFn: () =>
@@ -104,12 +107,7 @@ export const useKardexHandler = (
         .then((r) => r.data.data!),
     enabled: !!productId && (options?.enabled ?? true),
     staleTime: 0, // no caching, always fetch fresh movements
-    // 404 = el producto/insumo no existe; reintentar solo duplicaría el error.
-    // Ojo: el error.interceptor rechaza con { message, fields, status, errorCode },
-    // no con ApiErrorResponse, así que el código HTTP viene en `status`.
-    retry: (failureCount, error) =>
-      (error as unknown as { status?: number } | null)?.status !== 404 &&
-      failureCount < 1,
+    // Reintentos: política global (shouldRetryQuery); un 404 no se repite.
   });
 
   const data = useMemo(
@@ -149,7 +147,10 @@ export const useResolveStockAlert = () => {
   const handler = usePutHandler({
     mutationFn: (alertId: string) =>
       httpClient
-        .put<ApiResponse<StockAlertDTO>>(`/inventory/alerts/${alertId}/resolve`, {})
+        .put<ApiResponse<StockAlertDTO>>(
+          `/inventory/alerts/${alertId}/resolve`,
+          {},
+        )
         .then((r) => r.data.data!),
     invalidateKeys: [QUERY_KEYS.STOCK_ALERTS],
     successMessage: "Alerta resuelta exitosamente",

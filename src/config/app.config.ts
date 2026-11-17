@@ -6,7 +6,6 @@ export const appConfig = {
   timezone: "America/La_Paz",
   http: {
     timeout: 10_000,
-    maxRetries: 2,
   },
   pagination: {
     defaultPage: 1,

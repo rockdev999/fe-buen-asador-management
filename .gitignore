@@ -28,5 +28,6 @@ tsconfig.tsbuildinfo
 Pasted code.json
 tsconfig.tsbuildinfo
 
-# Reportes de cobertura
+# Reportes de cobertura y del bundle
 coverage
+stats.html

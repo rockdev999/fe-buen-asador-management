@@ -3,7 +3,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { QUERY_KEYS } from "@/constants";
 import { CredentialsEmailStatusEnum } from "@/constants/enums/user.enum";
 import { usePostHandler } from "@/hooks/api.handlers";
-import { httpClient } from "@/services/http.client";
+import { httpClient, NO_TIMEOUT } from "@/services/http.client";
 import { ApiResponse } from "@/types/api.types";
 import { ResetPasswordResponseDTO, UserLocationsDTO } from "../dto/user.dto";
 
@@ -94,9 +94,11 @@ export function usePasswordReset() {
   const mutation = usePostHandler({
     mutationFn: (userId: string) =>
       httpClient
-        .post<
-          ApiResponse<ResetPasswordResponseDTO>
-        >(`/users/${userId}/reset-password`)
+        .post<ApiResponse<ResetPasswordResponseDTO>>(
+          `/users/${userId}/reset-password`,
+          undefined,
+          NO_TIMEOUT,
+        )
         .then((r) => r.data.data!),
     retry: false,
     successMessage:

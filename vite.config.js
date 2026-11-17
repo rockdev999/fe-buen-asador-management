@@ -1,9 +1,21 @@
 /// <reference types="vitest/config" />
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
+import { visualizer } from "rollup-plugin-visualizer";
 import path from "path";
-export default defineConfig({
-    plugins: [react()],
+export default defineConfig(({ mode }) => ({
+    plugins: [
+        react(),
+        // `npm run analyze` genera stats.html con el treemap del bundle.
+        mode === "analyze" &&
+            visualizer({
+                filename: "stats.html",
+                template: "treemap",
+                gzipSize: true,
+                brotliSize: true,
+                open: true,
+            }),
+    ],
     resolve: {
         alias: {
             "@": path.resolve(__dirname, "./src"),
@@ -14,6 +26,7 @@ export default defineConfig({
         include: ["src/**/*.test.ts"],
         coverage: {
             provider: "v8",
+            reporter: ["text", "html", "json-summary"],
             include: [
                 "src/lib/money.ts",
                 "src/components/shared/Interactives/money-input.utils.ts",
@@ -25,4 +38,4 @@ export default defineConfig({
             ],
         },
     },
-});
+}));

@@ -1,0 +1,26 @@
+sequenceDiagram
+  actor C as Cajero
+  participant POS as POS
+  participant Q as Cola (IndexedDB)
+  participant Sync as useOfflineSync
+  participant API as Backend
+  Note over POS: Se cae la conexión (markOffline)
+  C->>POS: Venta para llevar o presencial
+  POS->>POS: getOfflineIneligibility() y buildOfflineSale()
+  POS->>Q: Guarda la venta (UUID de idempotencia)
+  POS-->>C: Ticket con código -OFF-
+  Note over Sync: Vuelve la conexión o pasan 20 s
+  Sync->>Sync: navigator.locks (una sincronización a la vez)
+  Sync->>Q: Lee ventas PENDING del usuario
+  loop Lotes de 50 ventas (600 ms entre lotes)
+    Sync->>API: POST /sales/offline-sync
+    API-->>Sync: Resultado por venta
+    alt CREATED o DUPLICATE
+      Sync->>Q: Elimina la venta
+    else REJECTED reintentable
+      Sync->>Q: Suma un intento
+    else REJECTED no reintentable
+      Sync->>Q: Marca CONFLICT
+    end
+  end
+  Sync->>POS: Invalida ventas, turnos e inventario

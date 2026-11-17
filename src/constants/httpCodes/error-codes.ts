@@ -6,6 +6,7 @@ export const HTTP_STATUS = {
   NOT_FOUND: 404,
   CONFLICT: 409,
   UNPROCESSABLE_ENTITY: 422,
+  TOO_MANY_REQUESTS: 429,
   INTERNAL_SERVER_ERROR: 500,
 } as const;
 
@@ -16,6 +17,8 @@ export const API_ERROR_CODES = {
   FORBIDDEN: "FORBIDDEN",
   /** Access token vencido: renovar con el refresh token y reintentar. */
   TOKEN_EXPIRED: "TOKEN_EXPIRED",
+  /** Solo hay token temporal: falta elegir sucursal. */
+  TOKEN_TEMPORARY: "TOKEN_TEMPORARY",
   /** Access token inválido (firma, formato): cerrar sesión. */
   TOKEN_INVALID: "TOKEN_INVALID",
   // Errores de POST /auth/refresh: todos implican cerrar sesión.
@@ -28,6 +31,8 @@ export const API_ERROR_CODES = {
   MUST_CHANGE_PASSWORD: "MUST_CHANGE_PASSWORD",
 
   // Recursos
+  /** 400 con detalle por campo en `errors`. */
+  VALIDATION_ERROR: "VALIDATION_ERROR",
   NOT_FOUND: "NOT_FOUND",
   CONFLICT: "CONFLICT",
   BAD_REQUEST: "BAD_REQUEST",
@@ -35,6 +40,7 @@ export const API_ERROR_CODES = {
 
   // Servidor
   INTERNAL_SERVER_ERROR: "INTERNAL_SERVER_ERROR",
+  TOO_MANY_REQUESTS: "TOO_MANY_REQUESTS",
 } as const;
 
 export type ApiErrorCode =

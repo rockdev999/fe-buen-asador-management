@@ -1,0 +1,21 @@
+sequenceDiagram
+  participant C as Componente
+  participant I as Interceptor Axios
+  participant S as refreshSession
+  participant API as Backend
+  C->>I: Petición
+  I->>API: GET /recurso (token vencido)
+  API-->>I: 401 TOKEN_EXPIRED
+  I->>S: refreshSession()
+  Note over S: Una sola promesa compartida<br/>por todas las peticiones que fallaron
+  S->>API: POST /auth/refresh (refreshToken)
+  alt Refresh válido
+    API-->>S: accessToken y refreshToken nuevos
+    S-->>I: Token nuevo
+    I->>API: Repite GET /recurso
+    API-->>I: 200 OK
+    I-->>C: Datos (el usuario no nota nada)
+  else Refresh rechazado (inválido, vencido, revocado o reutilizado)
+    API-->>S: 401 REFRESH_TOKEN_*
+    S-->>C: Cierra la sesión y redirige a /login
+  end

@@ -5,7 +5,7 @@ import {
   usePaginatedGetHandler,
   usePostHandler,
 } from "@/hooks/api.handlers";
-import { httpClient } from "@/services/http.client";
+import { httpClient, NO_TIMEOUT } from "@/services/http.client";
 import { ApiErrorResponse, ApiResponse } from "@/types/api.types";
 import { useMemo } from "react";
 import {
@@ -32,9 +32,9 @@ export function usePayrollPaySheet(locationId: string) {
     queryKey: QUERY_KEYS.PAYROLL_PAY_SHEET(locationId),
     queryFn: () =>
       httpClient
-        .get<
-          ApiResponse<PaySheetItemDTO[]>
-        >(`/finances/payroll/${locationId}/pay-sheet`)
+        .get<ApiResponse<PaySheetItemDTO[]>>(
+          `/finances/payroll/${locationId}/pay-sheet`,
+        )
         .then((r) => r.data.data!),
     enabled: !!locationId,
     staleTime: 0,
@@ -163,7 +163,11 @@ export const useCreatePayroll = (options?: PayrollMutationOptions) => {
   const handler = usePostHandler({
     mutationFn: (dto: CreatePayrollDTO) =>
       httpClient
-        .post<ApiResponse<PayrollPaymentDTO>>("/finances/payroll", dto)
+        .post<ApiResponse<PayrollPaymentDTO>>(
+          "/finances/payroll",
+          dto,
+          NO_TIMEOUT,
+        )
         .then((r) => r.data.data!),
     invalidateKeys: [],
     successMessage: "Pago de nómina registrado exitosamente",
@@ -180,9 +184,11 @@ export const useCreatePayrollBatch = (options?: PayrollMutationOptions) => {
   const handler = usePostHandler({
     mutationFn: (dto: CreatePayrollBatchDTO) =>
       httpClient
-        .post<
-          ApiResponse<PayrollPaymentDTO[]>
-        >("/finances/payroll/batch", dto)
+        .post<ApiResponse<PayrollPaymentDTO[]>>(
+          "/finances/payroll/batch",
+          dto,
+          NO_TIMEOUT,
+        )
         .then((r) => r.data.data!),
     invalidateKeys: [],
     successMessage: "Pagos de nómina registrados exitosamente",
@@ -215,9 +221,9 @@ export function usePayrollReport({
     queryKey: QUERY_KEYS.PAYROLL_REPORT(params),
     queryFn: () =>
       httpClient
-        .get<
-          ApiResponse<PayrollReportDTO>
-        >("/finances/reports/payroll", { params })
+        .get<ApiResponse<PayrollReportDTO>>("/finances/reports/payroll", {
+          params,
+        })
         .then((r) => r.data.data!),
     enabled: !!dateFrom && !!dateTo,
     staleTime: 0,
