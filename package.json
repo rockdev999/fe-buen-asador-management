@@ -12,6 +12,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "e2e": "playwright test",
+    "e2e:ui": "playwright test --ui",
+    "e2e:report": "playwright show-report e2e-results/report",
     "analyze": "vite build --mode analyze"
   },
   "dependencies": {
@@ -53,6 +56,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.4",
+    "@playwright/test": "^1.65.1",
     "@types/node": "^24.12.0",
     "@types/react": "^19.2.14",
     "@types/react-datepicker": "^6.2.0",
@@ -60,6 +64,7 @@
     "@vitejs/plugin-react": "^6.0.1",
     "@vitest/coverage-v8": "^5.1.0",
     "autoprefixer": "^10.4.27",
+    "dotenv": "^18.0.10",
     "eslint": "^9.39.4",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.2",
