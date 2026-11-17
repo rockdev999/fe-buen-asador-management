@@ -94,3 +94,38 @@ Cada celda es un caso: CP-PER-01 a CP-PER-24.
 | CP-POS-09 | Venta presencial en efectivo con vuelto | "¡Pago registrado!"; "Nuevo pedido" vacía el carrito |
 | CP-POS-10 | Venta para llevar con tarjeta | Sin campo de monto; "¡Pago registrado!" con el nombre del cliente |
 | CP-POS-11 | Producto sin stock | El backend responde 409; aviso de stock; no se abre el cobro |
+
+### RF-04 · Pedidos por WhatsApp — transición de estados
+
+El cliente se simula enviando al webhook (`POST /api/whatsapp/webhook`) los
+mensajes que mandaría Meta, firmados con HMAC-SHA256. El secreto y el
+`phone_number_id` se leen del `.env` del backend (`E2E_BACKEND_ENV`, por
+defecto `../be-buen-asador-management/.env`). Sin `WHATSAPP_TOKEN`, el backend
+no envía nada a WhatsApp: solo registra en el log lo que habría enviado.
+
+```
+PENDING ──Aprobar──▶ CONFIRMED ──Preparar──▶ PREPARING ──Listo──▶ READY ──Cobrar──▶ PAID
+   │                                                                │
+   └──Rechazar (motivo)──▶ CANCELLED        (delivery) READY ──Entregado──▶ DELIVERED ──Cobrar──▶ PAID
+```
+
+| ID | Transición / caso | Resultado esperado |
+|---|---|---|
+| CP-WA-01 | Cliente confirma en el bot → PENDING | Aparece en "Pendientes" en tiempo real (SSE), con código corto, "Aprobar" y "Rechazar" |
+| CP-WA-02 | PENDING → CONFIRMED → PREPARING → READY → PAID (para llevar) | Cambia de pestaña en cada paso; sin paso "Entregado"; al cobrar sale de la bandeja |
+| CP-WA-03 | READY → DELIVERED (delivery) | Ofrece "Entregado"; DELIVERED sigue en "Listos" y se puede cobrar |
+| CP-WA-04 | PENDING → CANCELLED | Exige motivo (vacío o solo espacios no); sale de todas las pestañas |
+| CP-WA-05 | Webhook con firma inválida o sin firma | El backend responde 401 (seguridad) |
+
+## Integración continua
+
+[`.github/workflows/ci.yml`](../.github/workflows/ci.yml):
+
+- **En cada push o PR** a `develop`, `qa` y `main`: lint, pruebas unitarias con
+  cobertura (resumen en la pestaña del run y reporte como artefacto) y build
+  de producción.
+- **E2E, manual** (*Actions → CI → Run workflow → e2e*): necesita un backend
+  accesible desde GitHub y estos *secrets*: `E2E_API_URL`, las credenciales
+  `E2E_*` de `.env.e2e.example` y, para RF-04, `E2E_WHATSAPP_APP_SECRET` y
+  `E2E_WHATSAPP_PHONE_NUMBER_ID`. El reporte (capturas, videos y trazas) queda
+  como artefacto `e2e-report`.

@@ -13,6 +13,8 @@ import dotenv from "dotenv";
 import path from "path";
 
 dotenv.config({ path: path.resolve(import.meta.dirname, ".env.e2e"), quiet: true });
+// VITE_API_URL: la misma API que usa la app (para preparar datos por API).
+dotenv.config({ path: path.resolve(import.meta.dirname, ".env"), quiet: true });
 
 const BASE_URL = process.env.E2E_BASE_URL ?? "http://localhost:5173";
 
