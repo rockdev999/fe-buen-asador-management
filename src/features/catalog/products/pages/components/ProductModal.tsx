@@ -33,13 +33,14 @@ import { FormSwitch } from "@/components/shared/Basics/FormSwitch";
 import { LocationSimple } from "@/features/locations/models/location.model";
 import { ImageUploader } from "@/components/shared/Interactives/ImageUploader";
 import { AsyncDropdown } from "@/components/shared/Interactives/AsyncDropdown";
-import { MultiSelectDropdown } from "@/components/shared/Interactives/MultiSelectDropdown";
 import { ProductModalSkeleton } from "./ProductModalSkeleton";
 import { ApiErrorResponse } from "@/types/api.types";
 import { ConfirmDeactivateModal } from "@/components/shared/Overlay/ConfirmDeactivateModal";
-import { formatMoney } from "@/lib/utils";
-import { Switch } from "@/components/shared/Basics/Switch";
 import { getFieldError } from "@/lib/zodToFormik";
+import {
+  LocationPriceList,
+  LocationPriceValue,
+} from "@/components/shared/Interactives/LocationPriceList";
 
 interface ProductModalProps {
   productId?: UUID | null;
@@ -147,36 +148,22 @@ export const ProductModal = ({
     },
   });
 
-  // Una fila de precio por sucursal elegida: al quitar una sucursal se quita
-  // su fila; las que siguen elegidas conservan lo que ya se escribió.
-  const handleLocationsChange = (ids: string[]) => {
-    const current = formValues.locationPrices ?? [];
+  // Sucursales y precios se editan juntos en LocationPriceList: siempre hay
+  // una entrada de precio por sucursal elegida.
+  const handleLocationPricesChange = (
+    ids: string[],
+    prices: LocationPriceValue[],
+  ) => {
     setFieldValue("locationIds", ids, true);
-    setFieldValue(
-      "locationPrices",
-      ids.map(
-        (locationId) =>
-          current.find((lp) => lp.locationId === locationId) ?? {
-            locationId,
-            price: null,
-          },
-      ),
-      true,
-    );
+    setFieldValue("locationPrices", prices, true);
     setFieldTouched("locationIds", true, false);
   };
 
-  // Igual que en modificadores: el switch "Precio propio" decide si la
-  // sucursal usa el general (null) o su propio precio. Al activarlo se parte
-  // del precio general para no dejar un valor vacío por accidente.
-  const setLocationPrice = (locationId: string, price: number | null) => {
-    setFieldValue(
-      "locationPrices",
-      (formValues.locationPrices ?? []).map((lp) =>
-        lp.locationId === locationId ? { ...lp, price } : lp,
-      ),
-      true,
+  const getLocationPriceError = (locationId: string) => {
+    const index = (formValues.locationPrices ?? []).findIndex(
+      (lp) => lp.locationId === locationId,
     );
+    return getFieldError(formErrors, `locationPrices.${index}.price`);
   };
 
   const handleDropdownChange = async (field: "categoryId", id: string) => {
@@ -325,94 +312,32 @@ export const ProductModal = ({
                 )}
               </FormField>
 
-              <FormField>
-                <Label required>Sucursales</Label>
-                <MultiSelectDropdown
-                  options={
-                    locations?.map((location) => ({
-                      value: location.id,
-                      label: location.name,
-                    })) ?? []
-                  }
-                  value={formValues.locationIds ?? []}
-                  onChange={handleLocationsChange}
-                  placeholder="Seleccionar sucursales..."
-                  emptyText="No hay sucursales disponibles"
-                  error={formErrors.locationIds as string}
-                  touched={formTouched.locationIds as boolean}
-                />
-                {!hasLocations && (
-                  <EmptyFieldHint text="Primero crea una sucursal para poder registrar productos." />
-                )}
-                {formErrors.locationIds && (
-                  <ErrorMessage
-                    touched={!!formTouched.locationIds}
-                    error={formErrors.locationIds as string}
-                  />
-                )}
-              </FormField>
             </div>
 
-            {(formValues.locationPrices?.length ?? 0) > 0 && (
-              <div className="mt-3 rounded-2xl border border-surface bg-surface/20 p-3">
-                <p className="text-[12px] font-semibold text-inkblack">
-                  Precio por sucursal
-                </p>
-                <p className="mt-0.5 mb-2 text-[11px] text-muted-foreground">
-                  Activa &quot;Precio propio&quot; para cobrar otro monto en esa
-                  sucursal. Desactivado usa el precio general.
-                </p>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  {formValues.locationPrices!.map((lp, index) => {
-                    const name =
-                      locations?.find((loc) => loc.id === lp.locationId)
-                        ?.name ?? "sucursal";
-                    const hasOwn = lp.price !== null;
-                    const rowError = getFieldError(
-                      formErrors,
-                      `locationPrices.${index}.price`,
-                    );
-                    return (
-                      <div key={lp.locationId} className="flex flex-col gap-1">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-[12px] text-inkblack">
-                            Precio en {name}
-                          </span>
-                          <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                            Precio propio
-                            <Switch
-                              checked={hasOwn}
-                              onChange={(checked) =>
-                                setLocationPrice(
-                                  lp.locationId,
-                                  checked ? (formValues.price ?? 0) : null,
-                                )
-                              }
-                              ariaLabel={`Precio propio en ${name}`}
-                            />
-                          </label>
-                        </div>
-                        <MoneyInput
-                          id={`locationPrice-${lp.locationId}`}
-                          disabled={!hasOwn}
-                          defaultValue={lp.price ?? 0}
-                          onChange={(value) =>
-                            setLocationPrice(lp.locationId, value)
-                          }
-                          placeholder={
-                            hasOwn
-                              ? "Ej: 25.00"
-                              : `Precio general: ${formatMoney(formValues.price || 0)}`
-                          }
-                          error={rowError}
-                          className="h-9 rounded-xl bg-white text-[13px] disabled:opacity-60"
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
+            <FormField className="mt-3">
+              <Label required>Sucursales y precios</Label>
+              <p className="-mt-0.5 mb-1 text-[11px] text-muted-foreground">
+                Marca dónde se ofrece y cambia el monto si esa sucursal cobra
+                distinto. Si queda igual al general, seguirá al general.
+              </p>
+              {hasLocations ? (
+                <LocationPriceList
+                  locations={locations ?? []}
+                  selectedIds={formValues.locationIds ?? []}
+                  prices={formValues.locationPrices ?? []}
+                  basePrice={formValues.price}
+                  onChange={handleLocationPricesChange}
+                  getPriceError={getLocationPriceError}
+                  error={
+                    formTouched.locationIds
+                      ? (formErrors.locationIds as string | undefined)
+                      : undefined
+                  }
+                />
+              ) : (
+                <EmptyFieldHint text="Primero crea una sucursal para poder registrar productos." />
+              )}
+            </FormField>
           </FormSection>
 
           {/* Imagen y orden */}

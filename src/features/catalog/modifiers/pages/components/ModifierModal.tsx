@@ -19,16 +19,16 @@ import { ModifierFormConfig } from "../../forms/modifier.form-config";
 import { MoneyInput } from "@/components/shared/Interactives/MoneyInput";
 import { FormField } from "@/components/shared/Basics/FormField";
 import { Label } from "@/components/shared/Basics/Label";
-import { MultiSelectDropdown } from "@/components/shared/Interactives/MultiSelectDropdown";
 import { useGetLocationSimple } from "@/features/locations/hooks/useLocation";
 import { ModifierModalSkeleton } from "./ModifierModalSkeleton";
 import { FormSwitch } from "@/components/shared/Basics/FormSwitch";
-import { ErrorMessage } from "@/components/shared/Basics/ErrorMessage";
 import { ApiErrorResponse } from "@/types/api.types";
 import { ConfirmDeactivateModal } from "@/components/shared/Overlay/ConfirmDeactivateModal";
-import { Switch } from "@/components/shared/Basics/Switch";
-import { formatMoney } from "@/lib/utils";
 import { getFieldError } from "@/lib/zodToFormik";
+import {
+  LocationPriceList,
+  LocationPriceValue,
+} from "@/components/shared/Interactives/LocationPriceList";
 
 interface ModifierModalProps {
   modifier: Modifier | null;
@@ -117,38 +117,31 @@ export const ModifierModal = ({
     },
   });
 
-  // Una fila por sucursal elegida: al quitar una sucursal se quita su fila; las
-  // que siguen elegidas conservan su precio.
-  const handleLocationsChange = (ids: string[]) => {
-    const current = formValues.locationPrices ?? [];
+  // Sucursales y precios se editan juntos en LocationPriceList, que trabaja
+  // con { locationId, price }; aquí el campo se llama extraPrice. El 0
+  // ("gratis") es un precio propio válido; null = usa el general.
+  const listPrices: LocationPriceValue[] = (formValues.locationPrices ?? []).map(
+    (lp) => ({ locationId: lp.locationId, price: lp.extraPrice }),
+  );
+
+  const handleLocationPricesChange = (
+    ids: string[],
+    prices: LocationPriceValue[],
+  ) => {
     formSetFieldValue("locationIds", ids, true);
     formSetFieldValue(
       "locationPrices",
-      ids.map(
-        (locationId) =>
-          current.find((lp) => lp.locationId === locationId) ?? {
-            locationId,
-            extraPrice: null,
-          },
-      ),
+      prices.map((p) => ({ locationId: p.locationId, extraPrice: p.price })),
       true,
     );
     formSetFieldTouched("locationIds", true, false);
   };
 
-  // El 0 ("gratis") no es lo mismo que vacío ("usa el general"): el check
-  // "Precio propio" decide. Al marcarlo se parte del precio general.
-  const setLocationExtraPrice = (
-    locationId: string,
-    extraPrice: number | null,
-  ) => {
-    formSetFieldValue(
-      "locationPrices",
-      (formValues.locationPrices ?? []).map((lp) =>
-        lp.locationId === locationId ? { ...lp, extraPrice } : lp,
-      ),
-      true,
+  const getLocationPriceError = (locationId: string) => {
+    const index = (formValues.locationPrices ?? []).findIndex(
+      (lp) => lp.locationId === locationId,
     );
+    return getFieldError(formErrors, `locationPrices.${index}.extraPrice`);
   };
 
   const handleDelete = () => {
@@ -192,33 +185,6 @@ export const ModifierModal = ({
               error={formErrors.name}
               className="h-9 rounded-xl bg-white text-[13px]"
             />
-
-            <FormField>
-              <Label required>Sucursales</Label>
-              <MultiSelectDropdown
-                options={
-                  locations?.map((location) => ({
-                    value: location.id,
-                    label: location.name,
-                  })) ?? []
-                }
-                value={formValues.locationIds ?? []}
-                onChange={handleLocationsChange}
-                placeholder="Seleccionar sucursales..."
-                emptyText="No hay sucursales disponibles"
-                error={formErrors.locationIds as string}
-                touched={formTouched.locationIds as boolean}
-              />
-              {!hasLocations && (
-                <EmptyFieldHint text="Primero crea una sucursal para poder registrar productos." />
-              )}
-              {formErrors.locationIds && (
-                <ErrorMessage
-                  touched={!!formTouched.locationIds}
-                  error={formErrors.locationIds as string}
-                />
-              )}
-            </FormField>
 
             <div className="rounded-2xl border border-surface bg-surface/20 p-3">
               <div className="mb-2 flex items-start gap-2">
@@ -275,67 +241,6 @@ export const ModifierModal = ({
                 className="h-9 rounded-xl bg-white text-[13px]"
               />
 
-              {(formValues.locationPrices?.length ?? 0) > 0 && (
-                <div className="mt-3 flex flex-col gap-2 border-t border-surface pt-3">
-                  <div>
-                    <p className="text-[12px] font-semibold text-inkblack">
-                      Precio por sucursal
-                    </p>
-                    <p className="mt-0.5 text-[11px] text-muted-foreground">
-                      Activa &quot;Precio propio&quot; para cobrar otro monto en
-                      esa sucursal (0 = gratis). Desactivado usa el precio
-                      general.
-                    </p>
-                  </div>
-                  {formValues.locationPrices!.map((lp, index) => {
-                    const name =
-                      locations?.find((loc) => loc.id === lp.locationId)
-                        ?.name ?? "sucursal";
-                    const hasOwn = lp.extraPrice !== null;
-                    const generalText = `Precio general: ${formatMoney(formValues.extraPrice || 0)}`;
-                    const rowError = getFieldError(
-                      formErrors,
-                      `locationPrices.${index}.extraPrice`,
-                    );
-                    return (
-                      <div key={lp.locationId} className="flex flex-col gap-1">
-                        <div className="flex items-center justify-between gap-2">
-                          <span className="text-[12px] text-inkblack">
-                            Precio en {name}
-                          </span>
-                          <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-                            Precio propio
-                            <Switch
-                              checked={hasOwn}
-                              onChange={(checked) =>
-                                setLocationExtraPrice(
-                                  lp.locationId,
-                                  checked ? (formValues.extraPrice ?? 0) : null,
-                                )
-                              }
-                              ariaLabel={`Precio propio en ${name}`}
-                            />
-                          </label>
-                        </div>
-                        <MoneyInput
-                          id={`locationPrice-${lp.locationId}`}
-                          disabled={!hasOwn}
-                          defaultValue={lp.extraPrice ?? 0}
-                          onChange={(value) =>
-                            setLocationExtraPrice(lp.locationId, value)
-                          }
-                          placeholder={
-                            hasOwn ? "Gratis (Bs. 0.00)" : generalText
-                          }
-                          error={rowError}
-                          className="h-9 rounded-xl bg-white text-[13px] disabled:opacity-60"
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-
               <FormSwitch
                 label="Modificador activo"
                 description="Si el modificador está inactivo, no se podrá agregar a los productos."
@@ -344,14 +249,32 @@ export const ModifierModal = ({
               />
             </div>
 
-            {/* Info */}
-            <div className="flex items-start gap-2 rounded-xl border border-blue-100 bg-blue-50/60 px-3 py-2.5">
-              <Tags size={13} className="mt-0.5 shrink-0 text-blue-500" />
-              <p className="text-[11px] leading-4 text-blue-700">
-                Este modificador estará disponible para los productos de las
-                sucursales seleccionadas.
+            <FormField>
+              <Label required>Sucursales y precios</Label>
+              <p className="-mt-0.5 mb-1 text-[11px] text-muted-foreground">
+                Marca dónde se ofrece y cambia el monto si esa sucursal cobra
+                distinto (0 = gratis). Si queda igual al general, seguirá al
+                general.
               </p>
-            </div>
+              {hasLocations ? (
+                <LocationPriceList
+                  allowZero
+                  locations={locations ?? []}
+                  selectedIds={formValues.locationIds ?? []}
+                  prices={listPrices}
+                  basePrice={formValues.extraPrice}
+                  onChange={handleLocationPricesChange}
+                  getPriceError={getLocationPriceError}
+                  error={
+                    formTouched.locationIds
+                      ? (formErrors.locationIds as string | undefined)
+                      : undefined
+                  }
+                />
+              ) : (
+                <EmptyFieldHint text="Primero crea una sucursal para poder registrar modificadores." />
+              )}
+            </FormField>
           </FormSection>
         </div>
 
