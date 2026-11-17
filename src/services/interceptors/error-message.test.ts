@@ -1,8 +1,9 @@
-import { AxiosError, AxiosHeaders, type AxiosResponse } from "axios";
+import { AxiosError, AxiosHeaders, CanceledError, type AxiosResponse } from "axios";
 import { describe, expect, it } from "vitest";
-import { MESSAGES } from "@/constants";
+import { API_ERROR_CODES, MESSAGES } from "@/constants";
 import {
   classifyError,
+  isGatewayStatus,
   isIdempotent,
   parseErrorBody,
   resolveErrorMessage,
@@ -131,5 +132,128 @@ describe("resolveErrorMessage", () => {
         message: "<html>",
       }),
     ).toBe(MESSAGES.ERROR.SERVER_UNAVAILABLE);
+  });
+});
+
+describe("classifyError · ramas adicionales", () => {
+  it("un CanceledError de axios se clasifica como cancelado (axios.isCancel)", () => {
+    expect(classifyError(new CanceledError() as unknown as AxiosError)).toBe("canceled");
+  });
+
+  it("sin código ni respuesta es error de red", () => {
+    expect(classifyError(axiosError())).toBe("network");
+  });
+
+  it("503 es servicio no disponible; 4xx es HTTP normal", () => {
+    expect(classifyError(axiosError(undefined, 503))).toBe("unavailable");
+    expect(classifyError(axiosError(undefined, 404, {}))).toBe("http");
+  });
+});
+
+describe("isGatewayStatus", () => {
+  it.each([
+    [502, true],
+    [503, true],
+    [504, true],
+    [500, false],
+    [undefined, false],
+  ])("%s → %s", (status, expected) => {
+    expect(isGatewayStatus(status)).toBe(expected);
+  });
+});
+
+describe("isIdempotent · resto de métodos", () => {
+  it.each([
+    ["head", true],
+    ["OPTIONS", true],
+    ["put", false],
+    ["patch", false],
+  ])("%s → %s", (method, expected) => {
+    expect(isIdempotent(method)).toBe(expected);
+  });
+});
+
+describe("parseErrorBody · ramas adicionales", () => {
+  it("message como arreglo: une solo los strings", () => {
+    expect(parseErrorBody({ message: ["campo a", 3, "campo b"] }).message).toBe(
+      "campo a. campo b",
+    );
+  });
+
+  it("errorCode vacío o no string se descarta", () => {
+    expect(parseErrorBody({ errorCode: "" }).errorCode).toBeUndefined();
+    expect(parseErrorBody({ errorCode: 409 }).errorCode).toBeUndefined();
+  });
+
+  it("message de otro tipo se ignora y se recorta si es string", () => {
+    expect(parseErrorBody({ message: 123 }).message).toBeUndefined();
+    expect(parseErrorBody({ message: "  hola  " }).message).toBe("hola");
+  });
+
+  it("errors con field o message no string se filtran", () => {
+    expect(
+      parseErrorBody({
+        errors: [
+          { field: 1, message: "x" },
+          { field: "a", message: 2 },
+          "texto",
+          { field: "ok", message: "bien" },
+        ],
+      }).errors,
+    ).toEqual([{ field: "ok", message: "bien" }]);
+  });
+});
+
+describe("resolveErrorMessage · ramas adicionales", () => {
+  it("cancelación", () => {
+    expect(resolveErrorMessage({ kind: "canceled" })).toBe(MESSAGES.ERROR.CANCELED);
+  });
+
+  it("timeout sin método se trata como lectura", () => {
+    expect(resolveErrorMessage({ kind: "timeout" })).toBe(MESSAGES.ERROR.TIMEOUT);
+  });
+
+  it("network sin browserOnline asume que hay internet (valor por defecto)", () => {
+    expect(resolveErrorMessage({ kind: "network" })).toBe(
+      MESSAGES.ERROR.SERVER_UNREACHABLE,
+    );
+  });
+
+  it("VALIDATION_ERROR sin message usa el texto de validación", () => {
+    expect(
+      resolveErrorMessage({
+        kind: "http",
+        status: 400,
+        errorCode: API_ERROR_CODES.VALIDATION_ERROR,
+      }),
+    ).toBe(MESSAGES.ERROR.VALIDATION);
+  });
+
+  it("errorCode desconocido cae al texto por status", () => {
+    expect(
+      resolveErrorMessage({ kind: "http", status: 404, errorCode: "ALGO_NUEVO" }),
+    ).toBe(MESSAGES.ERROR.NOT_FOUND);
+  });
+
+  it("sin status ni mensaje usa el texto genérico", () => {
+    expect(resolveErrorMessage({ kind: "http" })).toBe(MESSAGES.ERROR.GENERIC);
+  });
+
+  // Cobertura de cada rama del switch de statusFallback
+  it.each([
+    [400, MESSAGES.ERROR.BAD_REQUEST],
+    [401, MESSAGES.ERROR.SESSION_EXPIRED],
+    [403, MESSAGES.ERROR.UNAUTHORIZED],
+    [404, MESSAGES.ERROR.NOT_FOUND],
+    [409, MESSAGES.ERROR.CONFLICT],
+    [413, MESSAGES.ERROR.PAYLOAD_TOO_LARGE],
+    [422, MESSAGES.ERROR.UNPROCESSABLE],
+    [429, MESSAGES.ERROR.TOO_MANY_REQUESTS],
+    [503, MESSAGES.ERROR.SERVER_UNAVAILABLE],
+    [500, MESSAGES.ERROR.SERVER_ERROR],
+    [501, MESSAGES.ERROR.SERVER_ERROR],
+    [418, MESSAGES.ERROR.GENERIC],
+  ])("status %i sin cuerpo → texto por status", (status, expected) => {
+    expect(resolveErrorMessage({ kind: "http", status })).toBe(expected);
   });
 });

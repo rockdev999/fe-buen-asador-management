@@ -9,13 +9,13 @@ export default defineConfig(({ mode }) => ({
     react(),
     // `npm run analyze` genera stats.html con el treemap del bundle.
     mode === "analyze" &&
-      visualizer({
-        filename: "stats.html",
-        template: "treemap",
-        gzipSize: true,
-        brotliSize: true,
-        open: true,
-      }),
+    visualizer({
+      filename: "stats.html",
+      template: "treemap",
+      gzipSize: true,
+      brotliSize: true,
+      open: true,
+    }),
   ],
   resolve: {
     alias: {
@@ -25,6 +25,7 @@ export default defineConfig(({ mode }) => ({
   test: {
     environment: "node",
     include: ["src/**/*.test.ts"],
+    env: { TZ: "America/La_Paz" },
     coverage: {
       provider: "v8",
       reporter: ["text", "html", "json-summary"],
@@ -36,6 +37,12 @@ export default defineConfig(({ mode }) => ({
         "src/features/whatsapp/utils/order-actions.ts",
         "src/features/catalog/products/utils/product-availability.ts",
         "src/features/finances/reports/utils/report-period.ts",
+        "src/services/interceptors/error-message.ts",
+        "src/utils/validation-errors.ts",
+        "src/features/pos/mappers/order.mapper.ts",
+        "src/features/whatsapp/stores/whatsapp-orders.store.ts",
+        "src/features/whatsapp/mappers/whatsapp-order.mapper.ts",
+        "src/lib/formatters.ts",
       ],
     },
   },

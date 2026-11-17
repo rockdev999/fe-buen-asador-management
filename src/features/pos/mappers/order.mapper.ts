@@ -142,7 +142,7 @@ export const mapCartToCreateOrderDTO = (
       type: orderType,
       channel: orderChannel,
       initialStatus: initialStatus,
-      customerName: customerName || null,
+      customerName,
       items: flatItems,
     };
   }
