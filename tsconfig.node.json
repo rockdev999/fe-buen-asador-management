@@ -10,6 +10,10 @@
     "verbatimModuleSyntax": true,
     "moduleDetection": "force",
     "composite": true,
+    // Proyecto referenciado: TS no permite noEmit. Solo se emiten .d.ts y fuera
+    // de la raíz, para no dejar un vite.config.js que Vite cargaría antes que el .ts.
+    "emitDeclarationOnly": true,
+    "outDir": "./node_modules/.tmp/tsconfig.node",
     "allowSyntheticDefaultImports": true,
     "strict": true,
     "noUnusedLocals": true,

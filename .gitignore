@@ -31,3 +31,7 @@ tsconfig.tsbuildinfo
 # Reportes de cobertura y del bundle
 coverage
 stats.html
+
+# Salida de tsc -b sobre la config de Vite (no debe versionarse)
+vite.config.js
+vite.config.d.ts
