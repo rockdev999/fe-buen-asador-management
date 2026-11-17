@@ -130,11 +130,39 @@ export const getProductColumns = ({
     key: "price",
     label: "Precio",
     sortable: true,
-    render: (row) => (
-      <span className="text-[13px] font-semibold text-inkblack tabular-nums">
-        {formatMoney(row.price)}
-      </span>
-    ),
+    render: (row) => {
+      // Vista de una sucursal (ADMIN o MANAGER filtrado): price ya viene
+      // resuelto para esa sucursal.
+      if (scopeLocationId) {
+        return (
+          <span className="text-[13px] font-semibold text-inkblack tabular-nums">
+            {formatMoney(row.price)}
+          </span>
+        );
+      }
+
+      // Vista "todas": precio general y aviso si alguna sucursal tiene uno propio.
+      const custom = row.locations.filter((loc) => loc.price !== null);
+      const detail = custom
+        .map((loc) => `${loc.name}: ${formatMoney(loc.price!)}`)
+        .join(", ");
+
+      return (
+        <div className="flex flex-col">
+          <span className="text-[13px] font-semibold text-inkblack tabular-nums">
+            {formatMoney(row.basePrice)}
+          </span>
+          {custom.length > 0 && (
+            <span
+              className="text-[10px] text-amber-600 whitespace-nowrap"
+              title={detail}
+            >
+              {custom.length === 1 ? detail : "Precio varía por sucursal"}
+            </span>
+          )}
+        </div>
+      );
+    },
   },
   {
     key: "available",

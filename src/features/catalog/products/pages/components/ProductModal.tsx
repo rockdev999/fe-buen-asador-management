@@ -23,7 +23,6 @@ import { PanelHeader } from "@/components/shared/Overlay/PanelHeader";
 import { PanelFooter } from "@/components/shared/Overlay/PanelFooter";
 import {
   AlertCircle,
-  Building2,
   ImageIcon,
   ListOrdered,
   Package,
@@ -36,8 +35,11 @@ import { ImageUploader } from "@/components/shared/Interactives/ImageUploader";
 import { AsyncDropdown } from "@/components/shared/Interactives/AsyncDropdown";
 import { MultiSelectDropdown } from "@/components/shared/Interactives/MultiSelectDropdown";
 import { ProductModalSkeleton } from "./ProductModalSkeleton";
-import { useAuth } from "@/features/auth/hooks/useAuth";
 import { ApiErrorResponse } from "@/types/api.types";
+import { ConfirmDeactivateModal } from "@/components/shared/Overlay/ConfirmDeactivateModal";
+import { formatMoney } from "@/lib/utils";
+import { Switch } from "@/components/shared/Basics/Switch";
+import { getFieldError } from "@/lib/zodToFormik";
 
 interface ProductModalProps {
   productId?: UUID | null;
@@ -56,9 +58,7 @@ export const ProductModal = ({
 }: ProductModalProps) => {
   const isEdit = !!productId;
 
-  const { user, isManager } = useAuth();
-  const adminLocationId = user?.locationId ?? null;
-
+  const [confirmDeactivate, setConfirmDeactivate] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [removeImage, setRemoveImage] = useState(false);
 
@@ -87,8 +87,7 @@ export const ProductModal = ({
   const hasLocations = Boolean(locations?.length);
   const hasImageChanges = imageFile !== null || removeImage;
 
-  // ADMIN opera fijo en su propia sucursal: el backend rechaza cualquier otro
-  // locationId con 403, así que ni se muestra el selector ni se permite editarlo.
+  // Solo el MANAGER crea y edita productos (el ADMIN solo cambia disponibilidad).
   const initValues: CreateProductForm = useMemo(() => {
     if (isEdit && product) {
       return {
@@ -97,24 +96,26 @@ export const ProductModal = ({
         brand: product.brand ?? "",
         description: product.description ?? "",
         imageUrl: product.imageUrl ?? "",
-        price: product.price,
+        // basePrice y no price: price puede venir resuelto para una sucursal.
+        price: product.basePrice,
         available: product.available,
         isQuantifiable: product.isQuantifiable,
         haveModifiers: product.haveModifiers,
         categoryId: product.category.id ?? "",
-        locationIds: isManager
-          ? product.locations.map((location) => location.id)
-          : adminLocationId
-            ? [adminLocationId]
-            : [],
+        locationIds: product.locations.map((location) => location.id),
+        locationPrices: product.locations.map((location) => ({
+          locationId: location.id,
+          price: location.price,
+        })),
         sortOrder: product.sortOrder ?? 0,
       };
     }
     return {
       ...ProductFormConfig.initialValues,
-      locationIds: isManager || !adminLocationId ? [] : [adminLocationId],
+      locationIds: [],
+      locationPrices: [],
     };
-  }, [isEdit, product, isManager, adminLocationId]);
+  }, [isEdit, product]);
 
   const {
     values: formValues,
@@ -133,13 +134,8 @@ export const ProductModal = ({
     enableReinitialize: true,
     validate: ProductFormConfig.validationSchemaCreate,
     onSubmit: (data: CreateProductForm) => {
-      // Defensa extra: nunca confiar en el estado del form para el rol ADMIN,
-      // por si queda un valor viejo en caché o hay un bug de UI.
-      const submitData = isManager
-        ? data
-        : { ...data, locationIds: adminLocationId ? [adminLocationId] : [] };
       const formData = ProductFormConfig.mapFormToFormData(
-        submitData,
+        data,
         imageFile,
         removeImage,
       );
@@ -150,6 +146,38 @@ export const ProductModal = ({
       }
     },
   });
+
+  // Una fila de precio por sucursal elegida: al quitar una sucursal se quita
+  // su fila; las que siguen elegidas conservan lo que ya se escribió.
+  const handleLocationsChange = (ids: string[]) => {
+    const current = formValues.locationPrices ?? [];
+    setFieldValue("locationIds", ids, true);
+    setFieldValue(
+      "locationPrices",
+      ids.map(
+        (locationId) =>
+          current.find((lp) => lp.locationId === locationId) ?? {
+            locationId,
+            price: null,
+          },
+      ),
+      true,
+    );
+    setFieldTouched("locationIds", true, false);
+  };
+
+  // Igual que en modificadores: el switch "Precio propio" decide si la
+  // sucursal usa el general (null) o su propio precio. Al activarlo se parte
+  // del precio general para no dejar un valor vacío por accidente.
+  const setLocationPrice = (locationId: string, price: number | null) => {
+    setFieldValue(
+      "locationPrices",
+      (formValues.locationPrices ?? []).map((lp) =>
+        lp.locationId === locationId ? { ...lp, price } : lp,
+      ),
+      true,
+    );
+  };
 
   const handleDropdownChange = async (field: "categoryId", id: string) => {
     await setFieldValue(field, id, true);
@@ -218,7 +246,7 @@ export const ProductModal = ({
               />
 
               <FormField>
-                <Label required>Precio</Label>
+                <Label required>Precio general</Label>
                 <MoneyInput
                   id="price"
                   name="price"
@@ -299,34 +327,22 @@ export const ProductModal = ({
 
               <FormField>
                 <Label required>Sucursales</Label>
-                {isManager ? (
-                  <>
-                    <MultiSelectDropdown
-                      options={
-                        locations?.map((location) => ({
-                          value: location.id,
-                          label: location.name,
-                        })) ?? []
-                      }
-                      value={formValues.locationIds ?? []}
-                      onChange={(vals) => {
-                        setFieldValue("locationIds", vals, true);
-                        setFieldTouched("locationIds", true, false);
-                      }}
-                      placeholder="Seleccionar sucursales..."
-                      emptyText="No hay sucursales disponibles"
-                      error={formErrors.locationIds as string}
-                      touched={formTouched.locationIds as boolean}
-                    />
-                    {!hasLocations && (
-                      <EmptyFieldHint text="Primero crea una sucursal para poder registrar productos." />
-                    )}
-                  </>
-                ) : (
-                  <div className="flex h-9 items-center gap-2 rounded-xl border border-surface bg-surface/40 px-3 text-[13px] text-inkblack">
-                    <Building2 size={14} className="text-muted-foreground" />
-                    {user?.locationName ?? "Tu sucursal"}
-                  </div>
+                <MultiSelectDropdown
+                  options={
+                    locations?.map((location) => ({
+                      value: location.id,
+                      label: location.name,
+                    })) ?? []
+                  }
+                  value={formValues.locationIds ?? []}
+                  onChange={handleLocationsChange}
+                  placeholder="Seleccionar sucursales..."
+                  emptyText="No hay sucursales disponibles"
+                  error={formErrors.locationIds as string}
+                  touched={formTouched.locationIds as boolean}
+                />
+                {!hasLocations && (
+                  <EmptyFieldHint text="Primero crea una sucursal para poder registrar productos." />
                 )}
                 {formErrors.locationIds && (
                   <ErrorMessage
@@ -336,6 +352,67 @@ export const ProductModal = ({
                 )}
               </FormField>
             </div>
+
+            {(formValues.locationPrices?.length ?? 0) > 0 && (
+              <div className="mt-3 rounded-2xl border border-surface bg-surface/20 p-3">
+                <p className="text-[12px] font-semibold text-inkblack">
+                  Precio por sucursal
+                </p>
+                <p className="mt-0.5 mb-2 text-[11px] text-muted-foreground">
+                  Activa &quot;Precio propio&quot; para cobrar otro monto en esa
+                  sucursal. Desactivado usa el precio general.
+                </p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  {formValues.locationPrices!.map((lp, index) => {
+                    const name =
+                      locations?.find((loc) => loc.id === lp.locationId)
+                        ?.name ?? "sucursal";
+                    const hasOwn = lp.price !== null;
+                    const rowError = getFieldError(
+                      formErrors,
+                      `locationPrices.${index}.price`,
+                    );
+                    return (
+                      <div key={lp.locationId} className="flex flex-col gap-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[12px] text-inkblack">
+                            Precio en {name}
+                          </span>
+                          <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                            Precio propio
+                            <Switch
+                              checked={hasOwn}
+                              onChange={(checked) =>
+                                setLocationPrice(
+                                  lp.locationId,
+                                  checked ? (formValues.price ?? 0) : null,
+                                )
+                              }
+                              ariaLabel={`Precio propio en ${name}`}
+                            />
+                          </label>
+                        </div>
+                        <MoneyInput
+                          id={`locationPrice-${lp.locationId}`}
+                          disabled={!hasOwn}
+                          defaultValue={lp.price ?? 0}
+                          onChange={(value) =>
+                            setLocationPrice(lp.locationId, value)
+                          }
+                          placeholder={
+                            hasOwn
+                              ? "Ej: 25.00"
+                              : `Precio general: ${formatMoney(formValues.price || 0)}`
+                          }
+                          error={rowError}
+                          className="h-9 rounded-xl bg-white text-[13px] disabled:opacity-60"
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
           </FormSection>
 
           {/* Imagen y orden */}
@@ -439,16 +516,11 @@ export const ProductModal = ({
         <PanelFooter>
           <Button
             type="button"
-            isLoading={deleteStatus === "pending"}
-            onClick={() => {
-              if (isEdit && product) {
-                deleteProduct(product.id, { onSuccess: onSuccess });
-              }
-            }}
+            onClick={() => setConfirmDeactivate(true)}
             disabled={!isEdit}
             variant="danger"
           >
-            Eliminar producto
+            Dar de baja
           </Button>
           <div>
             <Button type="button" variant="outline" onClick={onClose}>
@@ -467,6 +539,16 @@ export const ProductModal = ({
           </div>
         </PanelFooter>
       </form>
+
+      {confirmDeactivate && product && (
+        <ConfirmDeactivateModal
+          title="Dar de baja producto"
+          itemName={product.name}
+          isPending={deleteStatus === "pending"}
+          onClose={() => setConfirmDeactivate(false)}
+          onConfirm={() => deleteProduct(product.id, { onSuccess })}
+        />
+      )}
     </AppModal>
   );
 };

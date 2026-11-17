@@ -125,14 +125,18 @@ export function Categories() {
           </span>
         </div>
 
-        <Button
-          type="button"
-          onClick={handleCreate}
-          className="h-9 rounded-xl px-4 text-[12px] font-medium"
-        >
-          <Plus size={14} />
-          Nueva categoría
-        </Button>
+        {/* Crear, editar y dar de baja es solo del MANAGER; el ADMIN solo
+            cambia la disponibilidad de la categoría en su sucursal. */}
+        {isManager && (
+          <Button
+            type="button"
+            onClick={handleCreate}
+            className="h-9 rounded-xl px-4 text-[12px] font-medium"
+          >
+            <Plus size={14} />
+            Nueva categoría
+          </Button>
+        )}
       </div>
 
       {/* Search */}
@@ -177,14 +181,14 @@ export function Categories() {
 
       {/* Content */}
       {filteredCategories.length === 0 ? (
-        <EmptyCategoriesState hasSearch={hasSearch} />
+        <EmptyCategoriesState hasSearch={hasSearch} canCreate={isManager} />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {filteredCategories.map((category) => (
             <CategoryCard
               key={category.id}
               category={category}
-              onEdit={handleEdit}
+              onEdit={isManager ? handleEdit : undefined}
               onToggleAvailability={handleToggleAvailability}
               isTogglePending={
                 isAvailabilityPending && variables?.id === category.id
@@ -211,7 +215,7 @@ export function Categories() {
         />
       )}
 
-      {isModalOpen && (
+      {isManager && isModalOpen && (
         <CategoryModal
           category={selectedCategory}
           locations={locations}
@@ -225,9 +229,13 @@ export function Categories() {
 
 interface EmptyCategoriesStateProps {
   hasSearch: boolean;
+  canCreate: boolean;
 }
 
-function EmptyCategoriesState({ hasSearch }: EmptyCategoriesStateProps) {
+function EmptyCategoriesState({
+  hasSearch,
+  canCreate,
+}: EmptyCategoriesStateProps) {
   return (
     <div className="rounded-2xl border border-dashed border-surface bg-white px-6 py-10 text-center shadow-sm">
       <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-surface text-muted-foreground">
@@ -241,7 +249,9 @@ function EmptyCategoriesState({ hasSearch }: EmptyCategoriesStateProps) {
       <p className="mx-auto mt-1 max-w-sm text-[12px] text-muted-foreground">
         {hasSearch
           ? "Intenta buscar con otro nombre o limpia el filtro."
-          : "Crea tu primera categoría para empezar a organizar los productos del catálogo."}
+          : canCreate
+            ? "Crea tu primera categoría para empezar a organizar los productos del catálogo."
+            : "Aún no hay categorías asignadas a tu sucursal."}
       </p>
     </div>
   );

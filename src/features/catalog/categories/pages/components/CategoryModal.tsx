@@ -1,6 +1,6 @@
 // src/features/catalog/categories/components/CategoryModal.tsx
 import { useFormik } from "formik";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { AppModal } from "@/components/shared/Overlay/AppModal";
 import { PanelHeader } from "@/components/shared/Overlay/PanelHeader";
 import { PanelFooter } from "@/components/shared/Overlay/PanelFooter";
@@ -9,7 +9,7 @@ import { FormInput } from "@/components/shared/Form/FormInput";
 import { FormField } from "@/components/shared/Basics/FormField";
 import { Label } from "@/components/shared/Basics/Label";
 import { Button } from "@/components/shared/Basics/Button";
-import { Tags, ListOrdered, Building2 } from "lucide-react";
+import { Tags, ListOrdered } from "lucide-react";
 import { Category } from "../../models/category.model";
 import {
   useCreateCategory,
@@ -21,8 +21,8 @@ import { CreateCategoryForm } from "../../validators/category.schema";
 import { MultiSelectDropdown } from "@/components/shared/Interactives/MultiSelectDropdown";
 import { LocationSimple } from "@/features/locations/models/location.model";
 import { ErrorMessage } from "@/components/shared/Basics/ErrorMessage";
-import { useAuth } from "@/features/auth/hooks/useAuth";
 import { ApiErrorResponse } from "@/types/api.types";
+import { ConfirmDeactivateModal } from "@/components/shared/Overlay/ConfirmDeactivateModal";
 
 interface CategoryModalProps {
   category: Category | null;
@@ -39,8 +39,7 @@ export const CategoryModal = ({
 }: CategoryModalProps) => {
   const isEdit = !!category;
 
-  const { user, isManager } = useAuth();
-  const adminLocationId = user?.locationId ?? null;
+  const [confirmDeactivate, setConfirmDeactivate] = useState(false);
 
   const handleForbiddenLocation = (error: ApiErrorResponse) => {
     if (error.errorCode === "FORBIDDEN") {
@@ -61,26 +60,18 @@ export const CategoryModal = ({
 
   const isSaving = createStatus === "pending" || updateStatus === "pending";
 
-  // ADMIN opera fijo en su propia sucursal: el backend rechaza cualquier otro
-  // locationId con 403, así que ni se muestra el selector ni se permite editarlo.
+  // Solo el MANAGER crea y edita categorías (el ADMIN solo cambia disponibilidad).
   const initValues: CreateCategoryForm = useMemo(() => {
     if (isEdit && category) {
       return {
         id: category.id ?? "",
         name: category.name,
         sortOrder: category.sortOrder ?? "",
-        locationIds: isManager
-          ? category.locations.map((location) => location.id)
-          : adminLocationId
-            ? [adminLocationId]
-            : [],
+        locationIds: category.locations.map((location) => location.id),
       };
     }
-    return {
-      ...CategoryFormConfig.initialValues,
-      locationIds: isManager || !adminLocationId ? [] : [adminLocationId],
-    };
-  }, [isEdit, category, isManager, adminLocationId]);
+    return { ...CategoryFormConfig.initialValues, locationIds: [] };
+  }, [isEdit, category]);
 
   const {
     values: formValues,
@@ -100,11 +91,6 @@ export const CategoryModal = ({
     validate: CategoryFormConfig.validationSchemaCreate,
     onSubmit: (data) => {
       const dto = CategoryFormConfig.mapFormToDTO(data);
-      // Defensa extra: nunca confiar en el estado del form para el rol ADMIN,
-      // por si queda un valor viejo en caché o hay un bug de UI.
-      if (!isManager) {
-        dto.locationIds = adminLocationId ? [adminLocationId] : [];
-      }
       if (isEdit) {
         updateCategory(dto, { onSuccess });
       } else {
@@ -192,30 +178,23 @@ export const CategoryModal = ({
 
             <FormField>
               <Label required>Sucursales</Label>
-              {isManager ? (
-                <MultiSelectDropdown
-                  options={
-                    locations?.map((location) => ({
-                      value: location.id,
-                      label: location.name,
-                    })) ?? []
-                  }
-                  value={formValues.locationIds ?? []}
-                  onChange={(vals) => {
-                    formSetFieldValue("locationIds", vals, true);
-                    formSetFieldTouched("locationIds", true, false);
-                  }}
-                  placeholder="Seleccionar sucursales..."
-                  emptyText="No hay sucursales disponibles"
-                  error={formErrors.locationIds as string}
-                  touched={formTouched.locationIds as boolean}
-                />
-              ) : (
-                <div className="flex h-9 items-center gap-2 rounded-xl border border-surface bg-surface/40 px-3 text-[13px] text-inkblack">
-                  <Building2 size={14} className="text-muted-foreground" />
-                  {user?.locationName ?? "Tu sucursal"}
-                </div>
-              )}
+              <MultiSelectDropdown
+                options={
+                  locations?.map((location) => ({
+                    value: location.id,
+                    label: location.name,
+                  })) ?? []
+                }
+                value={formValues.locationIds ?? []}
+                onChange={(vals) => {
+                  formSetFieldValue("locationIds", vals, true);
+                  formSetFieldTouched("locationIds", true, false);
+                }}
+                placeholder="Seleccionar sucursales..."
+                emptyText="No hay sucursales disponibles"
+                error={formErrors.locationIds as string}
+                touched={formTouched.locationIds as boolean}
+              />
               <ErrorMessage
                 touched={!!formTouched.locationIds}
                 error={formErrors.locationIds as string}
@@ -236,12 +215,11 @@ export const CategoryModal = ({
         <PanelFooter>
           <Button
             type="button"
-            isLoading={deleteStatus === "pending"}
             disabled={isSaving || !isEdit}
-            onClick={handleDelete}
+            onClick={() => setConfirmDeactivate(true)}
             variant="danger"
           >
-            Eliminar
+            Dar de baja
           </Button>
           <div>
             <Button type="button" variant="outline" onClick={onClose}>
@@ -258,6 +236,17 @@ export const CategoryModal = ({
           </div>
         </PanelFooter>
       </form>
+
+      {confirmDeactivate && category && (
+        <ConfirmDeactivateModal
+          title="Dar de baja categoría"
+          itemName={category.name}
+          extraWarning="Sus productos también dejarán de ofrecerse."
+          isPending={deleteStatus === "pending"}
+          onClose={() => setConfirmDeactivate(false)}
+          onConfirm={handleDelete}
+        />
+      )}
     </AppModal>
   );
 };

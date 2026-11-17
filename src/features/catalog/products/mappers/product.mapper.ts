@@ -18,6 +18,8 @@ export const mapProductLocationDTOToModel = (
   name: dto.name,
   // Respuestas anteriores al campo: se asume disponible.
   available: dto.available ?? true,
+  price: dto.price ?? null,
+  effectivePrice: dto.effectivePrice ?? 0,
 });
 import { CreateProductForm } from "../validators/product.schema";
 
@@ -28,6 +30,8 @@ export const mapProductDTOToModel = (dto: ProductDTO): Product => ({
   description: dto.description,
   imageUrl: dto.imageUrl,
   price: dto.price,
+  // Respuestas anteriores al campo: el precio devuelto era el general.
+  basePrice: dto.basePrice ?? dto.price,
   available: dto.available,
   isQuantifiable: dto.isQuantifiable,
   haveModifiers: dto.haveModifiers,
@@ -50,6 +54,7 @@ export const mapProductPageItemDTOToModel = (
   description: dto.description,
   imageUrl: dto.imageUrl,
   price: dto.price,
+  basePrice: dto.basePrice ?? dto.price,
   available: dto.available,
   isQuantifiable: dto.isQuantifiable,
   haveModifiers: dto.haveModifiers,
@@ -76,6 +81,16 @@ export const mapProductFormToDTO = (
   categoryId: form.categoryId,
   sortOrder: form.sortOrder,
   locationIds: form.locationIds,
+  // Siempre se envía, con una entrada por sucursal elegida: así el backend
+  // reemplaza los precios y las sucursales quitadas vuelven al general.
+  // Un precio igual al general se envía como null para que siga al general
+  // si este cambia después.
+  locationPrices: form.locationIds.map((locationId) => {
+    const price =
+      form.locationPrices?.find((lp) => lp.locationId === locationId)?.price ??
+      null;
+    return { locationId, price: price === form.price ? null : price };
+  }),
 });
 
 export const mapProductDTOToFormData = (

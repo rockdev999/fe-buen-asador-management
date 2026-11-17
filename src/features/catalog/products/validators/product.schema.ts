@@ -92,6 +92,20 @@ export const productCreateSchema = z.object({
     .string()
     .min(1, { error: v.categoryRequired })
     .uuid({ error: v.categoryInvalid }),
+
+  // Precio propio por sucursal; null = usa el precio general.
+  locationPrices: z
+    .array(
+      z.object({
+        locationId: z.string().uuid({ error: v.locationInvalid }),
+        price: z
+          .number({ error: v.locationPriceInvalid })
+          .positive({ error: v.locationPricePositive })
+          .max(999999, { error: v.locationPriceMax })
+          .nullable(),
+      }),
+    )
+    .optional(),
 });
 
 export type CreateProductForm = z.infer<typeof productCreateSchema>;

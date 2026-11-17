@@ -28,6 +28,9 @@
       "priceInvalid": "Ingresa un precio válido.",
       "pricePositive": "El precio debe ser mayor a 0.",
       "priceMax": "El precio no puede exceder los 999999.",
+      "locationPriceInvalid": "Ingresa un precio por sucursal válido.",
+      "locationPricePositive": "El precio por sucursal debe ser mayor a 0.",
+      "locationPriceMax": "El precio por sucursal no puede exceder los 999999.",
 
       "availableRequired": "Indica si el producto está disponible.",
       "availableInvalid": "El estado de disponibilidad no es válido.",
@@ -59,6 +62,9 @@
       "extraPriceRequired": "El precio extra es requerido.",
       "extraPricePositive": "El precio extra debe ser mayor o igual a 0.",
       "extraPriceMax": "El precio extra no puede exceder los 999999.",
+      "locationPriceInvalid": "Ingresa un precio extra por sucursal válido.",
+      "locationPriceMin": "El precio extra por sucursal debe ser mayor o igual a 0.",
+      "locationPriceMax": "El precio extra por sucursal no puede exceder los 999999.",
 
       "activeRequired": "Indica si el modificador está activo.",
       "activeInvalid": "El estado de activo no es válido.",

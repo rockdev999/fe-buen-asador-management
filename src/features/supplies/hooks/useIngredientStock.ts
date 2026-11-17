@@ -1,4 +1,4 @@
-import { QUERY_KEYS } from "@/constants";
+import { AdjustmentType, QUERY_KEYS } from "@/constants";
 import {
   useGetHandler,
   usePatchHandler,
@@ -9,6 +9,9 @@ import { httpClient } from "@/services/http.client";
 import { ApiErrorResponse, ApiResponse } from "@/types/api.types";
 import { useQueryClient } from "@tanstack/react-query";
 import { useMemo } from "react";
+import type { RejectedApiError } from "@/services/interceptors/error.interceptor";
+import { suggestSetOnInsufficientStock } from "@/utils/insufficient-stock";
+import { ADJUSTMENT_TYPE_LABELS } from "../config/ingredient.table";
 import {
   mapIngredientKardexDTOToModel,
   mapIngredientStockAlertDTOToModel,
@@ -60,7 +63,14 @@ export const useAdjustIngredientStock = (
             params: locationId ? { locationId } : {},
           },
         )
-        .then((r) => r.data.data!),
+        .then((r) => r.data.data!)
+        .catch((error: RejectedApiError) => {
+          suggestSetOnInsufficientStock(
+            error,
+            ADJUSTMENT_TYPE_LABELS[AdjustmentType.SET],
+          );
+          throw error;
+        }),
     // El listado de stock (INGREDIENT_STOCK) se refresca manualmente con
     // refetch() desde quien llama — invalidarlo aquí duplicaría la petición.
     invalidateKeys: [QUERY_KEYS.INGREDIENT_STOCK_ALERTS],

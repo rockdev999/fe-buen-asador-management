@@ -1,4 +1,7 @@
-import { QUERY_KEYS } from "@/constants";
+import { AdjustmentType, QUERY_KEYS } from "@/constants";
+import type { RejectedApiError } from "@/services/interceptors/error.interceptor";
+import { suggestSetOnInsufficientStock } from "@/utils/insufficient-stock";
+import { ADJUSTMENT_TYPE_LABELS } from "../config/inventory.table";
 import {
   useGetHandler,
   usePatchHandler,
@@ -55,7 +58,14 @@ export const useAdjustStock = (
         .post<ApiResponse<StockProductDTO>>("/inventory/stock/adjust", dto, {
           params: locationId ? { locationId } : {},
         })
-        .then((r) => r.data.data!),
+        .then((r) => r.data.data!)
+        .catch((error: RejectedApiError) => {
+          suggestSetOnInsufficientStock(
+            error,
+            ADJUSTMENT_TYPE_LABELS[AdjustmentType.SET],
+          );
+          throw error;
+        }),
     // El listado de stock (QUERY_KEYS.STOCK) se refresca manualmente con
     // refetch() desde quien llama — invalidarlo aquí duplicaría la petición.
     invalidateKeys: [QUERY_KEYS.STOCK_ALERTS],

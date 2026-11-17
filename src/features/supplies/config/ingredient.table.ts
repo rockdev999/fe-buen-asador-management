@@ -23,7 +23,7 @@ export const INGREDIENT_UNIT_SHORT_LABELS: Record<IngredientUnitEnum, string> = 
 export const ADJUSTMENT_TYPE_LABELS: Record<AdjustmentType, string> = {
   [AdjustmentType.ADD]: "Agregar",
   [AdjustmentType.SUBTRACT]: "Restar",
-  [AdjustmentType.SET]: "Establecer",
+  [AdjustmentType.SET]: "Fijar cantidad",
 };
 
 export const INGREDIENT_KARDEX_TYPE_LABELS: Record<

@@ -16,6 +16,7 @@ export const ProductFormConfig = {
     price: 0,
     categoryId: "",
     locationIds: [] as string[],
+    locationPrices: [],
     sortOrder: 0,
     description: "",
     imageUrl: "",

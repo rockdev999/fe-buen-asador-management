@@ -1,18 +1,37 @@
 import { FolderTree, ListOrdered } from "lucide-react";
 import { formatLocalDate } from "@/lib/formatters";
 import { Modifier } from "../../models/modifier.model";
-import { formatMoney } from "@/lib/utils";
+import { cn, formatMoney } from "@/lib/utils";
 
 interface ModifierCardProps {
   modifier: Modifier;
-  onEdit: (modifier: Modifier) => void;
+  /** Si se define, la tarjeta es clickeable y abre la edición (solo MANAGER). */
+  onEdit?: (modifier: Modifier) => void;
+  /**
+   * ADMIN: muestra el precio de su sucursal (extraPrice ya viene resuelto).
+   * MANAGER: muestra el general y el detalle de las sucursales con precio propio.
+   */
+  showLocationPrice?: boolean;
 }
 
-export function ModifierCard({ modifier, onEdit }: ModifierCardProps) {
+export function ModifierCard({
+  modifier,
+  onEdit,
+  showLocationPrice = false,
+}: ModifierCardProps) {
+  const custom = showLocationPrice
+    ? []
+    : modifier.locations.filter((loc) => loc.extraPrice !== null);
+  const detail = custom
+    .map((loc) => `${loc.name}: ${formatMoney(loc.extraPrice!)}`)
+    .join(", ");
   return (
     <div
-      className="group rounded-2xl border border-surface bg-white p-4 shadow-sm transition-all hover:border-brand/30 hover:shadow-md"
-      onClick={() => onEdit(modifier)}
+      className={cn(
+        "group rounded-2xl border border-surface bg-white p-4 shadow-sm transition-all",
+        onEdit && "cursor-pointer hover:border-brand/30 hover:shadow-md",
+      )}
+      onClick={onEdit ? () => onEdit(modifier) : undefined}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">
@@ -27,8 +46,23 @@ export function ModifierCard({ modifier, onEdit }: ModifierCardProps) {
 
             <div className="mt-1 flex items-center gap-1.5 text-[11px] text-muted-foreground">
               <ListOrdered size={12} />
-              <span>Precio: {formatMoney(modifier.extraPrice)}</span>
+              <span>
+                Precio:{" "}
+                {formatMoney(
+                  showLocationPrice
+                    ? modifier.extraPrice
+                    : modifier.baseExtraPrice,
+                )}
+              </span>
             </div>
+            {custom.length > 0 && (
+              <p
+                className="mt-0.5 truncate text-[10px] text-amber-600"
+                title={detail}
+              >
+                {detail}
+              </p>
+            )}
           </div>
         </div>
       </div>

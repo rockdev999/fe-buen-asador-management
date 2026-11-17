@@ -13,20 +13,30 @@ import {
   StockAlertEvent,
 } from "../models/stock-alert-event.model";
 
-// El backend responde 403 al CASHIER en /notifications/stream.
-const STREAM_ROLES = [RoleEnum.MANAGER, RoleEnum.ADMIN];
+// El stream lo abren todos los roles con sesión (el CASHIER para enterarse de
+// cambios del catálogo). Las alertas de stock solo llegan a MANAGER y ADMIN.
 const ALERTS_PAGE_ROLES = [RoleEnum.MANAGER, RoleEnum.ADMIN];
+
+/** Queries que muestran el catálogo: el menú del POS y las pantallas de gestión. */
+const CATALOG_QUERY_KEYS = [
+  QUERY_KEYS.MENU,
+  QUERY_KEYS.PRODUCTS,
+  QUERY_KEYS.CATEGORIES,
+  QUERY_KEYS.MODIFIERS,
+];
 const TOAST_DURATION_MS = 10_000;
 
 const formatQty = (n: number) =>
   Number.isInteger(n) ? String(n) : n.toLocaleString("es-BO", { maximumFractionDigits: 3 });
 
 /**
- * Escucha las alertas de stock en tiempo real (SSE) mientras haya sesión.
- * Montar una sola vez, en el layout autenticado.
+ * Escucha /notifications/stream (SSE) mientras haya sesión. Montar una sola
+ * vez, en el layout autenticado.
  *
- * Por cada alerta: muestra un toast e invalida las queries de alertas y de
- * stock del tipo correspondiente, para que tablas y modales se actualicen solos.
+ * - `alert` (MANAGER/ADMIN): muestra un toast e invalida las queries de
+ *   alertas y de stock del tipo correspondiente.
+ * - `catalog-updated` (todos): invalida el menú del POS y los listados del
+ *   catálogo, para que precios, bajas y modificadores se vean al instante.
  */
 export function useStockAlertsStream() {
   const token = useAuthStore((s) => s.token);
@@ -42,7 +52,7 @@ export function useStockAlertsStream() {
   }, [navigate]);
 
   useEffect(() => {
-    if (!token || !role || !STREAM_ROLES.includes(role)) return;
+    if (!token || !role) return;
 
     const canOpenAlertsPage = ALERTS_PAGE_ROLES.includes(role);
 
@@ -89,6 +99,11 @@ export function useStockAlertsStream() {
       // al reconectar se refrescan alertas y stock una vez para recuperarlo.
       onOpen: ({ isReconnect }) => {
         if (!isReconnect) return;
+        // Los cambios del catálogo mientras no hubo conexión no se reenvían.
+        CATALOG_QUERY_KEYS.forEach((queryKey) =>
+          queryClient.invalidateQueries({ queryKey }),
+        );
+        if (!canOpenAlertsPage) return;
         [
           QUERY_KEYS.STOCK_ALERTS,
           QUERY_KEYS.INGREDIENT_STOCK_ALERTS,
@@ -98,7 +113,17 @@ export function useStockAlertsStream() {
         ].forEach((queryKey) => queryClient.invalidateQueries({ queryKey }));
       },
       onMessage: ({ event, data }) => {
-        if (event !== "alert") return; // `ping` = heartbeat, solo mantiene viva la conexión
+        // `ping` = heartbeat, solo mantiene viva la conexión.
+        if (event === "catalog-updated") {
+          // Payload: {"entity":"product"|"category"|"modifier","locationIds":[...]}.
+          // No hace falta leerlo: el backend ya filtra por sucursal y solo se
+          // vuelven a pedir las queries montadas.
+          CATALOG_QUERY_KEYS.forEach((queryKey) =>
+            queryClient.invalidateQueries({ queryKey }),
+          );
+          return;
+        }
+        if (event !== "alert") return;
         try {
           handleAlert(JSON.parse(data) as StockAlertEvent);
         } catch {

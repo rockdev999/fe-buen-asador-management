@@ -18,7 +18,7 @@ export const STOCK_UNIT_LABELS: Record<StockMesurementUnitTypeEnum, string> = {
 export const ADJUSTMENT_TYPE_LABELS: Record<AdjustmentType, string> = {
   [AdjustmentType.ADD]: "Agregar",
   [AdjustmentType.SUBTRACT]: "Restar",
-  [AdjustmentType.SET]: "Establecer",
+  [AdjustmentType.SET]: "Fijar cantidad",
 };
 
 export const KARDEX_TYPE_LABELS: Record<KardexTypeEnum, string> = {

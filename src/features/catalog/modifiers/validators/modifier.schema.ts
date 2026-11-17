@@ -11,15 +11,28 @@ export const modifierCreateSchema = z.object({
     .min(2, v.nameMin)
     .max(150, v.nameMax)
     .trim(),
+  // 0 es válido: modificador gratis (el backend lo acepta al crear y editar).
   extraPrice: z
-    .number()
-    .min(1, v.extraPriceRequired)
-    .min(1, v.extraPricePositive)
+    .number({ error: v.extraPriceRequired })
+    .min(0, v.extraPricePositive)
     .max(999999, v.extraPriceMax),
   active: z.boolean().optional(),
   locationIds: z
     .array(z.string().uuid({ error: v.locationInvalid }))
     .min(1, { error: v.locationRequired }),
+  // Precio extra propio por sucursal; null = usa el general, 0 = gratis.
+  locationPrices: z
+    .array(
+      z.object({
+        locationId: z.string().uuid({ error: v.locationInvalid }),
+        extraPrice: z
+          .number({ error: v.locationPriceInvalid })
+          .min(0, v.locationPriceMin)
+          .max(999999, v.locationPriceMax)
+          .nullable(),
+      }),
+    )
+    .optional(),
 });
 
 export type CreateModifierForm = z.infer<typeof modifierCreateSchema>;

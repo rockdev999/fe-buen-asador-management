@@ -41,7 +41,8 @@ export const useCreateModifier = (options?: ModifierMutationOptions) => {
         .post<ApiResponse<CreateModifierDTO>>("/modifiers", dto)
         .then((r) => r.data.data!),
 
-    invalidateKeys: [],
+    // El POS debe ver de inmediato precios, modificadores y bajas.
+    invalidateKeys: [QUERY_KEYS.MENU],
     successMessage: "Modificador creado exitosamente",
     onErrorCallback: options?.onErrorCallback,
   });
@@ -59,7 +60,8 @@ export const useUpdateModifier = (
         .put<ApiResponse<CreateModifierDTO>>(`/modifiers/${modifierId}`, dto)
         .then((r) => r.data.data!),
 
-    invalidateKeys: [],
+    // El POS debe ver de inmediato precios, modificadores y bajas.
+    invalidateKeys: [QUERY_KEYS.MENU],
     successMessage: "Modificador actualizado exitosamente",
     onErrorCallback: options?.onErrorCallback,
   });
@@ -74,7 +76,8 @@ export const useDeleteModifier = (modifierId: string) => {
         .delete<ApiResponse<null>>(`/modifiers/${modifierId}`)
         .then((r) => r.data.data!),
 
-    invalidateKeys: [],
+    // El POS debe ver de inmediato precios, modificadores y bajas.
+    invalidateKeys: [QUERY_KEYS.MENU],
     successMessage: "Modificador eliminado exitosamente",
   });
 

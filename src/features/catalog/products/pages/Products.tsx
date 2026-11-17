@@ -195,6 +195,7 @@ function ManagerProducts() {
 
 // Vista operativa por sucursal (ADMIN) — el backend fuerza el locationId del token,
 // así que no se expone el filtro de sucursal para no sugerir que se puede cambiar.
+// El ADMIN no crea, edita ni da de baja productos: solo cambia su disponibilidad.
 function AdminProducts() {
   const {
     page,
@@ -208,15 +209,10 @@ function AdminProducts() {
     defaultSortKey: "default",
     defaultSortDir: DATA_TABLE.PRODUCTS.defaultSorting.direction,
   });
-  const { data: locations } = useGetLocationSimple();
   const { data: categories, status: categoriesStatus } =
     useCategoriesSimpleHandler();
 
   const [categoryId, setCategoryId] = useState(filters.categoryId ?? "");
-  const [openProductModal, setOpenProductModal] = useState(false);
-  const [selectedProductId, setSelectedProductId] = useState<string | null>(
-    null,
-  );
 
   const {
     data,
@@ -247,38 +243,17 @@ function AdminProducts() {
     render: (item) => <span>{item.name}</span>,
   }));
 
-  const handleOpenCreateModal = () => {
-    setSelectedProductId(null);
-    setOpenProductModal(true);
-  };
-
-  const handleCloseProductModal = () => {
-    setSelectedProductId(null);
-    setOpenProductModal(false);
-    refetch();
-  };
-
   function handleApplyFilters(newFilters: Record<string, string>) {
     const isSame = JSON.stringify(newFilters) === JSON.stringify(filters);
     handleApply(newFilters);
     if (isSame) refetch();
   }
 
-  const handleRowClick = (data: ProductPageItem) => {
-    setSelectedProductId(data.id);
-    setOpenProductModal(true);
-  };
-
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <PageHeader
         title="Productos"
-        actions={
-          <Button size="sm" onClick={handleOpenCreateModal}>
-            <Plus size={13} />
-            Nuevo producto
-          </Button>
-        }
+        subtitle="Activa o desactiva la disponibilidad de los productos en tu sucursal"
       />
 
       <TableFilters
@@ -318,22 +293,10 @@ function AdminProducts() {
         onSort={handleSort}
         sortKey={sortKey}
         sortDir={sortDir}
-        onRowClick={(data) => handleRowClick(data)}
         rowKey={(row) => row.id}
         emptyMessage="No hay productos"
-        emptySubMessage="Crea el primer producto con el botón de arriba"
+        emptySubMessage="Aún no hay productos asignados a tu sucursal"
       />
-
-      {openProductModal && (
-        <ProductModal
-          productId={selectedProductId}
-          categories={categories}
-          locations={locations}
-          onClose={handleCloseProductModal}
-          onSuccess={handleCloseProductModal}
-          key={selectedProductId ?? "default"}
-        />
-      )}
     </div>
   );
 }

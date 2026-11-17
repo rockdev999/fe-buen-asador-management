@@ -168,8 +168,13 @@ export const useCreateOrder = () => {
     // apagó mientras se armaba el pedido. El interceptor ya mostró el mensaje;
     // se refresca el menú para que desaparezca. (El backend no envía un
     // errorCode específico, por eso se reconoce por el texto.)
+    // Igual con 400 'El modificador "X" no se ofrece en esta sucursal'.
     onErrorCallback: (error) => {
-      if (/no está disponible en esta sucursal/i.test(error?.message ?? "")) {
+      if (
+        /no está disponible en esta sucursal|no se ofrece en esta sucursal/i.test(
+          error?.message ?? "",
+        )
+      ) {
         queryClient.invalidateQueries({ queryKey: QUERY_KEYS.MENU });
       }
     },

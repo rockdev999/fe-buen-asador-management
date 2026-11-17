@@ -125,7 +125,8 @@ export const useCreateProduct = (options?: ProductMutationOptions) => {
         })
         .then((r) => r.data.data!),
 
-    invalidateKeys: [],
+    // El POS debe ver de inmediato precios, modificadores y bajas.
+    invalidateKeys: [QUERY_KEYS.MENU],
     successMessage: "Producto creado exitosamente",
     onErrorCallback: options?.onErrorCallback,
   });
@@ -142,7 +143,8 @@ export const useUpdateProduct = (id: string, options?: ProductMutationOptions) =
         })
         .then((r) => r.data.data!),
 
-    invalidateKeys: [],
+    // El POS debe ver de inmediato precios, modificadores y bajas.
+    invalidateKeys: [QUERY_KEYS.MENU],
     successMessage: "Producto actualizado exitosamente",
     onErrorCallback: options?.onErrorCallback,
   });
@@ -157,7 +159,8 @@ export const useDeleteProduct = (id: string) => {
         .delete<ApiResponse<null>>(`/products/${id}/delete`)
         .then((r) => r.data),
 
-    invalidateKeys: [],
+    // El POS debe ver de inmediato precios, modificadores y bajas.
+    invalidateKeys: [QUERY_KEYS.MENU],
     successMessage: "Producto eliminado exitosamente",
   });
 

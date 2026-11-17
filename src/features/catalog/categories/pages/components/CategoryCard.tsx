@@ -7,7 +7,8 @@ import { getCategoryAvailability } from "@/features/catalog/products/utils/produ
 
 interface CategoryCardProps {
   category: Category;
-  onEdit: (category: Category) => void;
+  /** Si se define, la tarjeta es clickeable y abre la edición (solo MANAGER). */
+  onEdit?: (category: Category) => void;
   /** Si se define, muestra el switch de disponibilidad. */
   onToggleAvailability?: (category: Category, available: boolean) => void;
   isTogglePending?: boolean;
@@ -25,8 +26,11 @@ export function CategoryCard({
   const state = getCategoryAvailability(category);
   return (
     <div
-      className="group rounded-2xl border border-surface bg-white p-4 shadow-sm transition-all hover:border-brand/30 hover:shadow-md"
-      onClick={() => onEdit(category)}
+      className={cn(
+        "group rounded-2xl border border-surface bg-white p-4 shadow-sm transition-all",
+        onEdit && "cursor-pointer hover:border-brand/30 hover:shadow-md",
+      )}
+      onClick={onEdit ? () => onEdit(category) : undefined}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-start gap-3">

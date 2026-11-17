@@ -5,6 +5,7 @@ import { Modifier } from "../models/modifier.model";
 import { useModifiersHandler } from "../hooks/useModifiers";
 import { ModifierModal } from "./components/ModifierModal";
 import { ModifierCard } from "./components/ModifierCard";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 
 export function Modifiers() {
   const [search, setSearch] = useState("");
@@ -13,6 +14,8 @@ export function Modifiers() {
   );
   const [isModalOpen, setIsModalOpen] = useState(false);
 
+  // Crear, editar y dar de baja es solo del MANAGER; el ADMIN queda en lectura.
+  const { isManager } = useAuth();
   const { data: modifiers, refetch } = useModifiersHandler();
 
   const modifierList = modifiers ?? [];
@@ -24,8 +27,14 @@ export function Modifiers() {
       .filter((modifier) =>
         modifier.name.toLowerCase().includes(normalizedSearch),
       )
-      .sort((a, b) => Number(a.extraPrice) - Number(b.extraPrice));
-  }, [modifierList, search]);
+      // Mismo precio que muestra la tarjeta: el de la sucursal para el ADMIN,
+      // el general para el MANAGER.
+      .sort((a, b) =>
+        isManager
+          ? a.baseExtraPrice - b.baseExtraPrice
+          : a.extraPrice - b.extraPrice,
+      );
+  }, [modifierList, search, isManager]);
 
   const hasSearch = search.trim().length > 0;
 
@@ -63,14 +72,16 @@ export function Modifiers() {
           </span>
         </div>
 
-        <Button
-          type="button"
-          onClick={handleCreate}
-          className="h-9 rounded-xl px-4 text-[12px] font-medium"
-        >
-          <Plus size={14} />
-          Nuevo modificador
-        </Button>
+        {isManager && (
+          <Button
+            type="button"
+            onClick={handleCreate}
+            className="h-9 rounded-xl px-4 text-[12px] font-medium"
+          >
+            <Plus size={14} />
+            Nuevo modificador
+          </Button>
+        )}
       </div>
 
       {/* Search */}
@@ -103,20 +114,21 @@ export function Modifiers() {
 
       {/* Content */}
       {filteredModifiers.length === 0 ? (
-        <EmptyModifiersState hasSearch={hasSearch} />
+        <EmptyModifiersState hasSearch={hasSearch} canCreate={isManager} />
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {filteredModifiers.map((modifier) => (
             <ModifierCard
               key={modifier.id}
               modifier={modifier}
-              onEdit={handleEdit}
+              onEdit={isManager ? handleEdit : undefined}
+              showLocationPrice={!isManager}
             />
           ))}
         </div>
       )}
 
-      {isModalOpen && (
+      {isManager && isModalOpen && (
         <ModifierModal
           modifier={selectedModifier}
           onClose={handleCloseModal}
@@ -129,9 +141,13 @@ export function Modifiers() {
 
 interface EmptyModifiersStateProps {
   hasSearch: boolean;
+  canCreate: boolean;
 }
 
-function EmptyModifiersState({ hasSearch }: EmptyModifiersStateProps) {
+function EmptyModifiersState({
+  hasSearch,
+  canCreate,
+}: EmptyModifiersStateProps) {
   return (
     <div className="rounded-2xl border border-dashed border-surface bg-white px-6 py-10 text-center shadow-sm">
       <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-surface text-muted-foreground">
@@ -139,13 +155,15 @@ function EmptyModifiersState({ hasSearch }: EmptyModifiersStateProps) {
       </div>
 
       <h2 className="mt-4 text-sm font-semibold text-inkblack">
-        {hasSearch ? "No se encontraron modificador" : "No hay modificador"}
+        {hasSearch ? "No se encontraron modificadores" : "No hay modificadores"}
       </h2>
 
       <p className="mx-auto mt-1 max-w-sm text-[12px] text-muted-foreground">
         {hasSearch
           ? "Intenta buscar con otro nombre o limpia el filtro."
-          : "Crea tu primera categoría para empezar a organizar los productos del catálogo."}
+          : canCreate
+            ? "Crea tu primer modificador para ofrecer extras en los productos."
+            : "Aún no hay modificadores asignados a tu sucursal."}
       </p>
     </div>
   );

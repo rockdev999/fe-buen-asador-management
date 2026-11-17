@@ -40,6 +40,8 @@ export interface OfflineSyncOutcome {
 const WARNING_LABELS: Record<OfflineSaleWarning, (n: number) => string> = {
   PRICE_CHANGED: (n) => `${n} con precio distinto al catálogo`,
   PRODUCT_NOT_SELLABLE: (n) => `${n} con producto desactivado`,
+  MODIFIER_NOT_OFFERED: (n) =>
+    `${n} con modificador que ya no se ofrece en la sucursal`,
   TICKET_CODE_REGENERATED: (n) => `${n} con código de ticket nuevo`,
   OCCURRED_AT_ADJUSTED: (n) =>
     `${n} con hora ajustada (revisa el reloj del equipo)`,

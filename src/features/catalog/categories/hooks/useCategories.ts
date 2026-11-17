@@ -71,7 +71,11 @@ export const useGetMenuHandler = (enabled: boolean = true) => {
           ),
         ),
     enabled,
-    staleTime: 10 * 60 * 1000, // 10 minutes
+    // Precios, modificadores y bajas cambian desde otros equipos: el POS los
+    // vuelve a pedir pasados 2 minutos y al volver a la pestaña. Sin conexión
+    // el queryFn devuelve la copia offline, así que no falla.
+    staleTime: 2 * 60 * 1000,
+    refetchOnWindowFocus: true,
   });
 
   const data = useMemo(

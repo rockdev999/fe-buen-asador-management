@@ -53,6 +53,7 @@ export type OfflineSaleErrorCode =
 export type OfflineSaleWarning =
   | "PRICE_CHANGED"
   | "PRODUCT_NOT_SELLABLE"
+  | "MODIFIER_NOT_OFFERED"
   | "TICKET_CODE_REGENERATED"
   | "OCCURRED_AT_ADJUSTED";
 
