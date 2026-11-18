@@ -229,6 +229,35 @@ describe("resolveErrorMessage · ramas adicionales", () => {
     ).toBe(MESSAGES.ERROR.VALIDATION);
   });
 
+  it.each([
+    [API_ERROR_CODES.DUPLICATE_VALUE, 409, "Ya existe un registro con ese valor"],
+    [API_ERROR_CODES.INVALID_VALUE, 400, "El valor no es válido"],
+  ])("%s muestra el message del backend", (errorCode, status, message) => {
+    expect(
+      resolveErrorMessage({ kind: "http", status, errorCode, message }),
+    ).toBe(message);
+  });
+
+  it.each([
+    [API_ERROR_CODES.DUPLICATE_VALUE, 409, MESSAGES.ERROR.CONFLICT],
+    [API_ERROR_CODES.INVALID_VALUE, 400, MESSAGES.ERROR.BAD_REQUEST],
+  ])("%s sin message cae al texto por status", (errorCode, status, expected) => {
+    expect(resolveErrorMessage({ kind: "http", status, errorCode })).toBe(
+      expected,
+    );
+  });
+
+  it("descuento mayor al subtotal muestra el message del backend", () => {
+    expect(
+      resolveErrorMessage({
+        kind: "http",
+        status: 400,
+        errorCode: API_ERROR_CODES.BAD_REQUEST,
+        message: "El descuento no puede ser mayor al subtotal",
+      }),
+    ).toBe("El descuento no puede ser mayor al subtotal");
+  });
+
   it("errorCode desconocido cae al texto por status", () => {
     expect(
       resolveErrorMessage({ kind: "http", status: 404, errorCode: "ALGO_NUEVO" }),

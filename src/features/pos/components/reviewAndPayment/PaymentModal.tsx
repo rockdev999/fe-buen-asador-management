@@ -58,7 +58,9 @@ export function PaymentModal({
   const total = getTotal();
   const change = Math.max(0, received - total);
   const isCash = method === PaymentMethodEnum.CASH;
-  const canConfirm = !isLoading && (!isCash || received >= total);
+  const discountExceeds = discount > subtotal;
+  const canConfirm =
+    !isLoading && !discountExceeds && (!isCash || received >= total);
   const missing =
     isCash && received > 0 && received < total ? total - received : 0;
 
@@ -161,6 +163,11 @@ export function PaymentModal({
                 />
               </div>
             </div>
+            {discountExceeds && (
+              <p className="text-[11px] text-red-600 text-right">
+                El descuento no puede ser mayor al subtotal
+              </p>
+            )}
 
             <div className="border-t border-surface/80 pt-2 flex justify-between items-baseline">
               <span className="text-[12px] font-semibold text-inkblack">
