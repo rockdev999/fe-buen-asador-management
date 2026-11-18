@@ -306,7 +306,7 @@ Una misma ruta puede aparecer con otro nombre según el rol: `/shifts` es "Caja"
 | Rol | Alcance | Responsabilidades |
 |---|---|---|
 | **MANAGER** (Gerente) | Todas las sucursales | Control total: usuarios, sucursales, catálogo, inventario e insumos. Ve de forma consolidada los pedidos, ventas, egresos, nómina y turnos. Es el único con acceso a Reportes. |
-| **ADMIN** (Administrador) | Su sucursal | Catálogo, inventario e insumos. Gestiona pedidos (cambia estados), edita egresos y nómina, configura sueldos diarios y **aprueba los cierres de caja**. No cobra ni registra egresos o pagos. |
+| **ADMIN** (Administrador) | Su sucursal | Consulta el catálogo y cambia la disponibilidad de productos y categorías en su sucursal (no crea, edita ni da de baja). Inventario e insumos. Gestiona pedidos (cambia estados), edita egresos y nómina, configura sueldos diarios y **aprueba los cierres de caja**. No cobra ni registra egresos o pagos. |
 | **CASHIER** (Cajero) | Su sucursal | POS, cobros, pedidos de WhatsApp, **registro** de egresos y pagos de nómina, apertura y cierre de su turno. Necesita un turno abierto para operar. |
 | **EMPLOYEE** (Empleado) | — | Definido pero sin pantallas (reservado para uso futuro). |
 
@@ -590,7 +590,7 @@ Es la base del modelo multi-sucursal: el login devuelve estas asignaciones, y lo
   - *Global*: se cambia desde el formulario del producto. Si está apagada, el producto no se vende en ninguna sucursal.
   - *Por sucursal*: se cambia con un interruptor en la tabla. Si el Gerente ve "todas las sucursales", el interruptor puede mostrar el estado *parcial*.
 
-En los tres submódulos, el Gerente asigna libremente las sucursales. El Administrador queda restringido a la suya, tanto en la interfaz como antes de enviar el formulario; el backend también lo valida.
+**Permisos:** solo el Gerente crea, edita y da de baja categorías, modificadores y productos (incluida la imagen y la disponibilidad *global*), y asigna libremente las sucursales. El Administrador solo consulta el catálogo y cambia la disponibilidad en su sucursal: la de cada producto (`PATCH /products/:id/availability`) y la masiva por categoría (`PATCH /categories/:id/availability`). El backend hace cumplir estas reglas.
 
 ### 9.6 Inventario (`features/inventory`) — `/inventory`, Gerente y Administrador
 
@@ -968,7 +968,8 @@ sequenceDiagram
 | Usuarios | ✅ | — | — |
 | Sucursales | ✅ | — | — |
 | Reportes | ✅ | — | — |
-| Catálogo | ✅ | ✅ (su sucursal) | — |
+| Catálogo: crear, editar y dar de baja | ✅ | — | — |
+| Catálogo: consultar y cambiar disponibilidad | ✅ | ✅ (su sucursal) | — |
 | Inventario e insumos | ✅ | ✅ (su sucursal) | — |
 | Alertas de stock en tiempo real | ✅ | ✅ | — |
 | POS (vender, cobrar) | — | — | ✅ |
@@ -1014,10 +1015,10 @@ sequenceDiagram
 | CU-07 | Restablecer contraseña de un usuario | Gerente | Usuarios |
 | CU-08 | Gestionar sucursales | Gerente | Sucursales |
 | CU-09 | Asignar usuarios y roles a una sucursal | Gerente | Sucursales |
-| CU-10 | Gestionar categorías | Gerente, Administrador | Catálogo |
+| CU-10 | Gestionar categorías | Gerente | Catálogo |
 | CU-11 | Activar o desactivar una categoría completa | Gerente, Administrador | Catálogo |
-| CU-12 | Gestionar modificadores | Gerente, Administrador | Catálogo |
-| CU-13 | Gestionar productos | Gerente, Administrador | Catálogo |
+| CU-12 | Gestionar modificadores | Gerente | Catálogo |
+| CU-13 | Gestionar productos | Gerente | Catálogo |
 | CU-14 | Cambiar la disponibilidad de un producto | Gerente, Administrador | Catálogo |
 | CU-15 | Registrar stock inicial de un producto | Gerente, Administrador | Inventario |
 | CU-16 | Ajustar stock de un producto | Gerente, Administrador | Inventario |
@@ -1067,7 +1068,9 @@ flowchart LR
     UC_D(["CU-41 Dashboard"])
     UC_T(["CU-40 Historial de turnos"])
     UC_A(["CU-43 Alertas de stock"])
-    UC_C(["CU-10..21 Catálogo, inventario,<br/>insumos y recetas"])
+    UC_CAT(["CU-10, 12, 13 Gestionar catálogo"])
+    UC_DISP(["CU-11, 14 Disponibilidad de productos"])
+    UC_C(["CU-15..21 Inventario,<br/>insumos y recetas"])
     UC_W(["CU-29 Atender pedido de WhatsApp"])
     UC_EE(["CU-34 Editar egreso"])
     UC_SU(["CU-35 Configurar sueldos"])
@@ -1085,8 +1088,8 @@ flowchart LR
     UC_VE(["CU-31/32 Ventas"])
   end
 
-  Gerente --- UC_U & UC_R & UC_D & UC_T & UC_A & UC_C
-  Admin --- UC_D & UC_T & UC_A & UC_C & UC_W & UC_EE & UC_SU & UC_AP
+  Gerente --- UC_U & UC_R & UC_D & UC_T & UC_A & UC_CAT & UC_DISP & UC_C
+  Admin --- UC_D & UC_T & UC_A & UC_DISP & UC_C & UC_W & UC_EE & UC_SU & UC_AP
   Cajero --- UC_AT & UC_V & UC_CP & UC_W & UC_CW & UC_E & UC_N & UC_CT
   Gerente & Admin & Cajero --- UC_S & UC_P & UC_VE
   ClienteWA --- UC_W
@@ -1098,7 +1101,7 @@ flowchart LR
   UC_CT -.->|lo aprueba| UC_AP
 ```
 
-> La herencia Gerente → Administrador es conceptual (el Gerente supervisa lo que gestiona el Administrador). En el sistema, algunas acciones operativas son exclusivas del Administrador (aprobar cierres) o del Cajero (cobrar).
+> La herencia Gerente → Administrador es conceptual (el Gerente supervisa lo que gestiona el Administrador). En el sistema, algunas acciones operativas son exclusivas del Administrador (aprobar cierres) o del Cajero (cobrar), y la gestión del catálogo (crear, editar y dar de baja) es exclusiva del Gerente.
 
 ### 11.4 Especificación de los casos de uso principales
 
