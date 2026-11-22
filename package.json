@@ -13,6 +13,7 @@
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
     "e2e": "playwright test",
+    "e2e:isolated": "node scripts/e2e-isolated.mjs",
     "e2e:ui": "playwright test --ui",
     "e2e:report": "playwright show-report e2e-results/report",
     "analyze": "vite build --mode analyze"

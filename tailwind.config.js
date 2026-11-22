@@ -30,6 +30,12 @@ module.exports = {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
         },
+        // Fondo de Select/Popover/Dropdown (shadcn). Sin esto bg-popover no
+        // genera clase y los menús quedan transparentes.
+        popover: {
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
+        },
         brand: {
           DEFAULT: "#FF4D00",
           light: "#FF8C42",

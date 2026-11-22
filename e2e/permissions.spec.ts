@@ -8,8 +8,10 @@
  * |--------------------|---------|---------------|--------|
  * | /users             |   ✔     |  ✘ dashboard  | ✘ pos  |
  * | /locations         |   ✔     |  ✘ dashboard  | ✘ pos  |
- * | /reports           |   ✔     |  ✘ dashboard  | ✘ pos  |
+ * | /reports           |   ✔     | ✔ (gastos/nómina) | ✘ pos  |
  * | /catalog/products  |   ✔     |      ✔        | ✘ pos  |
+ * | /catalog/categories|   ✔     |  ✔ (lectura)  | ✘ pos  |
+ * | /catalog/modifiers |   ✔     |  ✔ (lectura)  | ✘ pos  |
  * | /inventory         |   ✔     |      ✔        | ✘ pos  |
  * | /dashboard         |   ✔     |      ✔        | ✘ pos  |
  * | /sales             |   ✔     |      ✔        |   ✔    |
@@ -23,8 +25,10 @@ type Rule = { path: string; allowed: Record<Role, boolean> };
 const RULES: Rule[] = [
   { path: "/users", allowed: { manager: true, admin: false, cashier: false } },
   { path: "/locations", allowed: { manager: true, admin: false, cashier: false } },
-  { path: "/reports", allowed: { manager: true, admin: false, cashier: false } },
+  { path: "/reports", allowed: { manager: true, admin: true, cashier: false } },
   { path: "/catalog/products", allowed: { manager: true, admin: true, cashier: false } },
+  { path: "/catalog/categories", allowed: { manager: true, admin: true, cashier: false } },
+  { path: "/catalog/modifiers", allowed: { manager: true, admin: true, cashier: false } },
   { path: "/inventory", allowed: { manager: true, admin: true, cashier: false } },
   { path: "/dashboard", allowed: { manager: true, admin: true, cashier: false } },
   { path: "/sales", allowed: { manager: true, admin: true, cashier: true } },

@@ -1,48 +1,73 @@
-import { useMemo, useState } from "react";
-import { CalendarDays, ChefHat, Receipt, Wallet } from "lucide-react";
+import { useMemo } from "react";
+import { CalendarDays, MapPin } from "lucide-react";
 import { PageHeader } from "@/components/shared/DataTable/PageHeader";
 import {
   AsyncDropdown,
   AsyncDropdownOption,
 } from "@/components/shared/Interactives/AsyncDropdown";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useGetLocationSimple } from "@/features/locations/hooks/useLocation";
 import { cn } from "@/lib/utils";
 import { ReportParams } from "../dto/report.dto";
+import { SUMMARY_PDF_ROLES, tabsForRole } from "../config/report-tabs";
+import { useReportFilters } from "../hooks/useReportFilters";
+import { useReportPdfDownload } from "../hooks/useReports";
 import {
-  DEFAULT_REPORT_PERIOD,
+  comparisonLabel,
   formatReportDate,
-  getReportPeriodRange,
-  REPORT_PERIOD_OPTIONS,
-  ReportPeriod,
+  periodLabel,
+  previousRange,
 } from "../utils/report-period";
+import { ReportPeriodPicker } from "./components/ReportPeriodPicker";
+import { ExportMenu } from "./components/ExportMenu";
+import { ReportTabProps } from "./components/ReportBlocks";
 import { SalesReportTab } from "./components/SalesReportTab";
-import { ExpensesPayrollReportTab } from "./components/ExpensesPayrollReportTab";
+import { ExpensesReportTab } from "./components/ExpensesReportTab";
+import { PayrollReportTab } from "./components/PayrollReportTab";
 import { IngredientsReportTab } from "./components/IngredientsReportTab";
-
-type ReportsTab = "sales" | "expenses" | "ingredients";
-
-const TABS: { key: ReportsTab; label: string; icon: React.ElementType }[] = [
-  { key: "sales", label: "Ventas", icon: Receipt },
-  { key: "expenses", label: "Egresos y nómina", icon: Wallet },
-  { key: "ingredients", label: "Insumos", icon: ChefHat },
-];
 
 const ALL_LOCATIONS_LABEL = "Todas las sucursales";
 
+const TAB_DESCRIPTIONS = {
+  sales: "Cuánto se vendió, cómo pagaron y qué productos se venden más.",
+  expenses: "En qué se gastó el dinero, por categoría.",
+  payroll: "Cuánto se pagó a cada empleado.",
+  ingredients: "Compras, consumo y merma de cada insumo.",
+} as const;
+
+const formatRange = (from: string, to: string) =>
+  from === to ? formatReportDate(from) : `${formatReportDate(from)} – ${formatReportDate(to)}`;
+
 export function Reports() {
-  const [activeTab, setActiveTab] = useState<ReportsTab>("sales");
-  const [period, setPeriod] = useState<ReportPeriod>(DEFAULT_REPORT_PERIOD);
-  const [locationId, setLocationId] = useState("");
+  const { user, isManager, hasRole } = useAuth();
+  const { filters, setTab, setMode, setRange, setLocationId } = useReportFilters();
+  const { download, pending } = useReportPdfDownload();
+
+  const tabs = tabsForRole(hasRole);
+  const activeTab = tabs.find((t) => t.key === filters.tab) ?? tabs[0];
 
   const { data: locations, status: locationsStatus } = useGetLocationSimple();
 
-  const params = useMemo<ReportParams>(
-    () => ({
-      ...getReportPeriodRange(period),
-      ...(locationId && { locationId }),
-    }),
-    [period, locationId],
-  );
+  // El admin siempre ve su sucursal: el backend ignora locationId.
+  const locationId = isManager ? filters.locationId : "";
+  const rangeValid = filters.rangeError === null;
+
+  const tabProps = useMemo<ReportTabProps>(() => {
+    const loc = locationId ? { locationId } : {};
+    const params: ReportParams = { ...filters.range, ...loc };
+    const prev = rangeValid ? previousRange(filters.mode, filters.range) : null;
+    return {
+      params,
+      previous: prev && { ...prev, ...loc },
+      compareLabel: comparisonLabel(filters.mode),
+    };
+  }, [filters.range, filters.mode, locationId, rangeValid]);
+
+  const scopeLabel = isManager
+    ? locationId
+      ? (locations?.find((l) => l.id === locationId)?.name ?? "Sucursal")
+      : ALL_LOCATIONS_LABEL
+    : (user?.locationName ?? "Tu sucursal");
 
   const locationOptions: AsyncDropdownOption<{ id: string; name: string }>[] =
     (locations ?? []).map((loc) => ({
@@ -52,85 +77,131 @@ export function Reports() {
       render: (item) => <span>{item.name}</span>,
     }));
 
+  if (!activeTab) return null;
+
   return (
     <div className="flex flex-col h-full overflow-hidden rounded-2xl">
       <PageHeader
         title="Reportes"
-        subtitle="Ventas, egresos, nómina e insumos por período y sucursal"
+        subtitle="Revisa cómo va el negocio y descarga los reportes en PDF"
       />
 
-      {/* Filtros */}
-      <div className="flex items-start gap-3 px-4 py-2.5 border-b border-surface bg-white flex-shrink-0 flex-wrap">
-        <div className="flex flex-col gap-1">
-          <div
-            role="radiogroup"
-            aria-label="Período"
-            className="flex items-center gap-1 rounded-xl bg-surface/60 p-1"
-          >
-            {REPORT_PERIOD_OPTIONS.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                role="radio"
-                aria-checked={period === option.value}
-                onClick={() => setPeriod(option.value)}
-                className={cn(
-                  "h-7 px-3 rounded-lg text-[12px] font-medium transition-all",
-                  period === option.value
-                    ? "bg-white text-brand shadow-sm"
-                    : "text-muted-foreground hover:text-inkblack",
-                )}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-          <span className="flex items-center gap-1 pl-1 text-[11px] text-muted-foreground tabular-nums">
-            <CalendarDays size={11} />
-            {formatReportDate(params.dateFrom)} –{" "}
-            {formatReportDate(params.dateTo)}
-          </span>
-        </div>
-
-        <AsyncDropdown
-          placeholder={ALL_LOCATIONS_LABEL}
-          clearLabel={ALL_LOCATIONS_LABEL}
-          value={locationId}
-          onChange={(id) => setLocationId(id)}
-          options={locationOptions}
-          isLoading={locationsStatus === "pending"}
-          emptyText="Sin sucursales"
-          searchable
+      {/* Filtros (aplican a todas las pestañas) + exportar */}
+      <div className="flex items-start gap-3 px-4 py-3 border-b border-surface bg-white flex-shrink-0 flex-wrap">
+        <ReportPeriodPicker
+          mode={filters.mode}
+          range={filters.range}
+          error={filters.rangeError}
+          onModeChange={setMode}
+          onRangeChange={setRange}
         />
-      </div>
 
-      {/* Pestañas */}
-      <div className="flex items-center gap-1 px-4 py-2 border-b border-surface bg-white flex-shrink-0 overflow-x-auto">
-        {TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            onClick={() => setActiveTab(tab.key)}
-            className={cn(
-              "flex items-center gap-1.5 h-8 px-3 rounded-xl text-[12px] font-medium transition-all whitespace-nowrap",
-              activeTab === tab.key
-                ? "bg-brand/8 text-brand"
-                : "text-muted-foreground hover:bg-surface hover:text-inkblack",
-            )}
-          >
-            <tab.icon size={13} />
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Cada pestaña consulta solo su endpoint */}
-      <div className="flex-1 overflow-y-auto p-4">
-        {activeTab === "sales" && <SalesReportTab params={params} />}
-        {activeTab === "expenses" && (
-          <ExpensesPayrollReportTab params={params} />
+        {isManager && (
+          <div className="w-[220px]">
+            <AsyncDropdown
+              placeholder={ALL_LOCATIONS_LABEL}
+              clearLabel={ALL_LOCATIONS_LABEL}
+              value={locationId}
+              onChange={(id) => setLocationId(id)}
+              options={locationOptions}
+              isLoading={locationsStatus === "pending"}
+              emptyText="Sin sucursales"
+              searchable
+            />
+          </div>
         )}
-        {activeTab === "ingredients" && <IngredientsReportTab params={params} />}
+
+        <div className="ml-auto">
+          <ExportMenu
+            activeTab={activeTab}
+            canSummary={hasRole(...SUMMARY_PDF_ROLES)}
+            disabledReason={filters.rangeError}
+            pending={pending}
+            onDownload={(type, detail) =>
+              download(type, {
+                ...tabProps.params,
+                ...(detail !== undefined && { detail }),
+              })
+            }
+          />
+        </div>
+      </div>
+
+      {/* Pestañas: solo las que el rol puede ver */}
+      <div
+        role="tablist"
+        aria-label="Reporte"
+        className="flex items-center gap-1 px-4 border-b border-surface bg-white flex-shrink-0 overflow-x-auto"
+      >
+        {tabs.map((tab) => {
+          const active = activeTab.key === tab.key;
+          return (
+            <button
+              key={tab.key}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => setTab(tab.key)}
+              className={cn(
+                "relative flex items-center gap-1.5 h-11 px-3 text-[13px] font-medium whitespace-nowrap transition-colors",
+                active ? "text-brand" : "text-inkblack/50 hover:text-inkblack",
+              )}
+            >
+              <tab.icon size={14} />
+              {tab.label}
+              <span
+                className={cn(
+                  "absolute inset-x-2 -bottom-px h-0.5 rounded-full transition-colors",
+                  active ? "bg-brand" : "bg-transparent",
+                )}
+              />
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="flex-1 overflow-y-auto bg-surface/30">
+        <div className="mx-auto max-w-[1400px] p-4 flex flex-col gap-4">
+          {/* Qué se está viendo */}
+          <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
+            <div>
+              <h2 className="text-base font-semibold text-inkblack">{activeTab.label}</h2>
+              <p className="text-[12px] text-muted-foreground">
+                {TAB_DESCRIPTIONS[activeTab.key]}
+              </p>
+            </div>
+            {rangeValid && (
+              <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[12px] text-inkblack/70">
+                <span className="flex items-center gap-1">
+                  <CalendarDays size={12} className="text-muted-foreground" />
+                  <span className="font-medium">{periodLabel(filters.mode)}</span>
+                  <span className="tabular-nums text-muted-foreground">
+                    {formatRange(filters.range.dateFrom, filters.range.dateTo)}
+                  </span>
+                </span>
+                <span className="flex items-center gap-1">
+                  <MapPin size={12} className="text-muted-foreground" />
+                  <span className="font-medium">{scopeLabel}</span>
+                </span>
+              </p>
+            )}
+          </div>
+
+          {!rangeValid ? (
+            <div className="rounded-2xl border border-dashed border-inkblack/10 bg-white py-14 text-center">
+              <p className="text-[13px] font-medium text-inkblack/60">Elige un periodo válido</p>
+              <p className="mt-1 text-[12px] text-muted-foreground">{filters.rangeError}</p>
+            </div>
+          ) : (
+            <>
+              {/* Solo se consulta el endpoint de la pestaña activa */}
+              {activeTab.key === "sales" && <SalesReportTab {...tabProps} />}
+              {activeTab.key === "expenses" && <ExpensesReportTab {...tabProps} />}
+              {activeTab.key === "payroll" && <PayrollReportTab {...tabProps} />}
+              {activeTab.key === "ingredients" && <IngredientsReportTab {...tabProps} />}
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

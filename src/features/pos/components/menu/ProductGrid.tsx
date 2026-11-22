@@ -20,14 +20,14 @@ interface ProductGridProps {
 export function ProductGrid({ isOpen, onAddItem }: ProductGridProps) {
   const { data: menu, status: menuStatus } = useGetMenuHandler(isOpen);
 
-  const [selectedCat, setSelectedCat] = useState<MenuCategory | null>(null);
+  // Se guarda solo el id: los productos se leen siempre del menú actual. Antes
+  // se guardaba la categoría entera y, al refrescarse el menú (p. ej. por
+  // catalog-updated), la pestaña abierta seguía mostrando precios y productos viejos.
+  const [selectedCatId, setSelectedCatId] = useState<string | null>(null);
   const activeSelectedCat = useMemo(() => {
     if (!menu || menu.length === 0) return null;
-    if (selectedCat && menu.some((cat) => cat.id === selectedCat.id)) {
-      return selectedCat;
-    }
-    return menu[0];
-  }, [menu, selectedCat]);
+    return menu.find((cat) => cat.id === selectedCatId) ?? menu[0];
+  }, [menu, selectedCatId]);
 
   return (
     <div className="flex flex-col flex-1 overflow-hidden">
@@ -42,7 +42,7 @@ export function ProductGrid({ isOpen, onAddItem }: ProductGridProps) {
           <CategoryTabs
             categories={menu}
             selected={activeSelectedCat ?? menu[0]}
-            onSelect={setSelectedCat}
+            onSelect={(cat: MenuCategory) => setSelectedCatId(cat.id)}
           />
         )
       )}

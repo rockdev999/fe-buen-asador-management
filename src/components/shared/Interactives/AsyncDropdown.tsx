@@ -65,19 +65,31 @@ export function AsyncDropdown<T>({
         )
       : options;
 
+  // Se cierra al tocar fuera o con Escape, para que haya un solo menú abierto.
+  // pointerdown (en captura) y no mousedown: los Select/Popover de Radix
+  // cancelan el pointerdown al abrirse y el navegador ya no emite mousedown,
+  // así que este menú quedaba abierto junto al otro.
   useEffect(() => {
-    function handleClickOutside(e: MouseEvent) {
-      if (
-        containerRef.current &&
-        !containerRef.current.contains(e.target as Node)
-      ) {
-        setOpen(false);
-        setSearch("");
+    if (!open) return;
+    function close() {
+      setOpen(false);
+      setSearch("");
+    }
+    function handlePointerDown(e: PointerEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        close();
       }
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") close();
+    }
+    document.addEventListener("pointerdown", handlePointerDown, true);
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", handlePointerDown, true);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [open]);
 
   useEffect(() => {
     if (open && searchable) {

@@ -5,6 +5,23 @@ manejan la aplicación desde el navegador, contra el **backend real**.
 
 ## Cómo ejecutarlas
 
+### Modo aislado (recomendado, repetible)
+
+```bash
+npm run e2e:isolated
+```
+
+No necesita credenciales ni datos previos. El script (`scripts/e2e-isolated.mjs`):
+
+1. Levanta el entorno de pruebas del backend (`npm run e2e:serve` en `../be-buen-asador-management`, o `E2E_BACKEND_DIR`). Crea una base nueva, la API en el puerto 3998, un SMTP de prueba y un administrador y un cajero por sucursal.
+2. Crea por la API los datos que estas pruebas necesitan: «E2E Para Tres» (275 Bs), «E2E Sin Stock» (cuantificable, stock 0) y el turno abierto del cajero.
+3. Ejecuta Playwright con Vite en el puerto 5174 apuntando a esa API (nunca reutiliza un Vite ya abierto que pueda apuntar a staging).
+4. Detiene el backend y borra su base al terminar, aunque las pruebas fallen.
+
+Acepta los argumentos de `playwright test`, por ejemplo `npm run e2e:isolated -- catalog`.
+
+### Contra un backend ya levantado
+
 1. Levantar el backend (`VITE_API_URL` del `.env`).
 2. Copiar `.env.e2e.example` como `.env.e2e` y completar las credenciales.
 3. Ejecutar:
@@ -27,6 +44,7 @@ e2e/
 ├── auth.spec.ts          RF-01 Autenticación
 ├── permissions.spec.ts   RF-02 Control de acceso por rol
 ├── pos-sale.spec.ts      RF-03 Venta en el POS
+├── catalog.spec.ts       RF-08, RF-09, RF-33, RF-34 Catálogo, precios por sucursal y tiempo real
 ├── pages/                Page Objects (LoginPage, PosPage)
 └── support/users.ts      Usuarios de prueba desde .env.e2e
 ```
@@ -56,13 +74,15 @@ e2e/
 | /users | ✔ | ✘ | ✘ |
 | /locations | ✔ | ✘ | ✘ |
 | /reports | ✔ | ✘ | ✘ |
-| /catalog/products | ✔ | ✔ | ✘ |
+| /catalog/products | ✔ | ✔ (solo disponibilidad) | ✘ |
+| /catalog/categories | ✔ | ✔ (solo lectura) | ✘ |
+| /catalog/modifiers | ✔ | ✔ (solo lectura) | ✘ |
 | /inventory | ✔ | ✔ | ✘ |
 | /dashboard | ✔ | ✔ | ✘ |
 | /sales | ✔ | ✔ | ✔ |
 | /pos | ✘ | ✘ | ✔ |
 
-Cada celda es un caso: CP-PER-01 a CP-PER-24.
+Cada celda es un caso: CP-PER-01 a CP-PER-30.
 
 ### RF-03 · Venta en el POS
 
@@ -94,6 +114,25 @@ Cada celda es un caso: CP-PER-01 a CP-PER-24.
 | CP-POS-09 | Venta presencial en efectivo con vuelto | "¡Pago registrado!"; "Nuevo pedido" vacía el carrito |
 | CP-POS-10 | Venta para llevar con tarjeta | Sin campo de monto; "¡Pago registrado!" con el nombre del cliente |
 | CP-POS-11 | Producto sin stock | El backend responde 409; aviso de stock; no se abre el cobro |
+
+### RF-08, RF-09, RF-33, RF-34 · Catálogo
+
+| ID | Técnica | Caso | Resultado esperado |
+|---|---|---|---|
+| CP-CAT-01 | Tabla de decisión | Gerente en productos y categorías | Ve «Nuevo producto» y «Nueva categoría» |
+| CP-CAT-02 | Tabla de decisión | Administrador en productos y categorías | No ve esos botones (solo cambia la disponibilidad) |
+| CP-CAT-03 | Tabla de decisión | Administrador hace clic en un producto | No se abre el formulario de edición |
+| CP-CAT-04 | Partición (precio propio) | Gerente en «todas las sucursales» | Precio general y «<sucursal>: Bs X» de la que tiene precio propio |
+| CP-CAT-05 | Partición (sin precio propio) | POS del cajero | Muestra el precio general |
+| CP-CAT-06 | Partición (con precio propio) | POS del cajero | Muestra el precio de su sucursal |
+| CP-CAT-07 | Tiempo real (SSE) | El gerente pone un producto como no disponible | Desaparece del POS sin recargar |
+| CP-CAT-08 | Tiempo real (SSE) | El gerente crea un producto | Aparece en el POS sin recargar |
+| CP-CAT-09 | Caso de uso | El gerente desmarca «Disponible para venta» | El producto deja de ofrecerse en el POS |
+
+Defectos detectados por estos casos (corregidos):
+
+- **CP-CAT-09:** el formulario enviaba `available` y el backend espera `isAvailable`, así que el check «Disponible para venta» no tenía efecto. Se corrigió en `mapProductFormToDTO`.
+- **CP-CAT-07:** el POS guardaba una copia de la categoría abierta. Al refrescarse el menú, esa pestaña seguía mostrando los productos y precios anteriores hasta cambiar de pestaña. Ahora guarda solo el id y lee los productos del menú actual (`ProductGrid`).
 
 ### RF-04 · Pedidos por WhatsApp — transición de estados
 

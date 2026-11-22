@@ -75,7 +75,8 @@ export const mapProductFormToDTO = (
   description: form.description ?? null,
   imageUrl: form.imageUrl ?? null,
   price: form.price,
-  available: form.available,
+  // Antes se enviaba `available`, que el backend ignoraba: el check no tenía efecto
+  isAvailable: form.available,
   isQuantifiable: form.isQuantifiable,
   haveModifiers: form.haveModifiers,
   categoryId: form.categoryId,
