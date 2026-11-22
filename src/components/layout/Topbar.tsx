@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import { Building2, LogOut, Repeat, User, WifiOff } from "lucide-react";
+import { Building2, LogOut, Menu, Repeat, User, WifiOff } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -25,12 +25,14 @@ import { AppModal } from "@/components/shared/Overlay/AppModal";
 import { PanelHeader } from "@/components/shared/Overlay/PanelHeader";
 import { PanelFooter } from "@/components/shared/Overlay/PanelFooter";
 import { Button } from "@/components/shared/Basics/Button";
+import { useUiStore } from "@/stores/ui.store";
 
 const trans = t.auth.switchLocation;
 
 export function Topbar() {
   const { user, isCashier } = useAuth();
   const navigate = useNavigate();
+  const { mobileNavOpen, setMobileNavOpen } = useUiStore();
   const [isSwitchLocationOpen, setIsSwitchLocationOpen] = useState(false);
   const [confirmLogout, setConfirmLogout] = useState(false);
   const unsyncedSales = useOfflineStore((s) => s.sales.length);
@@ -51,16 +53,28 @@ export function Topbar() {
   }
 
   return (
-    <header className="h-14 bg-white border-b border-surface flex items-center px-5 gap-3 flex-shrink-0">
+    <header className="h-14 bg-white border-b border-surface flex items-center px-3 md:px-5 gap-2 md:gap-3 flex-shrink-0">
+      {/* Menú: solo en móvil (en escritorio el lateral está siempre visible) */}
+      <button
+        type="button"
+        onClick={() => setMobileNavOpen(true)}
+        aria-label="Abrir menú"
+        aria-controls="app-sidebar"
+        aria-expanded={mobileNavOpen}
+        className="md:hidden -ml-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-inkblack/70 hover:bg-surface"
+      >
+        <Menu size={20} />
+      </button>
+
       {/* Brand + location */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 min-w-0">
         {user?.locationId && (
-          <div className="flex items-center gap-1 bg-surface text-brand-dark text-[11px] font-medium px-2 py-0.5 rounded-full mt-1">
+          <div className="hidden sm:flex items-center gap-1 bg-surface text-brand-dark text-[11px] font-medium px-2 py-0.5 rounded-full mt-1">
             <Building2 size={11} />
             <span>Sucursal</span>
           </div>
         )}
-        <span className="text-lg font-medium text-dark">
+        <span className="text-base md:text-lg font-medium text-dark truncate">
           {user?.locationName}
         </span>
       </div>

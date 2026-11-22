@@ -2,14 +2,55 @@ import { NAV_SECTIONS, NavItem } from "@/config/navigation/navSections";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { cn } from "@/lib/utils";
 import { useUiStore } from "@/stores/ui.store";
-import { ChevronDown, ChevronLeft, ChevronRight } from "lucide-react";
-import { useState } from "react";
+import { ChevronDown, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { useEffect, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 
+const MOBILE_QUERY = "(max-width: 767px)"; // por debajo de md (Tailwind)
+
+/** true en pantallas chicas, donde el menú es un panel superpuesto. */
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(
+    () => window.matchMedia(MOBILE_QUERY).matches,
+  );
+  useEffect(() => {
+    const mql = window.matchMedia(MOBILE_QUERY);
+    const onChange = (e: MediaQueryListEvent) => setIsMobile(e.matches);
+    mql.addEventListener("change", onChange);
+    return () => mql.removeEventListener("change", onChange);
+  }, []);
+  return isMobile;
+}
+
 export function Sidebar() {
-  const { sidebarOpen, toggleSidebar } = useUiStore();
+  const {
+    sidebarOpen: desktopOpen,
+    toggleSidebar,
+    mobileNavOpen,
+    setMobileNavOpen,
+  } = useUiStore();
   const { hasRole } = useAuth();
   const location = useLocation();
+  const isMobile = useIsMobile();
+
+  // En móvil el menú se superpone al contenido: siempre va expandido (con
+  // textos) y la opción de colapsar no aplica.
+  const sidebarOpen = isMobile || desktopOpen;
+
+  // Al navegar se cierra el panel móvil.
+  useEffect(() => {
+    setMobileNavOpen(false);
+  }, [location.pathname, setMobileNavOpen]);
+
+  // Escape cierra el panel móvil.
+  useEffect(() => {
+    if (!mobileNavOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobileNavOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [mobileNavOpen, setMobileNavOpen]);
 
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({
     Catálogo: true,
@@ -52,12 +93,29 @@ export function Sidebar() {
   };
 
   return (
-    <aside
-      className={cn(
-        "flex flex-col bg-inkblack transition-all duration-200 flex-shrink-0",
-        sidebarOpen ? "w-56" : "w-14",
-      )}
-    >
+    <>
+      {/* Fondo oscuro del panel móvil: tocarlo cierra el menú */}
+      <div
+        aria-hidden
+        onClick={() => setMobileNavOpen(false)}
+        className={cn(
+          "fixed inset-0 z-40 bg-inkblack/50 transition-opacity duration-200 md:hidden",
+          mobileNavOpen ? "opacity-100" : "pointer-events-none opacity-0",
+        )}
+      />
+      <aside
+        id="app-sidebar"
+        aria-label="Menú principal"
+        className={cn(
+          "flex flex-col bg-inkblack transition-all duration-200 flex-shrink-0",
+          // Móvil: panel fijo que entra desde la izquierda.
+          "fixed inset-y-0 left-0 z-50 w-64 shadow-2xl",
+          mobileNavOpen ? "translate-x-0" : "-translate-x-full",
+          // Escritorio: columna fija y colapsable, como siempre.
+          "md:static md:z-auto md:translate-x-0 md:shadow-none",
+          desktopOpen ? "md:w-56" : "md:w-14",
+        )}
+      >
       {/* Header */}
       <div className="flex items-center gap-3 px-3.5 h-14 border-b border-white/8">
         <div className="w-7 h-7 bg-brand rounded-lg flex items-center justify-center flex-shrink-0">
@@ -69,6 +127,15 @@ export function Sidebar() {
             Buen Asador
           </span>
         )}
+
+        <button
+          type="button"
+          onClick={() => setMobileNavOpen(false)}
+          aria-label="Cerrar menú"
+          className="ml-auto -mr-1 flex h-8 w-8 items-center justify-center rounded-md text-white/50 hover:bg-white/6 hover:text-white md:hidden"
+        >
+          <X size={18} />
+        </button>
       </div>
 
       {/* Nav */}
@@ -175,14 +242,16 @@ export function Sidebar() {
         ))}
       </nav>
 
-      {/* Toggle button */}
+      {/* Colapsar: solo en escritorio */}
       <button
         onClick={toggleSidebar}
-        className="mx-3 mb-2 flex items-center justify-center h-8 rounded-md text-white/40 hover:text-white hover:bg-white/6 transition-colors"
+        aria-label={desktopOpen ? "Colapsar menú" : "Expandir menú"}
+        className="mx-3 mb-2 hidden md:flex items-center justify-center h-8 rounded-md text-white/40 hover:text-white hover:bg-white/6 transition-colors"
       >
-        {sidebarOpen ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
+        {desktopOpen ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
       </button>
-    </aside>
+      </aside>
+    </>
   );
 }
 

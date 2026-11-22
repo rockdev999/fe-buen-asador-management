@@ -76,6 +76,14 @@ function notifyOffline(message: string, silent?: boolean) {
   if (!silent && !wasOffline) toast.error(message, { id: "network-offline" });
 }
 
+async function blobToJson(blob: Blob): Promise<unknown> {
+  try {
+    return JSON.parse(await blob.text());
+  } catch {
+    return undefined;
+  }
+}
+
 export async function errorInterceptor(
   error: unknown,
   instance: AxiosInstance,
@@ -85,6 +93,14 @@ export async function errorInterceptor(
     console.error(error);
     toast.error(MESSAGES.ERROR.GENERIC, { id: "unexpected-error" });
     return reject({ message: MESSAGES.ERROR.GENERIC });
+  }
+
+  // Descargas (responseType 'blob'): el error JSON del backend llega como
+  // Blob. Se decodifica para que el refresh del token y el toast con el
+  // mensaje del backend funcionen igual que en el resto de peticiones.
+  if (error.response && error.response.data instanceof Blob) {
+    // parseErrorBody tolera cualquier forma (o undefined si no era JSON).
+    error.response.data = (await blobToJson(error.response.data)) as ApiErrorResponse;
   }
 
   const config = error.config as RetriableConfig | undefined;

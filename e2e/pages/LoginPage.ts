@@ -20,8 +20,8 @@ export class LoginPage {
   }
 
   async goto() {
-    await this.page.goto("/login");
-    await expect(this.identifier).toBeVisible();
+    await this.page.goto("/login", { timeout: 90_000 });
+    await expect(this.identifier).toBeVisible({ timeout: 30_000 });
   }
 
   async fillCredentials(identifier: string, password: string) {

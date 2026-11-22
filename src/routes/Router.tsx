@@ -52,11 +52,13 @@ export const router = createBrowserRouter([
                 element: <RoleBasedRedirect />,
               },
 
-              // Dashboard — solo Manager y Admin
+              // Dashboard y Reportes — solo Manager y Admin. En Reportes el
+              // admin ve solo Gastos y Nómina de su sucursal.
               {
                 element: <RoleRoute roles={[RoleEnum.MANAGER, RoleEnum.ADMIN]} />,
                 children: [
                   { path: PATHS.DASHBOARD, element: <Dashboard /> },
+                  { path: PATHS.REPORTS, element: <Reports /> },
                 ],
               },
 
@@ -66,7 +68,6 @@ export const router = createBrowserRouter([
                 children: [
                   { path: PATHS.USERS, element: <Users /> },
                   { path: PATHS.LOCATIONS, element: <Locations /> },
-                  { path: PATHS.REPORTS, element: <Reports /> },
                 ],
               },
 

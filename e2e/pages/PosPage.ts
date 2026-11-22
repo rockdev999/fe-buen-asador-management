@@ -66,9 +66,25 @@ export class PosPage {
     ).toBeVisible();
   }
 
-  /** Tarjeta de producto del menú (nombre exacto + precio). */
+  /**
+   * Tarjeta de producto del menú. Su nombre accesible es
+   * "<texto de la imagen o iniciales> <nombre> BOB <precio>": sin imagen, la
+   * tarjeta muestra las iniciales en lugar del nombre repetido.
+   */
   product(name: string) {
-    return this.page.getByRole("button", { name: new RegExp(`^${name} ${name} BOB`) }).first();
+    const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    return this.page
+      .getByRole("button", { name: new RegExp(`^\\S+.* ${escaped} BOB `) })
+      .first();
+  }
+
+  /** Pestaña de categoría del menú (el POS muestra una categoría a la vez). */
+  category(name: string) {
+    return this.page.getByRole("button", { name, exact: true });
+  }
+
+  async openCategory(name: string) {
+    await this.category(name).click();
   }
 
   async addProduct(name: string, times = 1) {

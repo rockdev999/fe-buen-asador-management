@@ -5,6 +5,9 @@ interface UiState {
   sidebarOpen: boolean;
   toggleSidebar: () => void;
   setSidebarOpen: (open: boolean) => void;
+  /** Menú lateral como panel en pantallas chicas (< md). No se persiste. */
+  mobileNavOpen: boolean;
+  setMobileNavOpen: (open: boolean) => void;
 }
 
 export const useUiStore = create<UiState>()(
@@ -13,6 +16,8 @@ export const useUiStore = create<UiState>()(
       sidebarOpen: true,
       toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
       setSidebarOpen: (open) => set({ sidebarOpen: open }),
+      mobileNavOpen: false,
+      setMobileNavOpen: (open) => set({ mobileNavOpen: open }),
     }),
     {
       name: "ui-storage",

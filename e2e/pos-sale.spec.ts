@@ -21,6 +21,7 @@ test.use({ storageState: storageStateOf("cashier") });
 const PRODUCT = process.env.E2E_PRODUCT ?? "Para Tres";
 const PRICE = Number(process.env.E2E_PRODUCT_PRICE ?? 275);
 const NO_STOCK_PRODUCT = process.env.E2E_PRODUCT_NO_STOCK;
+const PRODUCT_CATEGORY = process.env.E2E_PRODUCT_CATEGORY;
 
 const money = (n: number) => new RegExp(`Bs\\.\\s*${n.toFixed(2).replace(".", "\\.")}`);
 
@@ -31,6 +32,8 @@ test.describe("RF-03 · Venta en el POS", () => {
     pos = new PosPage(page);
     await pos.goto();
     await pos.expectShiftOpen();
+    // El POS muestra una categoría a la vez: abrir la del producto de prueba
+    if (PRODUCT_CATEGORY) await pos.openCategory(PRODUCT_CATEGORY);
   });
 
   test.describe("Carrito", () => {

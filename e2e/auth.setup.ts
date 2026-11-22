@@ -8,6 +8,8 @@ import { storageStateOf, users } from "./support/users";
 
 for (const user of Object.values(users)) {
   setup(`sesión de ${user.role}`, async ({ page }) => {
+    // La primera carga de la corrida compila la app en Vite (arranque en frío)
+    setup.setTimeout(120_000);
     await new LoginPage(page).loginAs(user);
     await page.context().storageState({ path: storageStateOf(user.role) });
   });

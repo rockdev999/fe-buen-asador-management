@@ -62,7 +62,8 @@ export interface CreateProductDTO {
   description: string | null;
   imageUrl: string | null;
   price: number;
-  available: boolean;
+  /** Interruptor global "Disponible para venta" (el backend lo llama isAvailable). */
+  isAvailable: boolean;
   isQuantifiable: boolean;
   sortOrder: number;
   haveModifiers: boolean;

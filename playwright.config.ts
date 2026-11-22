@@ -53,9 +53,11 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: "npm run dev -- --port 5173 --strictPort",
+    command: `npm run dev -- --port ${new URL(BASE_URL).port || 5173} --strictPort`,
     url: BASE_URL,
-    reuseExistingServer: true,
+    // En modo aislado (npm run e2e:isolated) nunca reutilizar un Vite ya
+    // levantado: podría apuntar a otra API (p. ej. staging).
+    reuseExistingServer: process.env.E2E_ISOLATED !== "true",
     timeout: 120_000,
   },
 });
