@@ -1,6 +1,10 @@
 import { z } from "zod";
 import { t } from "@/locales/es";
 import { AdjustmentType } from "@/constants";
+import {
+  hasMaxDecimals,
+  DEFAULT_MAX_DECIMALS,
+} from "@/components/shared/Interactives/numeric-input.utils";
 
 const v = t.supplies.stock.validation;
 
@@ -22,7 +26,10 @@ const quantityField = z.preprocess(
         issue.input === undefined ? v.quantityRequired : v.quantityInvalid,
     })
     .min(0, { error: v.quantityMin })
-    .max(999999, { error: v.quantityMax }),
+    .max(999999, { error: v.quantityMax })
+    .refine((n) => hasMaxDecimals(n, DEFAULT_MAX_DECIMALS), {
+      error: v.quantityDecimals,
+    }),
 );
 
 const unitCostField = z.preprocess(
@@ -31,6 +38,9 @@ const unitCostField = z.preprocess(
     .number({ error: v.unitCostInvalid })
     .positive({ error: v.unitCostPositive })
     .max(999999, { error: v.unitCostMax })
+    .refine((n) => hasMaxDecimals(n, DEFAULT_MAX_DECIMALS), {
+      error: v.unitCostDecimals,
+    })
     .optional(),
 );
 

@@ -6,6 +6,7 @@ import { PanelHeader } from "@/components/shared/Overlay/PanelHeader";
 import { PanelFooter } from "@/components/shared/Overlay/PanelFooter";
 import { FormSection } from "@/components/shared/Form/FormSection";
 import { FormInput } from "@/components/shared/Form/FormInput";
+import { stripLeadingZeros } from "@/components/shared/Interactives/numeric-input.utils";
 import { FormField } from "@/components/shared/Basics/FormField";
 import { Label } from "@/components/shared/Basics/Label";
 import { Button } from "@/components/shared/Basics/Button";
@@ -166,7 +167,7 @@ export const CategoryModal = ({
                   }
                   if (!/^\d+$/.test(value)) return;
 
-                  formSetFieldValue("sortOrder", value);
+                  formSetFieldValue("sortOrder", stripLeadingZeros(value));
                 }}
                 onBlur={formHandleBlur}
                 touched={formTouched.sortOrder}

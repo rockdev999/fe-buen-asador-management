@@ -5,7 +5,7 @@ import { AppModal } from "@/components/shared/Overlay/AppModal";
 import { PanelHeader } from "@/components/shared/Overlay/PanelHeader";
 import { PanelFooter } from "@/components/shared/Overlay/PanelFooter";
 import { FormSection } from "@/components/shared/Form/FormSection";
-import { FormInput } from "@/components/shared/Form/FormInput";
+import { FormDecimalInput } from "@/components/shared/Form/FormDecimalInput";
 import { FormTextarea } from "@/components/shared/Form/FormTextarea";
 import { FormField } from "@/components/shared/Basics/FormField";
 import { Label } from "@/components/shared/Basics/Label";
@@ -117,7 +117,9 @@ export const CreateIngredientStockModal = ({
     id: location.id,
     data: location,
     searchText: location.name,
-    render: (item) => <span className="text-[13px] text-inkblack">{item.name}</span>,
+    render: (item) => (
+      <span className="text-[13px] text-inkblack">{item.name}</span>
+    ),
   }));
 
   const ingredientOptions: AsyncDropdownOption<{ id: string; name: string }>[] =
@@ -125,7 +127,9 @@ export const CreateIngredientStockModal = ({
       id: ingredient.id,
       data: ingredient,
       searchText: ingredient.name,
-      render: (item) => <span className="text-[13px] text-inkblack">{item.name}</span>,
+      render: (item) => (
+        <span className="text-[13px] text-inkblack">{item.name}</span>
+      ),
     }));
 
   const handleLocationChange = async (id: string) => {
@@ -144,7 +148,11 @@ export const CreateIngredientStockModal = ({
     (!!effectiveLocationId && existingStockStatus === "pending");
 
   return (
-    <AppModal size="lg" maxHeightClassName="max-h-[85vh]" contentClassName="max-w-lg">
+    <AppModal
+      size="lg"
+      maxHeightClassName="max-h-[85vh]"
+      contentClassName="max-w-lg"
+    >
       <PanelHeader
         icon={PackagePlus}
         title="Nuevo stock de insumo"
@@ -221,19 +229,14 @@ export const CreateIngredientStockModal = ({
                 )}
             </FormField>
 
-            <FormInput
+            <FormDecimalInput
               required
               id="quantity"
               name="quantity"
               label="Cantidad inicial"
-              type="number"
-              min={0}
               placeholder="Ej: 50"
               value={formValues.quantity}
-              onChange={(event) => {
-                const value = event.target.value;
-                setFieldValue("quantity", value === "" ? 0 : Number(value));
-              }}
+              onValueChange={(value) => setFieldValue("quantity", value)}
               onBlur={formHandleBlur}
               touched={formTouched.quantity}
               error={formErrors.quantity}
@@ -251,7 +254,9 @@ export const CreateIngredientStockModal = ({
                 id="unitCost"
                 name="unitCost"
                 defaultValue={formValues.unitCost}
-                onChange={(value) => setFieldValue("unitCost", value || undefined)}
+                onChange={(value) =>
+                  setFieldValue("unitCost", value || undefined)
+                }
                 onBlur={() => {}}
                 placeholder="0.00"
                 className="h-9 rounded-xl bg-white text-[13px]"

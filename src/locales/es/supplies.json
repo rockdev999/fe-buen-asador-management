@@ -21,10 +21,12 @@
       "quantityInvalid": "Ingresa una cantidad válida.",
       "quantityMin": "La cantidad no puede ser menor a 0.",
       "quantityMax": "La cantidad no puede exceder los 999999.",
+      "quantityDecimals": "La cantidad puede tener como máximo 2 decimales.",
 
       "unitCostInvalid": "Ingresa un costo unitario válido.",
       "unitCostPositive": "El costo unitario debe ser mayor a 0.",
       "unitCostMax": "El costo unitario no puede exceder los 999999.",
+      "unitCostDecimals": "El costo unitario puede tener como máximo 2 decimales.",
 
       "notesMax": "Las notas no pueden exceder los 500 caracteres."
     }
@@ -38,6 +40,7 @@
       "quantityUsedInvalid": "Ingresa una cantidad válida.",
       "quantityUsedPositive": "La cantidad utilizada debe ser mayor a 0.",
       "quantityUsedMax": "La cantidad utilizada no puede exceder los 999999.",
+      "quantityUsedDecimals": "La cantidad utilizada puede tener como máximo 3 decimales.",
 
       "ingredientsMin": "Agrega al menos un insumo a la receta.",
       "ingredientsDuplicate": "No puedes repetir el mismo insumo en la receta."

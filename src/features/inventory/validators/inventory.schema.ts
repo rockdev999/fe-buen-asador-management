@@ -1,5 +1,9 @@
 import { z } from "zod";
 import { t } from "@/locales/es";
+import {
+  hasMaxDecimals,
+  DEFAULT_MAX_DECIMALS,
+} from "@/components/shared/Interactives/numeric-input.utils";
 import { AdjustmentType } from "@/constants";
 
 const v = t.inventory.stock.validation;
@@ -27,7 +31,10 @@ export const adjustStockSchema = z.object({
           issue.input === undefined ? v.quantityRequired : v.quantityInvalid,
       })
       .min(0, { error: v.quantityMin })
-      .max(999999, { error: v.quantityMax }),
+      .max(999999, { error: v.quantityMax })
+      .refine((n) => hasMaxDecimals(n, DEFAULT_MAX_DECIMALS), {
+        error: v.quantityDecimals,
+      }),
   ),
   notes: z.preprocess(
     emptyStringToUndefined,
@@ -48,7 +55,10 @@ export const createStockSchema = z.object({
           issue.input === undefined ? v.quantityRequired : v.quantityInvalid,
       })
       .min(0, { error: v.quantityMin })
-      .max(999999, { error: v.quantityMax }),
+      .max(999999, { error: v.quantityMax })
+      .refine((n) => hasMaxDecimals(n, DEFAULT_MAX_DECIMALS), {
+        error: v.quantityDecimals,
+      }),
   ),
   notes: z.preprocess(
     emptyStringToUndefined,

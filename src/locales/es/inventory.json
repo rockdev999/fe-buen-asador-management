@@ -10,6 +10,7 @@
       "quantityInvalid": "Ingresa una cantidad válida.",
       "quantityMin": "La cantidad no puede ser menor a 0.",
       "quantityMax": "La cantidad no puede exceder los 999999.",
+      "quantityDecimals": "La cantidad puede tener como máximo 2 decimales.",
 
       "notesMax": "Las notas no pueden exceder los 500 caracteres."
     }

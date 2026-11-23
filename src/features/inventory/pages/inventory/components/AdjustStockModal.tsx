@@ -5,7 +5,7 @@ import { AppModal } from "@/components/shared/Overlay/AppModal";
 import { PanelHeader } from "@/components/shared/Overlay/PanelHeader";
 import { PanelFooter } from "@/components/shared/Overlay/PanelFooter";
 import { FormSection } from "@/components/shared/Form/FormSection";
-import { FormInput } from "@/components/shared/Form/FormInput";
+import { FormDecimalInput } from "@/components/shared/Form/FormDecimalInput";
 import { FormTextarea } from "@/components/shared/Form/FormTextarea";
 import { FormField } from "@/components/shared/Basics/FormField";
 import { Label } from "@/components/shared/Basics/Label";
@@ -16,7 +16,10 @@ import { StockProduct } from "../../../models/inventory.model";
 import { useAdjustStock } from "../../../hooks/useInventory";
 import { AdjustStockFormConfig } from "../../../forms/inventory.form-config";
 import { AdjustStockForm } from "../../../validators/inventory.schema";
-import { ADJUSTMENT_TYPE_LABELS, STOCK_UNIT_LABELS } from "../../../config/inventory.table";
+import {
+  ADJUSTMENT_TYPE_LABELS,
+  STOCK_UNIT_LABELS,
+} from "../../../config/inventory.table";
 import { ApiErrorResponse } from "@/types/api.types";
 
 interface AdjustStockModalProps {
@@ -69,7 +72,11 @@ export const AdjustStockModal = ({
         : formValues.quantity || 0;
 
   return (
-    <AppModal size="lg" maxHeightClassName="max-h-[85vh]" contentClassName="max-w-lg">
+    <AppModal
+      size="lg"
+      maxHeightClassName="max-h-[85vh]"
+      contentClassName="max-w-lg"
+    >
       <PanelHeader
         icon={PackagePlus}
         title="Ajustar stock"
@@ -86,7 +93,10 @@ export const AdjustStockModal = ({
           <FormSection icon={PackagePlus} title="Ajuste de inventario">
             {locationError && (
               <div className="flex items-start gap-2 rounded-xl border border-destructive/20 bg-destructive/5 px-3 py-2.5">
-                <AlertCircle size={13} className="mt-0.5 shrink-0 text-destructive" />
+                <AlertCircle
+                  size={13}
+                  className="mt-0.5 shrink-0 text-destructive"
+                />
                 <p className="text-[11px] leading-4 text-destructive">
                   {locationError}
                 </p>
@@ -136,19 +146,14 @@ export const AdjustStockModal = ({
               </div>
             </FormField>
 
-            <FormInput
+            <FormDecimalInput
               required
               id="quantity"
               name="quantity"
               label="Cantidad"
-              type="number"
-              min={0}
               placeholder="Ej: 10"
               value={formValues.quantity}
-              onChange={(event) => {
-                const value = event.target.value;
-                setFieldValue("quantity", value === "" ? 0 : Number(value));
-              }}
+              onValueChange={(value) => setFieldValue("quantity", value)}
               onBlur={formHandleBlur}
               touched={formTouched.quantity}
               error={formErrors.quantity}
@@ -182,7 +187,10 @@ export const AdjustStockModal = ({
 
             {previewQuantity < stockItem.minimumStock && (
               <div className="flex items-start gap-1.5 rounded-lg bg-yellow-50 px-2 py-1.5">
-                <AlertCircle size={12} className="mt-0.5 shrink-0 text-yellow-600" />
+                <AlertCircle
+                  size={12}
+                  className="mt-0.5 shrink-0 text-yellow-600"
+                />
                 <p className="text-[10px] leading-4 text-yellow-700">
                   El nuevo stock quedará por debajo del mínimo establecido.
                 </p>
