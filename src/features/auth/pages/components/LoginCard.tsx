@@ -6,8 +6,9 @@ import { loginFormConfig } from "../../forms/login.form-config";
 import { FormInput } from "@/components/shared/Form/FormInput";
 import { FormPassword } from "@/components/shared/Form/FormPassword";
 import { Button } from "@/components/shared/Basics/Button";
-import { Info } from "lucide-react";
+import { MailCheck } from "lucide-react";
 import { useState } from "react";
+import { ForgotPasswordCard } from "./ForgotPasswordCard";
 
 const trans = t.auth.login;
 
@@ -18,8 +19,9 @@ interface LoginCardProps {
 
 export function LoginCard({ isFinishing = false }: LoginCardProps) {
   const { mutate: login, status } = useLogin();
-  // No hay autoservicio: el gerente restablece la contraseña desde Usuarios.
-  const [showForgotHelp, setShowForgotHelp] = useState(false);
+  const [showForgot, setShowForgot] = useState(false);
+  /** Mensaje del backend tras pedir la contraseña temporal. */
+  const [forgotMessage, setForgotMessage] = useState<string | null>(null);
 
   const {
     values: formValues,
@@ -28,11 +30,27 @@ export function LoginCard({ isFinishing = false }: LoginCardProps) {
     handleBlur: formHandlerBlur,
     handleChange: formHandleChange,
     handleSubmit: formHandleSubmit,
+    setFieldValue,
   } = useFormik<LoginForm>({
     initialValues: loginFormConfig.initialValues,
     validate: loginFormConfig.validationSchema,
     onSubmit: (data) => login(data),
   });
+
+  if (showForgot) {
+    return (
+      <ForgotPasswordCard
+        initialIdentifier={formValues.identifier}
+        onBack={(identifier, sentMessage) => {
+          if (identifier) void setFieldValue("identifier", identifier, false);
+          // Tras enviarla, la contraseña de siempre ya no es la que usará.
+          if (sentMessage) void setFieldValue("password", "", false);
+          setForgotMessage(sentMessage ?? null);
+          setShowForgot(false);
+        }}
+      />
+    );
+  }
 
   return (
     <form
@@ -46,6 +64,21 @@ export function LoginCard({ isFinishing = false }: LoginCardProps) {
         </h2>
         <p className="text-sm text-muted-foreground">{trans.subtitle}</p>
       </div>
+
+      {forgotMessage && (
+        <div
+          role="status"
+          className="mb-4 flex items-start gap-2 rounded-xl border border-brand/20 bg-brand/5 px-3 py-2.5 text-left"
+        >
+          <MailCheck size={15} className="mt-0.5 shrink-0 text-brand" />
+          <div className="text-[12px] leading-4">
+            <p className="text-inkblack">{forgotMessage}</p>
+            <p className="mt-1 text-muted-foreground">
+              {t.auth.forgotPassword.nextStep}
+            </p>
+          </div>
+        </div>
+      )}
       <FormInput
         required
         id="identifier"
@@ -80,24 +113,16 @@ export function LoginCard({ isFinishing = false }: LoginCardProps) {
           type="button"
           variant="link"
           size="xs"
-          aria-expanded={showForgotHelp}
-          aria-controls="forgot-password-help"
-          onClick={() => setShowForgotHelp((open) => !open)}
+          onClick={() => setShowForgot(true)}
         >
           {trans.forgotPassword}
         </Button>
-        {showForgotHelp && (
-          <p
-            id="forgot-password-help"
-            role="status"
-            className="mt-2 flex items-start gap-2 rounded-xl bg-surface px-3 py-2 text-left text-[12px] text-muted-foreground"
-          >
-            <Info size={14} className="mt-0.5 shrink-0 text-brand" />
-            {trans.forgotPasswordHelp}
-          </p>
-        )}
       </div>
-      <Button type="submit" isLoading={status === "pending" || isFinishing} className="w-full">
+      <Button
+        type="submit"
+        isLoading={status === "pending" || isFinishing}
+        className="w-full"
+      >
         {trans.submit}
       </Button>
     </form>

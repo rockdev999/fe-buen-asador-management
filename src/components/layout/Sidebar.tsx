@@ -139,7 +139,7 @@ export function Sidebar() {
       </div>
 
       {/* Nav */}
-      <nav className="flex-1 py-2 overflow-y-auto overflow-x-hidden">
+      <nav className="scrollbar-on-dark flex-1 py-2 overflow-y-auto overflow-x-hidden">
         {visibleSections.map((section) => (
           <div key={section.title}>
             {sidebarOpen && (

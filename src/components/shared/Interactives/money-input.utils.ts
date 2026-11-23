@@ -1,3 +1,5 @@
+import { stripLeadingZeros } from "./numeric-input.utils";
+
 // Convierte string del input a número limpio
 // Acepta: "1.500", "1,500", "1500", "15.50", "15,50"
 export function parseMoneyString(raw: string): number {
@@ -29,6 +31,10 @@ export function sanitizeInput(raw: string, max?: number): string {
       result.slice(0, firstDot + 1) +
       result.slice(firstDot + 1).replace(/\./g, "");
   }
+
+  // Sin ceros sobrantes a la izquierda ("0005" → "5", "000.36" → "0.36")
+  result = stripLeadingZeros(result);
+  if (result.startsWith(".")) result = `0${result}`;
 
   // Máximo 2 decimales
   const dotIndex = result.indexOf(".");

@@ -7,6 +7,11 @@ export interface LoginRequestDTO {
   password: string;
 }
 
+/** POST /auth/forgot-password: usuario o correo. */
+export interface ForgotPasswordRequestDTO {
+  identifier: string;
+}
+
 export interface LoginLocationsDTO {
   temporaryToken: string;
   user: UserDTO;

@@ -32,5 +32,10 @@ declare module "axios" {
   interface AxiosRequestConfig {
     /** No mostrar toasts de error para esta petición (p. ej. sincronización en segundo plano). */
     silentErrors?: boolean;
+    /**
+     * errorCode que quien hace la petición maneja por su cuenta (con su propio
+     * aviso): el interceptor no muestra el toast genérico para ellos.
+     */
+    handledErrorCodes?: string[];
   }
 }

@@ -40,10 +40,10 @@ export const PasswordField = forwardRef<HTMLInputElement, PasswordFieldProps>(
           <button
             type="button"
             tabIndex={-1}
-            onMouseDown={() => setShow(true)}
-            onMouseUp={() => setShow(false)}
-            onTouchStart={() => setShow(true)}
-            onTouchEnd={() => setShow(false)}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => setShow((prev) => !prev)}
+            aria-label={show ? "Ocultar contraseña" : "Mostrar contraseña"}
+            aria-pressed={show}
             className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-dark transition-colors"
           >
             {show ? <EyeOff size={15} /> : <Eye size={15} />}

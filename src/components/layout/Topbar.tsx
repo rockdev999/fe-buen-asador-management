@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import { Building2, LogOut, Menu, Repeat, User, WifiOff } from "lucide-react";
+import { Building2, LogOut, Menu, Repeat, WifiOff } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -112,20 +112,18 @@ export function Topbar() {
               <p className="text-xs text-muted-foreground">{user?.email}</p>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="gap-2 cursor-pointer">
-              <User size={14} />
-              Mi perfil
-            </DropdownMenuItem>
             {canSwitchLocation && (
-              <DropdownMenuItem
-                className="gap-2 cursor-pointer"
-                onClick={() => setIsSwitchLocationOpen(true)}
-              >
-                <Repeat size={14} />
-                {trans.trigger}
-              </DropdownMenuItem>
+              <>
+                <DropdownMenuItem
+                  className="gap-2 cursor-pointer"
+                  onClick={() => setIsSwitchLocationOpen(true)}
+                >
+                  <Repeat size={14} />
+                  {trans.trigger}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+              </>
             )}
-            <DropdownMenuSeparator />
             <DropdownMenuItem
               className="gap-2 cursor-pointer text-destructive focus:text-destructive"
               onClick={handleLogout}

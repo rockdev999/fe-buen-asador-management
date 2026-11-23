@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { QUERY_KEYS } from "@/constants";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+import { API_ERROR_CODES, QUERY_KEYS } from "@/constants";
+import { PATHS } from "@/routes";
 import { CredentialsEmailStatusEnum } from "@/constants/enums/user.enum";
 import { usePostHandler } from "@/hooks/api.handlers";
 import { httpClient, NO_TIMEOUT } from "@/services/http.client";
@@ -22,6 +25,7 @@ const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
  */
 export function usePasswordReset() {
   const queryClient = useQueryClient();
+  const navigate = useNavigate();
   const [statusOverrides, setStatusOverrides] = useState<
     Record<string, CredentialsEmailStatusEnum>
   >({});
@@ -97,7 +101,10 @@ export function usePasswordReset() {
         .post<ApiResponse<ResetPasswordResponseDTO>>(
           `/users/${userId}/reset-password`,
           undefined,
-          NO_TIMEOUT,
+          {
+            ...NO_TIMEOUT,
+            handledErrorCodes: [API_ERROR_CODES.NO_SYSTEM_ACCESS],
+          },
         )
         .then((r) => r.data.data!),
     retry: false,
@@ -105,6 +112,21 @@ export function usePasswordReset() {
       "Contraseña restablecida. La contraseña temporal se está enviando al correo del usuario",
     onSuccessCallback: (data) => {
       void trackEmail(data.userId);
+    },
+    onErrorCallback: (error) => {
+      // Sin sucursal ni rol no puede entrar al sistema: llevar a Sucursales,
+      // donde se le asigna, antes de reenviar las credenciales.
+      if (error.errorCode === API_ERROR_CODES.NO_SYSTEM_ACCESS) {
+        toast.warning(
+          "Asigna una sucursal y un rol antes de reenviar las credenciales",
+          {
+            id: "no-system-access",
+            description:
+              "Abre la sucursal y agrega al usuario en «Usuarios y roles».",
+          },
+        );
+        navigate(PATHS.LOCATIONS);
+      }
     },
   });
 

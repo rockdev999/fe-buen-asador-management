@@ -29,6 +29,8 @@ export const API_ERROR_CODES = {
   SESSION_NO_LONGER_VALID: "SESSION_NO_LONGER_VALID",
   /** 403: el usuario debe cambiar su contraseña temporal antes de continuar. */
   MUST_CHANGE_PASSWORD: "MUST_CHANGE_PASSWORD",
+  /** El usuario no tiene sucursal ni rol asignados: no puede entrar al sistema. */
+  NO_SYSTEM_ACCESS: "NO_SYSTEM_ACCESS",
 
   // Recursos
   /** 400 con detalle por campo en `errors`. */

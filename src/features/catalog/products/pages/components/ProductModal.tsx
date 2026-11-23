@@ -11,6 +11,7 @@ import { UUID } from "@/types/common";
 import { ProductFormConfig } from "../../forms/product.form-config";
 import { FormSection } from "@/components/shared/Form/FormSection";
 import { FormInput } from "@/components/shared/Form/FormInput";
+import { FormDecimalInput } from "@/components/shared/Form/FormDecimalInput";
 import { FormField } from "@/components/shared/Basics/FormField";
 import { Label } from "@/components/shared/Basics/Label";
 import { MoneyInput } from "@/components/shared/Interactives/MoneyInput";
@@ -311,7 +312,6 @@ export const ProductModal = ({
                   <EmptyFieldHint text="Primero crea una categoría para poder registrar productos." />
                 )}
               </FormField>
-
             </div>
 
             <FormField className="mt-3">
@@ -380,22 +380,15 @@ export const ProductModal = ({
                   </div>
                 </div>
 
-                <FormInput
+                <FormDecimalInput
                   required
                   id="sortOrder"
                   name="sortOrder"
                   label="Orden"
-                  type="number"
-                  min={0}
+                  maxDecimals={0}
                   placeholder="Ej: 1"
                   value={formValues.sortOrder}
-                  onChange={(event) => {
-                    const value = event.target.value;
-                    setFieldValue(
-                      "sortOrder",
-                      value === "" ? 0 : Number(value),
-                    );
-                  }}
+                  onValueChange={(value) => setFieldValue("sortOrder", value)}
                   onBlur={formHandlerBlur}
                   touched={formTouched.sortOrder}
                   error={formErrors.sortOrder}
