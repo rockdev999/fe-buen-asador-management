@@ -215,6 +215,11 @@ export async function errorInterceptor(
 
   if (silent) return reject(rejection);
 
+  // Quien hizo la petición muestra su propio aviso para este errorCode.
+  if (errorCode && config?.handledErrorCodes?.includes(errorCode)) {
+    return reject(rejection);
+  }
+
   // Validación con detalle por campo: un único toast con la lista. El id fijo
   // hace que un nuevo envío reemplace el aviso anterior en vez de apilarse.
   // Con otro errorCode (p. ej. SHIFT_REVIEW_NOTES_REQUIRED trae errors[notes])

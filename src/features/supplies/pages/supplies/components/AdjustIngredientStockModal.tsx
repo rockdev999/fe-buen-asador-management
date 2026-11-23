@@ -144,7 +144,7 @@ export const AdjustIngredientStockModal = ({
 
             {isAdd && (
               <FormField>
-                <Label>Costo unitario</Label>
+                <Label>Costo ({unitLabel})</Label>
                 <MoneyInput
                   id="unitCost"
                   name="unitCost"
