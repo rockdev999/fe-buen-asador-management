@@ -1,7 +1,11 @@
 import { z } from "zod";
 import { t } from "@/locales/es";
+import { hasMaxDecimals } from "@/components/shared/Interactives/numeric-input.utils";
 
 const v = t.supplies.recipe.validation;
+
+/** Las recetas permiten 3 decimales (p. ej. 0.125 kg = 125 g). */
+export const RECIPE_QUANTITY_DECIMALS = 3;
 
 const stringToNumber = (value: unknown) => {
   if (value === "" || value === null || value === undefined) return undefined;
@@ -19,7 +23,10 @@ const quantityUsedField = z.preprocess(
           : v.quantityUsedInvalid,
     })
     .positive({ error: v.quantityUsedPositive })
-    .max(999999, { error: v.quantityUsedMax }),
+    .max(999999, { error: v.quantityUsedMax })
+    .refine((n) => hasMaxDecimals(n, RECIPE_QUANTITY_DECIMALS), {
+      error: v.quantityUsedDecimals,
+    }),
 );
 
 export const recipeIngredientRowSchema = z.object({

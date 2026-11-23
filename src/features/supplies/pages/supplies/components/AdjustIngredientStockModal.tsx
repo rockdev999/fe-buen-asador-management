@@ -4,7 +4,7 @@ import { AppModal } from "@/components/shared/Overlay/AppModal";
 import { PanelHeader } from "@/components/shared/Overlay/PanelHeader";
 import { PanelFooter } from "@/components/shared/Overlay/PanelFooter";
 import { FormSection } from "@/components/shared/Form/FormSection";
-import { FormInput } from "@/components/shared/Form/FormInput";
+import { FormDecimalInput } from "@/components/shared/Form/FormDecimalInput";
 import { FormTextarea } from "@/components/shared/Form/FormTextarea";
 import { FormField } from "@/components/shared/Basics/FormField";
 import { Label } from "@/components/shared/Basics/Label";
@@ -66,7 +66,11 @@ export const AdjustIngredientStockModal = ({
       : formValues.quantity || 0;
 
   return (
-    <AppModal size="lg" maxHeightClassName="max-h-[85vh]" contentClassName="max-w-lg">
+    <AppModal
+      size="lg"
+      maxHeightClassName="max-h-[85vh]"
+      contentClassName="max-w-lg"
+    >
       <PanelHeader
         icon={PackagePlus}
         title="Ajustar stock de insumo"
@@ -124,19 +128,14 @@ export const AdjustIngredientStockModal = ({
               </div>
             </FormField>
 
-            <FormInput
+            <FormDecimalInput
               required
               id="quantity"
               name="quantity"
               label="Cantidad"
-              type="number"
-              min={0}
               placeholder="Ej: 10"
               value={formValues.quantity}
-              onChange={(event) => {
-                const value = event.target.value;
-                setFieldValue("quantity", value === "" ? 0 : Number(value));
-              }}
+              onValueChange={(value) => setFieldValue("quantity", value)}
               onBlur={formHandleBlur}
               touched={formTouched.quantity}
               error={formErrors.quantity}
@@ -197,7 +196,10 @@ export const AdjustIngredientStockModal = ({
 
             {previewQuantity < stockItem.minimumStock && (
               <div className="flex items-start gap-1.5 rounded-lg bg-yellow-50 px-2 py-1.5">
-                <AlertCircle size={12} className="mt-0.5 shrink-0 text-yellow-600" />
+                <AlertCircle
+                  size={12}
+                  className="mt-0.5 shrink-0 text-yellow-600"
+                />
                 <p className="text-[10px] leading-4 text-yellow-700">
                   El nuevo stock quedará por debajo del mínimo establecido.
                 </p>

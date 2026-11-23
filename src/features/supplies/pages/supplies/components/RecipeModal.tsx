@@ -9,7 +9,8 @@ import { FormField } from "@/components/shared/Basics/FormField";
 import { Label } from "@/components/shared/Basics/Label";
 import { ErrorMessage } from "@/components/shared/Basics/ErrorMessage";
 import { Button } from "@/components/shared/Basics/Button";
-import { Input } from "@/components/ui/input";
+import { DecimalInput } from "@/components/shared/Interactives/DecimalInput";
+import { RECIPE_QUANTITY_DECIMALS } from "../../../validators/recipe.schema";
 import {
   AsyncDropdown,
   AsyncDropdownOption,
@@ -31,7 +32,11 @@ import {
   CreateRecipeForm,
   UpdateRecipeQuantityForm,
 } from "../../../validators/recipe.schema";
-import { INGREDIENT_UNIT_LABELS } from "../../../config/ingredient.table";
+import {
+  INGREDIENT_UNIT_LABELS,
+  INGREDIENT_UNIT_SHORT_LABELS,
+} from "../../../config/ingredient.table";
+import { cn } from "@/lib/utils";
 
 interface RecipeModalProps {
   recipe: Recipe | null;
@@ -122,11 +127,9 @@ const CreateRecipeModal = ({ onClose, onSuccess }: CreateRecipeModalProps) => {
     setFieldValue("ingredients", next, true);
   };
 
-  const handleRowQuantityChange = (index: number, value: string) => {
+  const handleRowQuantityChange = (index: number, value: number) => {
     const next = formValues.ingredients.map((row, i) =>
-      i === index
-        ? { ...row, quantityUsed: value === "" ? 0 : Number(value) }
-        : row,
+      i === index ? { ...row, quantityUsed: value } : row,
     );
     setFieldValue("ingredients", next, true);
   };
@@ -224,16 +227,18 @@ const CreateRecipeModal = ({ onClose, onSuccess }: CreateRecipeModalProps) => {
                       />
                     </div>
 
-                    <div className="w-24 shrink-0">
-                      <Input
-                        type="number"
-                        min={0}
+                    <div className="relative w-28 shrink-0">
+                      <DecimalInput
+                        maxDecimals={RECIPE_QUANTITY_DECIMALS}
                         placeholder="Cant."
-                        value={row.quantityUsed || ""}
-                        onChange={(event) =>
-                          handleRowQuantityChange(index, event.target.value)
+                        value={row.quantityUsed}
+                        onValueChange={(value) =>
+                          handleRowQuantityChange(index, value)
                         }
-                        className="h-9 rounded-xl bg-white text-[13px]"
+                        className={cn(
+                          "h-9 rounded-xl bg-white text-[13px]",
+                          rowIngredient && "pr-12",
+                        )}
                         title={
                           rowIngredient
                             ? INGREDIENT_UNIT_LABELS[
@@ -242,6 +247,15 @@ const CreateRecipeModal = ({ onClose, onSuccess }: CreateRecipeModalProps) => {
                             : undefined
                         }
                       />
+                      {rowIngredient && (
+                        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-medium text-muted-foreground">
+                          {
+                            INGREDIENT_UNIT_SHORT_LABELS[
+                              rowIngredient.unitOfMeasure
+                            ]
+                          }
+                        </span>
+                      )}
                     </div>
 
                     <Button
@@ -393,22 +407,23 @@ const EditRecipeModal = ({
 
             <FormField>
               <Label required>Cantidad utilizada</Label>
-              <Input
-                type="number"
-                min={0}
-                placeholder="Ej: 0.25"
-                value={formValues.quantityUsed}
-                onChange={(event) => {
-                  const value = event.target.value;
-                  setFieldValue(
-                    "quantityUsed",
-                    value === "" ? 0 : Number(value),
-                  );
-                }}
-                onBlur={formHandleBlur}
-                disabled={!isManager}
-                className="h-9 rounded-xl bg-white text-[13px]"
-              />
+              <div className="relative">
+                <DecimalInput
+                  maxDecimals={RECIPE_QUANTITY_DECIMALS}
+                  name="quantityUsed"
+                  placeholder="Ej: 0.25"
+                  value={formValues.quantityUsed}
+                  onValueChange={(value) =>
+                    setFieldValue("quantityUsed", value)
+                  }
+                  onBlur={formHandleBlur}
+                  disabled={!isManager}
+                  className="h-9 rounded-xl bg-white pr-24 text-[13px]"
+                />
+                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[12px] font-medium text-muted-foreground">
+                  {INGREDIENT_UNIT_LABELS[recipe.ingredient.unitOfMeasure]}
+                </span>
+              </div>
               <ErrorMessage
                 touched={formTouched.quantityUsed}
                 error={formErrors.quantityUsed}
