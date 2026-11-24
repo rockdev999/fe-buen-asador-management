@@ -37,6 +37,8 @@ export interface RejectedApiError {
   fields: ApiErrorResponse["errors"];
   status?: number;
   errorCode?: string;
+  /** `data` del cuerpo de error, si el backend la envió (solo 4xx). */
+  data?: unknown;
   /**
    * Sin respuesta útil del backend y la petición seguro no se procesó (o es
    * una lectura): se puede usar la copia offline o el cobro offline.
@@ -100,7 +102,9 @@ export async function errorInterceptor(
   // mensaje del backend funcionen igual que en el resto de peticiones.
   if (error.response && error.response.data instanceof Blob) {
     // parseErrorBody tolera cualquier forma (o undefined si no era JSON).
-    error.response.data = (await blobToJson(error.response.data)) as ApiErrorResponse;
+    error.response.data = (await blobToJson(
+      error.response.data,
+    )) as ApiErrorResponse;
   }
 
   const config = error.config as RetriableConfig | undefined;
@@ -191,7 +195,14 @@ export async function errorInterceptor(
     }
   }
 
-  const rejection = { message, status, errorCode, fields };
+  const body = error.response?.data as { data?: unknown } | undefined;
+  const rejection = {
+    message,
+    status,
+    errorCode,
+    fields,
+    ...(body?.data !== undefined && body?.data !== null && { data: body.data }),
+  };
 
   // Contraseña temporal pendiente: redirigir sin toast.
   if (errorCode === API_ERROR_CODES.MUST_CHANGE_PASSWORD) {

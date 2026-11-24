@@ -67,7 +67,14 @@ export const QUERY_KEYS = {
   // Inventario
   INVENTORY: ["inventory"],
   STOCK: (locationId: string) => ["inventory", "stock", locationId],
-  KARDEX: (productId: string) => ["inventory", "kardex", productId],
+  // Incluye la sucursal: el MANAGER ve el kardex de un mismo producto en
+  // varias sucursales y no debe mostrarse el de otra mientras carga.
+  KARDEX: (productId: string, locationId = "") => [
+    "inventory",
+    "kardex",
+    productId,
+    locationId,
+  ],
   STOCK_ALERTS: ["inventory", "alerts"],
 
   // Insumos
@@ -84,10 +91,11 @@ export const QUERY_KEYS = {
     "stock",
     locationId,
   ],
-  INGREDIENT_KARDEX: (ingredientId: string) => [
+  INGREDIENT_KARDEX: (ingredientId: string, locationId = "") => [
     "ingredients",
     "kardex",
     ingredientId,
+    locationId,
   ],
   INGREDIENT_STOCK_ALERTS: ["ingredients", "alerts"],
   RECIPES: ["ingredients", "recipes"],

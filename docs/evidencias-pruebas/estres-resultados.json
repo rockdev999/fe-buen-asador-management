@@ -1,0 +1,1747 @@
+{
+  "entorno": {
+    "fecha": "23/11/2026, 4:10:52 p. m.",
+    "perfil": "standard",
+    "commit": "75a9b4c",
+    "node": "v22.23.1",
+    "so": "Windows_NT 10.0.26300",
+    "cpu": "Intel(R) Core(TM) i5-10300H CPU @ 2.50GHz (8 hilos)",
+    "ram": "23.8 GB",
+    "duracion": "437 s"
+  },
+  "umbrales": {
+    "errorRate": 0.01,
+    "healthP95": 100,
+    "readP95": 500,
+    "writeP95": 1500,
+    "loginP95": 2000,
+    "nominalVus": 50,
+    "mixedP95": 1000
+  },
+  "escenarios": [
+    {
+      "id": "E1",
+      "name": "Línea base",
+      "type": "Carga ligera",
+      "objective": "Medir la latencia mínima de la API y la base (GET /health) con carga ligera, como referencia para el resto.",
+      "stages": [
+        {
+          "stage": {
+            "vus": 10,
+            "durationMs": 20000,
+            "label": "base"
+          },
+          "elapsedMs": 20103.092099999994,
+          "iterations": 15190,
+          "total": {
+            "label": "Total",
+            "count": 15190,
+            "errors": 0,
+            "errorRate": 0,
+            "rps": 755.6,
+            "min": 6.5,
+            "avg": 13.2,
+            "p50": 11.9,
+            "p90": 18.1,
+            "p95": 21.2,
+            "p99": 33.1,
+            "max": 323.3,
+            "statuses": {
+              "200": 15190
+            }
+          },
+          "byLabel": [
+            {
+              "label": "GET /health",
+              "count": 15190,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 755.6,
+              "min": 6.5,
+              "avg": 13.2,
+              "p50": 11.9,
+              "p90": 18.1,
+              "p95": 21.2,
+              "p99": 33.1,
+              "max": 323.3,
+              "statuses": {
+                "200": 15190
+              }
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "description": "Tasa de error · Total",
+          "expected": "≤ 0.00 %",
+          "actual": "0.00 % (0/15190)",
+          "passed": true
+        },
+        {
+          "description": "Latencia p95 · Total",
+          "expected": "≤ 100 ms",
+          "actual": "21.2 ms",
+          "passed": true
+        }
+      ],
+      "notes": [],
+      "passed": true
+    },
+    {
+      "id": "E2",
+      "name": "Catálogo del POS",
+      "type": "Carga creciente (lectura)",
+      "objective": "Comprobar que la consulta más frecuente del POS (menú de la sucursal) mantiene la latencia al aumentar los usuarios.",
+      "stages": [
+        {
+          "stage": {
+            "vus": 10,
+            "durationMs": 20000,
+            "label": "10 VU"
+          },
+          "elapsedMs": 20033.641499999998,
+          "iterations": 6415,
+          "total": {
+            "label": "Total",
+            "count": 6415,
+            "errors": 0,
+            "errorRate": 0,
+            "rps": 320.2,
+            "min": 19.8,
+            "avg": 31.2,
+            "p50": 29.7,
+            "p90": 38.7,
+            "p95": 43,
+            "p99": 57.2,
+            "max": 132.4,
+            "statuses": {
+              "200": 6415
+            }
+          },
+          "byLabel": [
+            {
+              "label": "GET /products/menu",
+              "count": 6415,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 320.2,
+              "min": 19.8,
+              "avg": 31.2,
+              "p50": 29.7,
+              "p90": 38.7,
+              "p95": 43,
+              "p99": 57.2,
+              "max": 132.4,
+              "statuses": {
+                "200": 6415
+              }
+            }
+          ]
+        },
+        {
+          "stage": {
+            "vus": 50,
+            "durationMs": 20000,
+            "label": "50 VU"
+          },
+          "elapsedMs": 20193.4127,
+          "iterations": 5943,
+          "total": {
+            "label": "Total",
+            "count": 5943,
+            "errors": 0,
+            "errorRate": 0,
+            "rps": 294.3,
+            "min": 47.7,
+            "avg": 169.2,
+            "p50": 149.4,
+            "p90": 255.1,
+            "p95": 302.7,
+            "p99": 378.2,
+            "max": 458.1,
+            "statuses": {
+              "200": 5943
+            }
+          },
+          "byLabel": [
+            {
+              "label": "GET /products/menu",
+              "count": 5943,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 294.3,
+              "min": 47.7,
+              "avg": 169.2,
+              "p50": 149.4,
+              "p90": 255.1,
+              "p95": 302.7,
+              "p99": 378.2,
+              "max": 458.1,
+              "statuses": {
+                "200": 5943
+              }
+            }
+          ]
+        },
+        {
+          "stage": {
+            "vus": 100,
+            "durationMs": 20000,
+            "label": "100 VU"
+          },
+          "elapsedMs": 20184.056599999996,
+          "iterations": 3192,
+          "total": {
+            "label": "Total",
+            "count": 3192,
+            "errors": 0,
+            "errorRate": 0,
+            "rps": 158.1,
+            "min": 193.1,
+            "avg": 630.3,
+            "p50": 539.2,
+            "p90": 1215.9,
+            "p95": 1428,
+            "p99": 1672.5,
+            "max": 1853,
+            "statuses": {
+              "200": 3192
+            }
+          },
+          "byLabel": [
+            {
+              "label": "GET /products/menu",
+              "count": 3192,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 158.1,
+              "min": 193.1,
+              "avg": 630.3,
+              "p50": 539.2,
+              "p90": 1215.9,
+              "p95": 1428,
+              "p99": 1672.5,
+              "max": 1853,
+              "statuses": {
+                "200": 3192
+              }
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "description": "Tasa de error · Total",
+          "expected": "≤ 1.00 %",
+          "actual": "0.00 % (0/3192)",
+          "passed": true
+        },
+        {
+          "description": "Latencia p95 · Total",
+          "expected": "≤ 500 ms",
+          "actual": "1428 ms",
+          "passed": false
+        },
+        {
+          "description": "Sin errores 5xx ni de red · Total",
+          "expected": "0",
+          "actual": "0",
+          "passed": true
+        }
+      ],
+      "notes": [
+        "Las verificaciones se aplican a la etapa de mayor carga (100 VU)."
+      ],
+      "passed": false
+    },
+    {
+      "id": "E3",
+      "name": "Inicio de sesión masivo",
+      "type": "Carga creciente (CPU)",
+      "objective": "Evaluar el login en dos pasos con muchos usuarios a la vez. bcrypt consume CPU del único hilo de Node: es el cuello de botella esperado.",
+      "stages": [
+        {
+          "stage": {
+            "vus": 5,
+            "durationMs": 20000,
+            "label": "5 VU"
+          },
+          "elapsedMs": 20095.978999999992,
+          "iterations": 876,
+          "total": {
+            "label": "Total",
+            "count": 1752,
+            "errors": 0,
+            "errorRate": 0,
+            "rps": 87.2,
+            "min": 11.8,
+            "avg": 57.2,
+            "p50": 65.8,
+            "p90": 94,
+            "p95": 102.1,
+            "p99": 147.6,
+            "max": 220.2,
+            "statuses": {
+              "200": 1752
+            }
+          },
+          "byLabel": [
+            {
+              "label": "POST /auth/login",
+              "count": 876,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 43.6,
+              "min": 65.2,
+              "avg": 88.2,
+              "p50": 85.1,
+              "p90": 101.5,
+              "p95": 113.3,
+              "p99": 174,
+              "max": 220.2,
+              "statuses": {
+                "200": 876
+              }
+            },
+            {
+              "label": "POST /auth/select-location",
+              "count": 876,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 43.6,
+              "min": 11.8,
+              "avg": 26.2,
+              "p50": 24.7,
+              "p90": 35.2,
+              "p95": 41.4,
+              "p99": 62.5,
+              "max": 155,
+              "statuses": {
+                "200": 876
+              }
+            }
+          ]
+        },
+        {
+          "stage": {
+            "vus": 20,
+            "durationMs": 20000,
+            "label": "20 VU"
+          },
+          "elapsedMs": 20385.926999999996,
+          "iterations": 1014,
+          "total": {
+            "label": "Total",
+            "count": 2028,
+            "errors": 0,
+            "errorRate": 0,
+            "rps": 99.5,
+            "min": 11.5,
+            "avg": 199.2,
+            "p50": 179.1,
+            "p90": 408.1,
+            "p95": 430.7,
+            "p99": 520.9,
+            "max": 2462.6,
+            "statuses": {
+              "200": 2028
+            }
+          },
+          "byLabel": [
+            {
+              "label": "POST /auth/login",
+              "count": 1014,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 49.7,
+              "min": 83.6,
+              "avg": 365.9,
+              "p50": 353.5,
+              "p90": 430.7,
+              "p95": 459.3,
+              "p99": 1196.4,
+              "max": 2462.6,
+              "statuses": {
+                "200": 1014
+              }
+            },
+            {
+              "label": "POST /auth/select-location",
+              "count": 1014,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 49.7,
+              "min": 11.5,
+              "avg": 32.6,
+              "p50": 25.8,
+              "p90": 46.7,
+              "p95": 65,
+              "p99": 191.4,
+              "max": 228.6,
+              "statuses": {
+                "200": 1014
+              }
+            }
+          ]
+        },
+        {
+          "stage": {
+            "vus": 40,
+            "durationMs": 20000,
+            "label": "40 VU"
+          },
+          "elapsedMs": 20882.828500000003,
+          "iterations": 979,
+          "total": {
+            "label": "Total",
+            "count": 1958,
+            "errors": 0,
+            "errorRate": 0,
+            "rps": 93.8,
+            "min": 12.6,
+            "avg": 417.3,
+            "p50": 189.1,
+            "p90": 872.6,
+            "p95": 901.5,
+            "p99": 942,
+            "max": 5085,
+            "statuses": {
+              "200": 1958
+            }
+          },
+          "byLabel": [
+            {
+              "label": "POST /auth/login",
+              "count": 979,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 46.9,
+              "min": 95.7,
+              "avg": 802.1,
+              "p50": 806.1,
+              "p90": 901.5,
+              "p95": 919.9,
+              "p99": 962.2,
+              "max": 5085,
+              "statuses": {
+                "200": 979
+              }
+            },
+            {
+              "label": "POST /auth/select-location",
+              "count": 979,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 46.9,
+              "min": 12.6,
+              "avg": 32.5,
+              "p50": 26.1,
+              "p90": 44.1,
+              "p95": 66.4,
+              "p99": 187.3,
+              "max": 307.8,
+              "statuses": {
+                "200": 979
+              }
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "description": "Tasa de error · Total",
+          "expected": "≤ 1.00 %",
+          "actual": "0.00 % (0/1958)",
+          "passed": true
+        },
+        {
+          "description": "Latencia p95 · POST /auth/login",
+          "expected": "≤ 2000 ms",
+          "actual": "919.9 ms",
+          "passed": true
+        },
+        {
+          "description": "Sin errores 5xx ni de red · Total",
+          "expected": "0",
+          "actual": "0",
+          "passed": true
+        }
+      ],
+      "notes": [
+        "Cada IP tiene un límite de 5 logins cada 15 min: la prueba usa una IP distinta por petición para simular usuarios distintos."
+      ],
+      "passed": true
+    },
+    {
+      "id": "E4",
+      "name": "Flujo de caja (pedido + cobro)",
+      "type": "Carga creciente (escritura transaccional)",
+      "objective": "Someter la operación crítica del negocio, crear un pedido y cobrarlo, a cajeros concurrentes en las tres sucursales. El cobro bloquea el pedido y el turno (pessimistic_write).",
+      "stages": [
+        {
+          "stage": {
+            "vus": 10,
+            "durationMs": 20000,
+            "label": "10 VU"
+          },
+          "elapsedMs": 20329.608200000017,
+          "iterations": 466,
+          "total": {
+            "label": "Total",
+            "count": 932,
+            "errors": 0,
+            "errorRate": 0,
+            "rps": 45.8,
+            "min": 82.2,
+            "avg": 218,
+            "p50": 207.2,
+            "p90": 329.1,
+            "p95": 382.7,
+            "p99": 487,
+            "max": 616,
+            "statuses": {
+              "201": 932
+            }
+          },
+          "byLabel": [
+            {
+              "label": "POST /orders",
+              "count": 466,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 22.9,
+              "min": 82.2,
+              "avg": 163.3,
+              "p50": 146.7,
+              "p90": 240.8,
+              "p95": 275.4,
+              "p99": 359.4,
+              "max": 433.3,
+              "statuses": {
+                "201": 466
+              }
+            },
+            {
+              "label": "POST /sales",
+              "count": 466,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 22.9,
+              "min": 161,
+              "avg": 272.8,
+              "p50": 255.4,
+              "p90": 376.3,
+              "p95": 426.2,
+              "p99": 570.2,
+              "max": 616,
+              "statuses": {
+                "201": 466
+              }
+            }
+          ]
+        },
+        {
+          "stage": {
+            "vus": 25,
+            "durationMs": 20000,
+            "label": "25 VU"
+          },
+          "elapsedMs": 20736.127399999998,
+          "iterations": 608,
+          "total": {
+            "label": "Total",
+            "count": 1216,
+            "errors": 0,
+            "errorRate": 0,
+            "rps": 58.6,
+            "min": 144.8,
+            "avg": 421.3,
+            "p50": 406,
+            "p90": 535.6,
+            "p95": 595.5,
+            "p99": 682.2,
+            "max": 767.5,
+            "statuses": {
+              "201": 1216
+            }
+          },
+          "byLabel": [
+            {
+              "label": "POST /orders",
+              "count": 608,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 29.3,
+              "min": 144.8,
+              "avg": 417.4,
+              "p50": 403.4,
+              "p90": 534.5,
+              "p95": 581.1,
+              "p99": 659.6,
+              "max": 767.5,
+              "statuses": {
+                "201": 608
+              }
+            },
+            {
+              "label": "POST /sales",
+              "count": 608,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 29.3,
+              "min": 244.2,
+              "avg": 425.3,
+              "p50": 409,
+              "p90": 540.7,
+              "p95": 612.5,
+              "p99": 682.7,
+              "max": 760.9,
+              "statuses": {
+                "201": 608
+              }
+            }
+          ]
+        },
+        {
+          "stage": {
+            "vus": 50,
+            "durationMs": 20000,
+            "label": "50 VU"
+          },
+          "elapsedMs": 21085.816100000025,
+          "iterations": 677,
+          "total": {
+            "label": "Total",
+            "count": 1354,
+            "errors": 0,
+            "errorRate": 0,
+            "rps": 64.2,
+            "min": 273.8,
+            "avg": 765,
+            "p50": 754.5,
+            "p90": 982.2,
+            "p95": 1041.2,
+            "p99": 1173,
+            "max": 1239.1,
+            "statuses": {
+              "201": 1354
+            }
+          },
+          "byLabel": [
+            {
+              "label": "POST /orders",
+              "count": 677,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 32.1,
+              "min": 273.8,
+              "avg": 809.9,
+              "p50": 828.4,
+              "p90": 1036.1,
+              "p95": 1091.3,
+              "p99": 1210.3,
+              "max": 1239.1,
+              "statuses": {
+                "201": 677
+              }
+            },
+            {
+              "label": "POST /sales",
+              "count": 677,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 32.1,
+              "min": 336.6,
+              "avg": 720,
+              "p50": 707.6,
+              "p90": 910.7,
+              "p95": 1001.1,
+              "p99": 1036.3,
+              "max": 1076.7,
+              "statuses": {
+                "201": 677
+              }
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "description": "Tasa de error · Total",
+          "expected": "≤ 1.00 %",
+          "actual": "0.00 % (0/1354)",
+          "passed": true
+        },
+        {
+          "description": "Sin errores 5xx ni de red · Total",
+          "expected": "0",
+          "actual": "0",
+          "passed": true
+        },
+        {
+          "description": "Latencia p95 · POST /orders",
+          "expected": "≤ 1500 ms",
+          "actual": "1091.3 ms",
+          "passed": true
+        },
+        {
+          "description": "Latencia p95 · POST /sales",
+          "expected": "≤ 1500 ms",
+          "actual": "1001.1 ms",
+          "passed": true
+        }
+      ],
+      "notes": [
+        "Los cajeros de una misma sucursal comparten turno: los cobros de esa sucursal se serializan en el bloqueo del turno."
+      ],
+      "passed": true
+    },
+    {
+      "id": "E5",
+      "name": "Carga mixta escalonada (punto de quiebre)",
+      "type": "Estrés hasta el quiebre",
+      "objective": "Aumentar por escalones una mezcla realista de operaciones hasta que la API deja de cumplir los límites, para hallar su capacidad máxima.",
+      "stages": [
+        {
+          "stage": {
+            "vus": 10,
+            "durationMs": 20000,
+            "label": "10 VU"
+          },
+          "elapsedMs": 20192.090399999986,
+          "iterations": 1597,
+          "total": {
+            "label": "Total",
+            "count": 2086,
+            "errors": 0,
+            "errorRate": 0,
+            "rps": 103.3,
+            "min": 7.1,
+            "avg": 96.5,
+            "p50": 64.1,
+            "p90": 201.6,
+            "p95": 225.3,
+            "p99": 298.8,
+            "max": 449.6,
+            "statuses": {
+              "200": 1108,
+              "201": 978
+            }
+          },
+          "byLabel": [
+            {
+              "label": "GET /orders?status=READY",
+              "count": 242,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 12,
+              "min": 17,
+              "avg": 31.4,
+              "p50": 29.7,
+              "p90": 40.8,
+              "p95": 46.5,
+              "p99": 53.7,
+              "max": 66.4,
+              "statuses": {
+                "200": 242
+              }
+            },
+            {
+              "label": "GET /products/menu",
+              "count": 779,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 38.6,
+              "min": 7.1,
+              "avg": 34.4,
+              "p50": 32.6,
+              "p90": 45.6,
+              "p95": 50.9,
+              "p99": 71.7,
+              "max": 155.9,
+              "statuses": {
+                "200": 779
+              }
+            },
+            {
+              "label": "POST /orders",
+              "count": 489,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 24.2,
+              "min": 82.1,
+              "avg": 124.2,
+              "p50": 116.7,
+              "p90": 157.5,
+              "p95": 172.1,
+              "p99": 226.9,
+              "max": 307.5,
+              "statuses": {
+                "201": 489
+              }
+            },
+            {
+              "label": "POST /sales",
+              "count": 489,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 24.2,
+              "min": 116.8,
+              "avg": 204.9,
+              "p50": 193.8,
+              "p90": 256,
+              "p95": 287.6,
+              "p99": 388,
+              "max": 449.6,
+              "statuses": {
+                "201": 489
+              }
+            },
+            {
+              "label": "GET /finances/reports/dashboard",
+              "count": 87,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 4.3,
+              "min": 16.9,
+              "avg": 68.8,
+              "p50": 65.7,
+              "p90": 89,
+              "p95": 98,
+              "p99": 108.8,
+              "max": 108.8,
+              "statuses": {
+                "200": 87
+              }
+            }
+          ]
+        },
+        {
+          "stage": {
+            "vus": 25,
+            "durationMs": 20000,
+            "label": "25 VU"
+          },
+          "elapsedMs": 20413.641900000046,
+          "iterations": 1459,
+          "total": {
+            "label": "Total",
+            "count": 1923,
+            "errors": 0,
+            "errorRate": 0,
+            "rps": 94.2,
+            "min": 31.9,
+            "avg": 262.9,
+            "p50": 276.6,
+            "p90": 413,
+            "p95": 452.2,
+            "p99": 532.4,
+            "max": 597.5,
+            "statuses": {
+              "200": 995,
+              "201": 928
+            }
+          },
+          "byLabel": [
+            {
+              "label": "GET /orders?status=READY",
+              "count": 216,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 10.6,
+              "min": 31.9,
+              "avg": 115.2,
+              "p50": 112.2,
+              "p90": 151.9,
+              "p95": 169.2,
+              "p99": 226.6,
+              "max": 257.5,
+              "statuses": {
+                "200": 216
+              }
+            },
+            {
+              "label": "GET /products/menu",
+              "count": 703,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 34.4,
+              "min": 49.7,
+              "avg": 158.9,
+              "p50": 154.9,
+              "p90": 210.5,
+              "p95": 232.8,
+              "p99": 281.5,
+              "max": 320,
+              "statuses": {
+                "200": 703
+              }
+            },
+            {
+              "label": "POST /orders",
+              "count": 464,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 22.7,
+              "min": 199.4,
+              "avg": 356.6,
+              "p50": 354.2,
+              "p90": 435.8,
+              "p95": 472.6,
+              "p99": 538.2,
+              "max": 582.1,
+              "statuses": {
+                "201": 464
+              }
+            },
+            {
+              "label": "GET /finances/reports/dashboard",
+              "count": 76,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 3.7,
+              "min": 239.1,
+              "avg": 414.8,
+              "p50": 405.3,
+              "p90": 524.3,
+              "p95": 564.1,
+              "p99": 591.2,
+              "max": 591.2,
+              "statuses": {
+                "200": 76
+              }
+            },
+            {
+              "label": "POST /sales",
+              "count": 464,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 22.7,
+              "min": 137.6,
+              "avg": 370.5,
+              "p50": 365.1,
+              "p90": 441.4,
+              "p95": 475.6,
+              "p99": 550.6,
+              "max": 597.5,
+              "statuses": {
+                "201": 464
+              }
+            }
+          ]
+        },
+        {
+          "stage": {
+            "vus": 50,
+            "durationMs": 20000,
+            "label": "50 VU"
+          },
+          "elapsedMs": 20764.592799999984,
+          "iterations": 1451,
+          "total": {
+            "label": "Total",
+            "count": 1901,
+            "errors": 0,
+            "errorRate": 0,
+            "rps": 91.6,
+            "min": 69.6,
+            "avg": 534.9,
+            "p50": 505.9,
+            "p90": 848.7,
+            "p95": 954.5,
+            "p99": 1188.7,
+            "max": 1572.8,
+            "statuses": {
+              "200": 1001,
+              "201": 900
+            }
+          },
+          "byLabel": [
+            {
+              "label": "GET /orders?status=READY",
+              "count": 234,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 11.3,
+              "min": 69.6,
+              "avg": 266.2,
+              "p50": 248.8,
+              "p90": 378.9,
+              "p95": 438.5,
+              "p99": 485,
+              "max": 553.4,
+              "statuses": {
+                "200": 234
+              }
+            },
+            {
+              "label": "GET /products/menu",
+              "count": 701,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 33.8,
+              "min": 107.6,
+              "avg": 393.9,
+              "p50": 382.4,
+              "p90": 546.5,
+              "p95": 620.9,
+              "p99": 711.2,
+              "max": 760.3,
+              "statuses": {
+                "200": 701
+              }
+            },
+            {
+              "label": "POST /orders",
+              "count": 450,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 21.7,
+              "min": 335.9,
+              "avg": 744.1,
+              "p50": 713.4,
+              "p90": 980.9,
+              "p95": 1058.8,
+              "p99": 1194.2,
+              "max": 1279.3,
+              "statuses": {
+                "201": 450
+              }
+            },
+            {
+              "label": "GET /finances/reports/dashboard",
+              "count": 66,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 3.2,
+              "min": 470.8,
+              "avg": 1003.5,
+              "p50": 914.6,
+              "p90": 1378.2,
+              "p95": 1430.5,
+              "p99": 1572.8,
+              "max": 1572.8,
+              "statuses": {
+                "200": 66
+              }
+            },
+            {
+              "label": "POST /sales",
+              "count": 450,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 21.7,
+              "min": 207.8,
+              "avg": 616.5,
+              "p50": 579.7,
+              "p90": 814.6,
+              "p95": 863.2,
+              "p99": 931.4,
+              "max": 1113.3,
+              "statuses": {
+                "201": 450
+              }
+            }
+          ]
+        },
+        {
+          "stage": {
+            "vus": 100,
+            "durationMs": 20000,
+            "label": "100 VU"
+          },
+          "elapsedMs": 21370.957600000023,
+          "iterations": 1731,
+          "total": {
+            "label": "Total",
+            "count": 2246,
+            "errors": 0,
+            "errorRate": 0,
+            "rps": 105.1,
+            "min": 159.7,
+            "avg": 918.3,
+            "p50": 832.1,
+            "p90": 1373.2,
+            "p95": 1678.7,
+            "p99": 2104.2,
+            "max": 2983.3,
+            "statuses": {
+              "200": 1216,
+              "201": 1030
+            }
+          },
+          "byLabel": [
+            {
+              "label": "GET /orders?status=READY",
+              "count": 266,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 12.4,
+              "min": 159.7,
+              "avg": 493.1,
+              "p50": 483.2,
+              "p90": 627.1,
+              "p95": 660,
+              "p99": 955.5,
+              "max": 1050.3,
+              "statuses": {
+                "200": 266
+              }
+            },
+            {
+              "label": "GET /products/menu",
+              "count": 869,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 40.7,
+              "min": 258.9,
+              "avg": 719.7,
+              "p50": 713.6,
+              "p90": 855.3,
+              "p95": 932.1,
+              "p99": 1256.4,
+              "max": 1366.4,
+              "statuses": {
+                "200": 869
+              }
+            },
+            {
+              "label": "POST /orders",
+              "count": 515,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 24.1,
+              "min": 781.7,
+              "avg": 1300.1,
+              "p50": 1273.5,
+              "p90": 1500.5,
+              "p95": 1754.8,
+              "p99": 2184.1,
+              "max": 2207.1,
+              "statuses": {
+                "201": 515
+              }
+            },
+            {
+              "label": "GET /finances/reports/dashboard",
+              "count": 81,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 3.8,
+              "min": 1255.4,
+              "avg": 1942.4,
+              "p50": 1899.1,
+              "p90": 2122.3,
+              "p95": 2521.3,
+              "p99": 2983.3,
+              "max": 2983.3,
+              "statuses": {
+                "200": 81
+              }
+            },
+            {
+              "label": "POST /sales",
+              "count": 515,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 24.1,
+              "min": 440.7,
+              "avg": 930.2,
+              "p50": 905.2,
+              "p90": 1213,
+              "p95": 1351.6,
+              "p99": 1413.2,
+              "max": 1647.8,
+              "statuses": {
+                "201": 515
+              }
+            }
+          ]
+        },
+        {
+          "stage": {
+            "vus": 150,
+            "durationMs": 20000,
+            "label": "150 VU"
+          },
+          "elapsedMs": 22243.632099999988,
+          "iterations": 1620,
+          "total": {
+            "label": "Total",
+            "count": 2131,
+            "errors": 0,
+            "errorRate": 0,
+            "rps": 95.8,
+            "min": 193.3,
+            "avg": 1486.1,
+            "p50": 1367.4,
+            "p90": 2241.4,
+            "p95": 2475.7,
+            "p99": 3385,
+            "max": 3708,
+            "statuses": {
+              "200": 1109,
+              "201": 1022
+            }
+          },
+          "byLabel": [
+            {
+              "label": "GET /orders?status=READY",
+              "count": 244,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 11,
+              "min": 193.3,
+              "avg": 789,
+              "p50": 819.7,
+              "p90": 996.3,
+              "p95": 1026.3,
+              "p99": 1236.4,
+              "max": 1269.1,
+              "statuses": {
+                "200": 244
+              }
+            },
+            {
+              "label": "GET /products/menu",
+              "count": 789,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 35.5,
+              "min": 272.1,
+              "avg": 1180.4,
+              "p50": 1239.3,
+              "p90": 1475.8,
+              "p95": 1519.6,
+              "p99": 1563.1,
+              "max": 1607.6,
+              "statuses": {
+                "200": 789
+              }
+            },
+            {
+              "label": "POST /orders",
+              "count": 511,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 23,
+              "min": 1066.8,
+              "avg": 2092.7,
+              "p50": 2149.1,
+              "p90": 2453.4,
+              "p95": 2500,
+              "p99": 2561,
+              "max": 2596.9,
+              "statuses": {
+                "201": 511
+              }
+            },
+            {
+              "label": "GET /finances/reports/dashboard",
+              "count": 76,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 3.4,
+              "min": 1537.1,
+              "avg": 3237.9,
+              "p50": 3279.7,
+              "p90": 3642.4,
+              "p95": 3692.7,
+              "p99": 3708,
+              "max": 3708,
+              "statuses": {
+                "200": 76
+              }
+            },
+            {
+              "label": "POST /sales",
+              "count": 511,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 23,
+              "min": 567,
+              "avg": 1423.9,
+              "p50": 1450.5,
+              "p90": 1630,
+              "p95": 1689.2,
+              "p99": 1767.9,
+              "max": 1973.6,
+              "statuses": {
+                "201": 511
+              }
+            }
+          ]
+        },
+        {
+          "stage": {
+            "vus": 200,
+            "durationMs": 20000,
+            "label": "200 VU"
+          },
+          "elapsedMs": 23311.936799999967,
+          "iterations": 1710,
+          "total": {
+            "label": "Total",
+            "count": 2225,
+            "errors": 0,
+            "errorRate": 0,
+            "rps": 95.4,
+            "min": 180.9,
+            "avg": 1935.8,
+            "p50": 1795.3,
+            "p90": 3037.2,
+            "p95": 3272.9,
+            "p99": 4658.2,
+            "max": 5016.6,
+            "statuses": {
+              "200": 1195,
+              "201": 1030
+            }
+          },
+          "byLabel": [
+            {
+              "label": "GET /orders?status=READY",
+              "count": 250,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 10.7,
+              "min": 180.9,
+              "avg": 1064.7,
+              "p50": 1102.9,
+              "p90": 1355.2,
+              "p95": 1502.1,
+              "p99": 1809.3,
+              "max": 1846.5,
+              "statuses": {
+                "200": 250
+              }
+            },
+            {
+              "label": "GET /products/menu",
+              "count": 872,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 37.4,
+              "min": 320.2,
+              "avg": 1540.3,
+              "p50": 1674.1,
+              "p90": 1968.2,
+              "p95": 2058.1,
+              "p99": 2172,
+              "max": 2221.3,
+              "statuses": {
+                "200": 872
+              }
+            },
+            {
+              "label": "POST /orders",
+              "count": 515,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 22.1,
+              "min": 1418.6,
+              "avg": 2742.8,
+              "p50": 2848.5,
+              "p90": 3256.7,
+              "p95": 3288.3,
+              "p99": 3378.1,
+              "max": 3502.7,
+              "statuses": {
+                "201": 515
+              }
+            },
+            {
+              "label": "GET /finances/reports/dashboard",
+              "count": 73,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 3.1,
+              "min": 3059.6,
+              "avg": 4421.8,
+              "p50": 4525.3,
+              "p90": 4852.2,
+              "p95": 4985.8,
+              "p99": 5016.6,
+              "max": 5016.6,
+              "statuses": {
+                "200": 73
+              }
+            },
+            {
+              "label": "POST /sales",
+              "count": 515,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 22.1,
+              "min": 828.9,
+              "avg": 1868.8,
+              "p50": 1916.2,
+              "p90": 2186.4,
+              "p95": 2289.1,
+              "p99": 2417.3,
+              "max": 2607.4,
+              "statuses": {
+                "201": 515
+              }
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "description": "Capacidad sostenida (error ≤ 1 % y p95 ≤ límite)",
+          "expected": "≥ 50 VU (p95 ≤ 1000 ms)",
+          "actual": "50 VU",
+          "passed": true
+        },
+        {
+          "description": "La API sigue respondiendo en la etapa más alta",
+          "expected": "sin errores de red",
+          "actual": "0 errores de red",
+          "passed": true
+        }
+      ],
+      "notes": [
+        "Mezcla: 50 % menú, 30 % pedido + cobro, 15 % pedidos listos, 5 % dashboard.",
+        "Rendimiento máximo observado: 105.1 peticiones/s.",
+        "Punto de quiebre: a partir de 100 VU (p95 1678.7 ms, error 0.00 %)."
+      ],
+      "passed": true
+    },
+    {
+      "id": "E6",
+      "name": "Pico repentino y recuperación",
+      "type": "Pico (spike)",
+      "objective": "Pasar de golpe de carga baja a muy alta (hora punta) y comprobar que, al bajar la carga, la API vuelve a la latencia normal sin quedar degradada.",
+      "stages": [
+        {
+          "stage": {
+            "vus": 10,
+            "durationMs": 10000,
+            "label": "antes"
+          },
+          "elapsedMs": 10172.032399999967,
+          "iterations": 705,
+          "total": {
+            "label": "Total",
+            "count": 941,
+            "errors": 0,
+            "errorRate": 0,
+            "rps": 92.5,
+            "min": 17.5,
+            "avg": 107.1,
+            "p50": 85.3,
+            "p90": 226.4,
+            "p95": 260.6,
+            "p99": 331.3,
+            "max": 442.5,
+            "statuses": {
+              "200": 469,
+              "201": 472
+            }
+          },
+          "byLabel": [
+            {
+              "label": "GET /products/menu",
+              "count": 469,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 46.1,
+              "min": 17.5,
+              "avg": 35.8,
+              "p50": 33.9,
+              "p90": 50.3,
+              "p95": 55.1,
+              "p99": 66.5,
+              "max": 82.2,
+              "statuses": {
+                "200": 469
+              }
+            },
+            {
+              "label": "POST /orders",
+              "count": 236,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 23.2,
+              "min": 83.5,
+              "avg": 135.3,
+              "p50": 128.7,
+              "p90": 181.6,
+              "p95": 200.5,
+              "p99": 259.7,
+              "max": 333.6,
+              "statuses": {
+                "201": 236
+              }
+            },
+            {
+              "label": "POST /sales",
+              "count": 236,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 23.2,
+              "min": 85.3,
+              "avg": 220.7,
+              "p50": 214.2,
+              "p90": 289.8,
+              "p95": 327.4,
+              "p99": 381.1,
+              "max": 442.5,
+              "statuses": {
+                "201": 236
+              }
+            }
+          ]
+        },
+        {
+          "stage": {
+            "vus": 200,
+            "durationMs": 15000,
+            "label": "pico"
+          },
+          "elapsedMs": 17211.90909999999,
+          "iterations": 1326,
+          "total": {
+            "label": "Total",
+            "count": 1724,
+            "errors": 0,
+            "errorRate": 0,
+            "rps": 100.2,
+            "min": 164.7,
+            "avg": 1834.5,
+            "p50": 1745,
+            "p90": 2805.1,
+            "p95": 3245.6,
+            "p99": 3382.8,
+            "max": 3479.2,
+            "statuses": {
+              "200": 928,
+              "201": 796
+            }
+          },
+          "byLabel": [
+            {
+              "label": "GET /products/menu",
+              "count": 928,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 53.9,
+              "min": 164.7,
+              "avg": 1500,
+              "p50": 1632.5,
+              "p90": 2026,
+              "p95": 2090.9,
+              "p99": 2155.6,
+              "max": 2230.8,
+              "statuses": {
+                "200": 928
+              }
+            },
+            {
+              "label": "POST /orders",
+              "count": 398,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 23.1,
+              "min": 181,
+              "avg": 2685.3,
+              "p50": 2778.5,
+              "p90": 3326.6,
+              "p95": 3382.5,
+              "p99": 3448.8,
+              "max": 3479.2,
+              "statuses": {
+                "201": 398
+              }
+            },
+            {
+              "label": "POST /sales",
+              "count": 398,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 23.1,
+              "min": 451,
+              "avg": 1763.5,
+              "p50": 1845,
+              "p90": 2265,
+              "p95": 2295.8,
+              "p99": 2632.9,
+              "max": 2752.1,
+              "statuses": {
+                "201": 398
+              }
+            }
+          ]
+        },
+        {
+          "stage": {
+            "vus": 10,
+            "durationMs": 10000,
+            "label": "recuperación"
+          },
+          "elapsedMs": 10233.084100000036,
+          "iterations": 736,
+          "total": {
+            "label": "Total",
+            "count": 965,
+            "errors": 0,
+            "errorRate": 0,
+            "rps": 94.3,
+            "min": 13.8,
+            "avg": 105,
+            "p50": 56.9,
+            "p90": 233.6,
+            "p95": 261.5,
+            "p99": 339,
+            "max": 403.9,
+            "statuses": {
+              "200": 507,
+              "201": 458
+            }
+          },
+          "byLabel": [
+            {
+              "label": "GET /products/menu",
+              "count": 507,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 49.5,
+              "min": 13.8,
+              "avg": 36,
+              "p50": 33.1,
+              "p90": 49.5,
+              "p95": 56.7,
+              "p99": 81,
+              "max": 135.5,
+              "statuses": {
+                "200": 507
+              }
+            },
+            {
+              "label": "POST /orders",
+              "count": 229,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 22.4,
+              "min": 80.8,
+              "avg": 134.4,
+              "p50": 126.8,
+              "p90": 183.4,
+              "p95": 201.5,
+              "p99": 233.9,
+              "max": 308,
+              "statuses": {
+                "201": 229
+              }
+            },
+            {
+              "label": "POST /sales",
+              "count": 229,
+              "errors": 0,
+              "errorRate": 0,
+              "rps": 22.4,
+              "min": 96.9,
+              "avg": 228.6,
+              "p50": 219.3,
+              "p90": 293.9,
+              "p95": 327.9,
+              "p99": 385.2,
+              "max": 403.9,
+              "statuses": {
+                "201": 229
+              }
+            }
+          ]
+        }
+      ],
+      "checks": [
+        {
+          "description": "Sin errores 5xx ni de red · Total",
+          "expected": "0",
+          "actual": "0",
+          "passed": true
+        },
+        {
+          "description": "Recuperación: p95 después del pico",
+          "expected": "≤ 2 × p95 previo (≤ 521.2 ms)",
+          "actual": "261.5 ms",
+          "passed": true
+        },
+        {
+          "description": "Tasa de error · recuperación",
+          "expected": "≤ 1.00 %",
+          "actual": "0.00 % (0/965)",
+          "passed": true
+        }
+      ],
+      "notes": [
+        "Durante el pico: p95 3245.6 ms, 100.2 pet/s, error 0.00 %."
+      ],
+      "passed": true
+    },
+    {
+      "id": "E7",
+      "name": "Integridad bajo concurrencia",
+      "type": "Concurrencia (condiciones de carrera)",
+      "objective": "Verificar que los bloqueos de la base evitan resultados incorrectos cuando muchas peticiones modifican el mismo dato al mismo tiempo.",
+      "stages": [],
+      "checks": [
+        {
+          "description": "Cobro doble: 20 cobros simultáneos del mismo pedido (× 10 pedidos)",
+          "expected": "exactamente 1 venta por pedido, sin 5xx",
+          "actual": "10/10 pedidos con 1 venta · 0 respuestas 5xx",
+          "passed": true
+        },
+        {
+          "description": "Ajustes simultáneos: 100 × ADD 1 al mismo stock",
+          "expected": "stock = 0 + ajustes aceptados",
+          "actual": "aceptados 100 · stock 0 → 100",
+          "passed": true
+        },
+        {
+          "description": "Ventas simultáneas: 50 cobros del mismo producto cuantificable",
+          "expected": "stock = 100 − ventas registradas",
+          "actual": "ventas 50 · stock 100 → 50",
+          "passed": true
+        }
+      ],
+      "notes": [
+        "Las peticiones de cada ráfaga se disparan a la vez, sin esperar respuesta, para forzar la competencia por la misma fila."
+      ],
+      "passed": true
+    },
+    {
+      "id": "E8",
+      "name": "Ráfaga desde una sola IP",
+      "type": "Abuso / denegación de servicio",
+      "objective": "Comprobar que el limitador por IP corta una ráfaga abusiva con 429 y que la API sigue atendiendo a los demás clientes.",
+      "stages": [],
+      "checks": [
+        {
+          "description": "300 peticiones simultáneas desde la misma IP",
+          "expected": "la mayoría recibe 429",
+          "actual": "290 × 429 · 10 × 200",
+          "passed": true
+        },
+        {
+          "description": "Sin errores 5xx durante la ráfaga",
+          "expected": "0",
+          "actual": "0",
+          "passed": true
+        },
+        {
+          "description": "Otros clientes (IP distinta) durante la ráfaga",
+          "expected": "20/20 con 200",
+          "actual": "20/20",
+          "passed": true
+        }
+      ],
+      "notes": [
+        "Límite global: 10 peticiones/s y 200/min por IP (THROTTLE_SHORT_LIMIT, THROTTLE_MEDIUM_LIMIT)."
+      ],
+      "passed": true
+    }
+  ]
+}

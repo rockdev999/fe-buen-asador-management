@@ -13,7 +13,12 @@ import {
 } from "../dto/order.dto";
 import { httpClient, NO_TIMEOUT } from "@/services/http.client";
 import { ApiResponse } from "@/types/api.types";
-import { DATA_TABLE, OrderStatusEnum, QUERY_KEYS } from "@/constants";
+import {
+  DATA_TABLE,
+  KNOWN_ERROR_CODES,
+  OrderStatusEnum,
+  QUERY_KEYS,
+} from "@/constants";
 import { useMemo } from "react";
 import {
   mapOrderDTOToModel,
@@ -160,7 +165,12 @@ export const useCreateOrder = () => {
   const handler = usePostHandler({
     mutationFn: (dto: CreateOrderDTO) =>
       httpClient
-        .post<ApiResponse<OrderDTO>>("/orders", dto, NO_TIMEOUT)
+        .post<ApiResponse<OrderDTO>>("/orders", dto, {
+          ...NO_TIMEOUT,
+          // 409 con `stockWarnings`: el POS muestra los avisos y pregunta si
+          // crear el pedido igual (forceCreate), en vez del toast genérico.
+          handledErrorCodes: [KNOWN_ERROR_CODES.INSUFFICIENT_STOCK],
+        })
         .then((r) => r.data.data!),
 
     invalidateKeys: [QUERY_KEYS.ORDERS],
