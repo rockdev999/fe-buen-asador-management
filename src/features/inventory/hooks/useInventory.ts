@@ -108,7 +108,7 @@ export const useKardexHandler = (
   options?: { enabled?: boolean },
 ) => {
   const handler = useGetHandler({
-    queryKey: QUERY_KEYS.KARDEX(productId ?? ""),
+    queryKey: QUERY_KEYS.KARDEX(productId ?? "", locationId),
     queryFn: () =>
       httpClient
         .get<ApiResponse<KardexDTO[]>>(`/inventory/kardex/${productId}`, {

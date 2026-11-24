@@ -8,10 +8,17 @@ import { CartPanel } from "../components/cardPanel/CartPanel";
 import { useCreateOrder } from "../hooks/useOrder";
 import { PaymentModal } from "../components/reviewAndPayment/PaymentModal";
 import { OrderSuccessModal } from "../components/reviewAndPayment/OrderSuccessModal";
-import { OrderStatusEnum, PaymentMethodEnum } from "@/constants";
+import {
+  KNOWN_ERROR_CODES,
+  OrderStatusEnum,
+  PaymentMethodEnum,
+} from "@/constants";
 import { mapCartToCreateOrderDTO } from "../mappers/order.mapper";
 import { OrderSnapshot } from "../models/order-snapshot";
 import { ReviewOrderModal } from "../components/reviewAndPayment/ReviewOrderModal";
+import { StockWarningsModal } from "../components/reviewAndPayment/StockWarningsModal";
+import { getStockWarnings, StockWarning } from "../models/stock-warning";
+import { CreateOrderDTO } from "../dto/order.dto";
 import { usePrintTicket } from "../hooks/usePrintTicket";
 import { TicketPrint } from "../components/reviewAndPayment/TicketPrint";
 import { useCreateSale } from "../../sales/hooks/useSale";
@@ -34,11 +41,7 @@ import {
 export type PosView = "idle" | "review" | "payment" | "success";
 
 export const Pos = () => {
-  const {
-    data: activeShift,
-    isOpen,
-    status: shiftStatus,
-  } = useActiveShift();
+  const { data: activeShift, isOpen, status: shiftStatus } = useActiveShift();
   const user = useAuthStore((s) => s.user);
   const isOffline = useOfflineStore((s) => s.isOffline);
 
@@ -82,6 +85,12 @@ export const Pos = () => {
   const [offlineCheckout, setOfflineCheckout] = useState(false);
   const [offlineSale, setOfflineSale] = useState<Sale | null>(null);
   const [savingOffline, setSavingOffline] = useState(false);
+  /** 409 INSUFFICIENT_STOCK: pedido pendiente de confirmar con forceCreate. */
+  const [stockWarnings, setStockWarnings] = useState<{
+    dto: CreateOrderDTO;
+    message: string;
+    warnings: StockWarning[];
+  } | null>(null);
 
   // La ficha impresa y el modal de éxito muestran la última venta cobrada.
   const displayedSale = offlineSale ?? sale;
@@ -151,16 +160,35 @@ export const Pos = () => {
       deliveryReference,
       OrderStatusEnum.READY,
     );
+    submitOrder(dto);
+  }
+
+  function submitOrder(dto: CreateOrderDTO) {
     createOrder(dto, {
       onSuccess: () => {
+        setStockWarnings(null);
         setOfflineCheckout(false);
         setView("payment");
       },
-      // Falló el primer paso sin respuesta del servidor: el pedido no se
-      // creó, así que es seguro ofrecer el cobro offline. (Si fallara
-      // POST /sales no se convierte: la venta pudo haberse registrado.)
       onError: (error) => {
-        if (error?.networkError) startOfflineCheckout();
+        // Falló el primer paso sin respuesta del servidor: el pedido no se
+        // creó, así que es seguro ofrecer el cobro offline. (Si fallara
+        // POST /sales no se convierte: la venta pudo haberse registrado.)
+        if (error?.networkError) {
+          startOfflineCheckout();
+          return;
+        }
+        // Falta stock: mostrar los avisos y dejar que el cajero decida.
+        const warnings = getStockWarnings(error);
+        if (warnings) {
+          setStockWarnings({ dto, message: error.message, warnings });
+          return;
+        }
+        // Mismo errorCode sin la lista (no debería pasar): el interceptor no
+        // mostró nada para este código, así que se avisa aquí.
+        if (error?.errorCode === KNOWN_ERROR_CODES.INSUFFICIENT_STOCK) {
+          toast.error(error.message);
+        }
       },
     });
   }
@@ -312,6 +340,19 @@ export const Pos = () => {
             );
           }}
           isLoading={createStatus === "pending"}
+        />
+      )}
+
+      {/* Modal: avisos de falta de stock (409 INSUFFICIENT_STOCK) */}
+      {stockWarnings && (
+        <StockWarningsModal
+          message={stockWarnings.message}
+          warnings={stockWarnings.warnings}
+          isLoading={createStatus === "pending"}
+          onConfirm={() =>
+            submitOrder({ ...stockWarnings.dto, forceCreate: true })
+          }
+          onClose={() => setStockWarnings(null)}
         />
       )}
 

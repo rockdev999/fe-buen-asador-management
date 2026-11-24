@@ -37,6 +37,11 @@ export interface CreateOrderDTO {
   customerPhone?: string | null;
   customerAddress?: string | null;
   deliveryReference?: string | null;
+  /**
+   * Crear el pedido aunque falte stock. Se envía solo después de que el
+   * usuario confirma los avisos del 409 INSUFFICIENT_STOCK.
+   */
+  forceCreate?: boolean;
 }
 export interface OrderItemDTO {
   id: UUID;

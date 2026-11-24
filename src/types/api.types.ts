@@ -17,6 +17,11 @@ export interface ApiErrorResponse {
   errorCode: string;
   message: string;
   errors: { field: string; message: string }[];
+  /**
+   * Detalle extra que algunos errores 4xx traen (p. ej. `stockWarnings` en el
+   * 409 INSUFFICIENT_STOCK al crear un pedido). Nunca viene en un 5xx.
+   */
+  data?: unknown;
   timestamp: string;
   path: string;
   /**

@@ -185,14 +185,14 @@ export const AdjustStockModal = ({
               </p>
             </div>
 
-            {previewQuantity < stockItem.minimumStock && (
+            {previewQuantity <= stockItem.minimumStock && (
               <div className="flex items-start gap-1.5 rounded-lg bg-yellow-50 px-2 py-1.5">
                 <AlertCircle
                   size={12}
                   className="mt-0.5 shrink-0 text-yellow-600"
                 />
                 <p className="text-[10px] leading-4 text-yellow-700">
-                  El nuevo stock quedará por debajo del mínimo establecido.
+                  El nuevo stock quedará en el mínimo establecido o por debajo.
                 </p>
               </div>
             )}

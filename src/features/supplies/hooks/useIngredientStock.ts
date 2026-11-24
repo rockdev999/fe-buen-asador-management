@@ -114,7 +114,7 @@ export const useIngredientKardexHandler = (
   options?: { enabled?: boolean },
 ) => {
   const handler = useGetHandler({
-    queryKey: QUERY_KEYS.INGREDIENT_KARDEX(ingredientId ?? ""),
+    queryKey: QUERY_KEYS.INGREDIENT_KARDEX(ingredientId ?? "", locationId),
     queryFn: () =>
       httpClient
         .get<ApiResponse<IngredientKardexDTO[]>>(
