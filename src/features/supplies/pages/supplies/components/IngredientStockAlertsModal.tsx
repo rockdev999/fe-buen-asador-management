@@ -6,6 +6,7 @@ import { PanelFooter } from "@/components/shared/Overlay/PanelFooter";
 import { Button } from "@/components/shared/Basics/Button";
 import { FormSwitch } from "@/components/shared/Basics/FormSwitch";
 import { formatLocalDateTimeShort } from "@/lib/formatters";
+import { INGREDIENT_UNIT_LABELS } from "../../../config/ingredient.table";
 import {
   useIngredientStockAlertsHandler,
   useResolveIngredientStockAlert,
@@ -86,7 +87,8 @@ export const IngredientStockAlertsModal = ({
                     </p>
                     <p className="mt-0.5 text-[11px] text-muted-foreground">
                       {alert.location.name} · {alert.currentQuantity}/
-                      {alert.minimumStock} unidades
+                      {alert.minimumStock}{" "}
+                      {INGREDIENT_UNIT_LABELS[alert.ingredient.unitOfMeasure]}
                     </p>
                   </div>
 

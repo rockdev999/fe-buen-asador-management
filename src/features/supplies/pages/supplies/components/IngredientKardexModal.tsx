@@ -1,4 +1,5 @@
 import { ArrowDownLeft, ArrowUpRight, History } from "lucide-react";
+import { kardexMovedQuantity } from "@/utils/kardex";
 import { AppModal } from "@/components/shared/Overlay/AppModal";
 import { PanelHeader } from "@/components/shared/Overlay/PanelHeader";
 import { PanelFooter } from "@/components/shared/Overlay/PanelFooter";
@@ -117,7 +118,7 @@ export const IngredientKardexModal = ({
                       )}
                     >
                       {isEntry ? "+" : "-"}
-                      {movement.quantity}
+                      {kardexMovedQuantity(movement)}
                     </span>
                     <span className="text-[10px] text-muted-foreground/60">
                       {formatLocalDateTimeShort(movement.createdAt)}
