@@ -131,10 +131,9 @@ export function usePasswordReset() {
   });
 
   return {
-    /** Cada llamada genera una contraseña temporal nueva; la anterior deja de servir. */
     resetPassword: mutation.mutate,
-    /** Usuario cuyo restablecimiento está en curso, o null. */
     resettingUserId: mutation.isPending ? (mutation.variables ?? null) : null,
     statusOverrides,
+    trackCredentialsEmail: trackEmail,
   };
 }

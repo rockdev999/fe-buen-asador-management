@@ -7,6 +7,4 @@ export interface UserForm {
   email: string;
   description?: string;
   position?: JobPositionEnum[];
-  password: string;
-  repitPassword: string;
 }

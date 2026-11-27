@@ -5,7 +5,6 @@
   "fields": {
     "name": "Nombre completo",
     "email": "Correo electrónico",
-    "password": "Contraseña",
     "role": "Rol",
     "location": "Sucursal",
     "status": "Estado"
@@ -13,7 +12,6 @@
   "placeholders": {
     "name": "Juan Pérez",
     "email": "juan@email.com",
-    "password": "••••••••",
     "role": "Selecciona un rol",
     "location": "Selecciona una sucursal"
   },
@@ -45,13 +43,10 @@
     "usernameRequired": "El nombre de usuario es requerido.",
     "usernameMin": "El nombre de usuario debe tener al menos 2 caracteres.",
     "usernameMax": "El nombre de usuario no puede exceder los 30 caracteres.",
+    "usernameInvalid": "Solo letras, números, punto, guion y guion bajo.",
     "emailRequired": "El email es requerido.",
     "emailInvalid": "Ingresa un email válido.",
-    "passwordRequired": "La contraseña es requerida.",
-    "passwordConfirmRequired": "Confirma la contraseña.",
-    "passwordsMustMatch": "Las contraseñas deben coincidir.",
-    "passwordMin": "La contraseña debe tener al menos 8 caracteres.",
-    "passwordMax": "La contraseña no puede exceder los 50 caracteres.",
+    "emailMax": "El email no puede exceder los 150 caracteres.",
     "roleRequired": "Selecciona un rol.",
     "locationRequired": "Selecciona una sucursal.",
     "descriptionMax": "La descripción no puede exceder los 200 caracteres.",

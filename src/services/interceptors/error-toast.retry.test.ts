@@ -162,7 +162,7 @@ describe("un error de consulta muestra un solo toast", () => {
 
   it("cancelada: sin toast", async () => {
     const { client } = failingClient((config) => {
-      throw new axios.CanceledError(undefined, "ERR_CANCELED", config);
+      throw new axios.CanceledError(undefined, config);
     });
     await runQuery(client);
     expect(shown).toHaveLength(0);
