@@ -3,6 +3,7 @@ import {
   Building2,
   User,
   Mail,
+  Phone,
   AlertTriangle,
   BriefcaseBusiness,
   FileText,
@@ -24,6 +25,10 @@ import { RoleEnum } from "@/constants";
 import { Label } from "@/components/shared/Basics/Label";
 import { FormField } from "@/components/shared/Basics/FormField";
 import { CreateUserForm } from "../../validators/user.schema";
+import { CreatedUserDTO } from "../../dto/user.dto";
+import { CredentialsEmailBadge } from "./CredentialsEmailBadge";
+import { CredentialsEmailStatusEnum } from "@/constants/enums/user.enum";
+import { formatDateTime } from "@/lib/formatters";
 import { UserModalSkeleton } from "./UserModalSkeleton";
 import { MultiSelectDropdown } from "@/components/shared/Interactives/MultiSelectDropdown";
 import { JOB_POSITION_OPTIONS } from "@/utils/generalStatus/job-display";
@@ -32,16 +37,22 @@ import { PanelHeader } from "@/components/shared/Overlay/PanelHeader";
 import { FormSection } from "@/components/shared/Form/FormSection";
 import { FormInput } from "@/components/shared/Form/FormInput";
 import { FormTextarea } from "@/components/shared/Form/FormTextarea";
-import { FormPassword } from "@/components/shared/Form/FormPassword";
 import { PanelFooter } from "@/components/shared/Overlay/PanelFooter";
 
 interface UserModalProps {
   userId?: UUID | null;
   onClose: () => void;
   onSuccess: () => void;
+  /** Tras crear: el correo con la contraseña temporal sigue en camino (PENDING). */
+  onCreated?: (user: CreatedUserDTO) => void;
 }
 
-export const UserModal = ({ userId, onClose, onSuccess }: UserModalProps) => {
+export const UserModal = ({
+  userId,
+  onClose,
+  onSuccess,
+  onCreated,
+}: UserModalProps) => {
   const isEdit = !!userId;
   const [confirmDeactivate, setConfirmDeactivate] = useState(false);
 
@@ -70,8 +81,6 @@ export const UserModal = ({ userId, onClose, onSuccess }: UserModalProps) => {
         lastName: user.lastName,
         username: user.username,
         email: user.email,
-        password: "",
-        repitPassword: "",
         description: user.description,
         positions: user.positions,
       };
@@ -99,7 +108,12 @@ export const UserModal = ({ userId, onClose, onSuccess }: UserModalProps) => {
       if (isEdit) {
         updateUser(dto, { onSuccess: onSuccess });
       } else {
-        createUser(dto, { onSuccess: onSuccess });
+        createUser(dto, {
+          onSuccess: (created) => {
+            onCreated?.(created);
+            onSuccess();
+          },
+        });
       }
     },
   });
@@ -214,6 +228,34 @@ export const UserModal = ({ userId, onClose, onSuccess }: UserModalProps) => {
               className="h-9 rounded-xl bg-white text-[13px]"
             />
 
+            {!isEdit && (
+              <FormInput
+                id="phone"
+                name="phone"
+                label="Teléfono"
+                icon={Phone}
+                type="tel"
+                value={formValues.phone ?? ""}
+                onChange={formHandleChange}
+                onBlur={formHandlerBlur}
+                placeholder="Ej: +591 70000000"
+                touched={formTouched.phone}
+                error={formErrors.phone}
+                className="h-9 rounded-xl bg-white text-[13px]"
+              />
+            )}
+
+            {isEdit && user?.credentialsEmailStatus && (
+              <div className="-mt-1 flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+                <CredentialsEmailBadge status={user.credentialsEmailStatus} />
+                {user.credentialsEmailStatus ===
+                  CredentialsEmailStatusEnum.SENT &&
+                  user.credentialsEmailSentAt && (
+                    <span>{formatDateTime(user.credentialsEmailSentAt)}</span>
+                  )}
+              </div>
+            )}
+
             <FormTextarea
               id="description"
               name="description"
@@ -263,37 +305,11 @@ export const UserModal = ({ userId, onClose, onSuccess }: UserModalProps) => {
               </div>
             </FormField>
 
-            {/* Contraseña — solo en creación */}
             {!isEdit && (
-              <div className="grid gap-3 sm:grid-cols-2">
-                <FormPassword
-                  required
-                  id="password"
-                  name="password"
-                  label="Contraseña"
-                  value={formValues.password}
-                  onChange={formHandleChange}
-                  onBlur={formHandlerBlur}
-                  placeholder="Mínimo 8 caracteres"
-                  touched={formTouched.password}
-                  error={formErrors.password}
-                  className="h-9 rounded-xl bg-white text-[13px]"
-                />
-
-                <FormPassword
-                  required
-                  id="repitPassword"
-                  name="repitPassword"
-                  label="Repetir contraseña"
-                  value={formValues.repitPassword}
-                  onChange={formHandleChange}
-                  onBlur={formHandlerBlur}
-                  placeholder="Confirma la contraseña"
-                  touched={formTouched.repitPassword}
-                  error={formErrors.repitPassword}
-                  className="h-9 rounded-xl bg-white text-[13px]"
-                />
-              </div>
+              <p className="rounded-xl bg-surface/50 px-3 py-2 text-[11px] text-muted-foreground">
+                Se enviará una contraseña temporal al correo del usuario. Deberá
+                cambiarla en su primer ingreso.
+              </p>
             )}
           </FormSection>
 

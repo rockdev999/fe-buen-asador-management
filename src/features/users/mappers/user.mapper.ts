@@ -86,6 +86,8 @@ export const mapUserLocationsDTOToModel = (
   positions: dto.positions,
   locations: dto.locations.map(mapUserLocationDTOToModel),
   audit: dto.audit,
+  credentialsEmailStatus: dto.credentialsEmailStatus ?? null,
+  credentialsEmailSentAt: dto.credentialsEmailSentAt ?? null,
 });
 
 export const mapCreateUserFormToDTO = (
@@ -97,7 +99,7 @@ export const mapCreateUserFormToDTO = (
     lastName: user.lastName.trim(),
     username: user.username.trim(),
     email: user.email.trim().toLowerCase(),
-    password: user.password.trim(),
+    ...(user.phone?.trim() && { phone: user.phone.trim() }),
     description: user.description ? user.description.trim() : "",
     positions: user.positions ? user.positions : [],
   };

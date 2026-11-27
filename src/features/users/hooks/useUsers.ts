@@ -7,6 +7,7 @@ import {
 } from "@/hooks/api.handlers";
 import {
   CreateUserDTO,
+  CreatedUserDTO,
   UserLocationsDTO,
   UserPageItemDTO,
   UserSimpleDTO,
@@ -22,6 +23,7 @@ import { ApiResponse } from "@/types/api.types";
 import { SortDirectionEnum } from "@/constants/enums/sort.enum";
 import { UserStatusEnum } from "@/constants/enums/user.enum";
 import { useMemo } from "react";
+import { toast } from "sonner";
 import { UUID } from "@/types/common";
 import { JobPositionEnum } from "@/constants/enums/job-position.enum";
 import { RoleDTO } from "../dto/role.dto";
@@ -146,11 +148,15 @@ export const useCreateUser = () => {
   const handler = usePostHandler({
     mutationFn: (dto: CreateUserDTO) =>
       httpClient
-        .post<ApiResponse<CreateUserDTO>>("/users", dto)
+        .post<ApiResponse<CreatedUserDTO>>("/users", dto)
         .then((r) => r.data.data!),
 
     invalidateKeys: [QUERY_KEYS.USERS],
-    successMessage: "Usuario creado exitosamente",
+    // El gerente nunca conoce la contraseña: el backend la envía por correo.
+    onSuccessCallback: (user) =>
+      toast.success("Usuario creado", {
+        description: `Se envió una contraseña temporal a ${user.email}.`,
+      }),
   });
 
   return { ...handler };

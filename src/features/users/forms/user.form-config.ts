@@ -14,8 +14,6 @@ export const UserFormConfig = {
     username: "",
     email: "",
     phone: "",
-    password: "",
-    repitPassword: "",
     description: "",
     position: [],
   } as CreateUserForm,
