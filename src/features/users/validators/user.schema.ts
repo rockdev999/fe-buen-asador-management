@@ -9,15 +9,14 @@ export const userSchema = z.object({
   firstName: z.string().min(2, v.firstNameMin).max(50, v.firstNameMax),
   lastName: z.string().min(2, v.lastNameMin).max(50, v.lastNameMax),
   email: z.string().email(v.emailInvalid),
-  password: z.string().min(8, v.passwordMin).max(50, v.passwordMax),
   role: z.nativeEnum(RoleEnum, { message: v.roleRequired }),
   locationId: z.string().uuid().optional(),
 });
 
 export type UserForm = z.infer<typeof userSchema>;
 
-export const userCreateSchema = z
-  .object({
+// Sin contraseña: el backend genera una temporal y la envía por correo.
+export const userCreateSchema = z.object({
     firstName: z
       .string()
       .min(1, v.firstNameRequired)
@@ -35,11 +34,13 @@ export const userCreateSchema = z
       .min(1, v.usernameRequired)
       .min(2, v.usernameMin)
       .max(30, v.usernameMax)
+      .regex(/^[a-zA-Z0-9_.-]+$/, v.usernameInvalid)
       .trim(),
     email: z
       .string()
       .min(1, v.emailRequired)
       .email(v.emailInvalid)
+      .max(150, v.emailMax)
       .trim()
       .toLowerCase(),
     phone: z
@@ -53,17 +54,6 @@ export const userCreateSchema = z
       }),
     description: z.string().max(200, v.descriptionMax).trim().optional(),
     positions: z.array(z.nativeEnum(JobPositionEnum)).optional(),
-    password: z
-      .string()
-      .min(1, v.passwordRequired)
-      .min(8, v.passwordMin)
-      .max(50, v.passwordMax)
-      .trim(),
-    repitPassword: z.string().min(1, v.passwordConfirmRequired),
-  })
-  .refine((data) => data.password === data.repitPassword, {
-    message: v.passwordsMustMatch,
-    path: ["repitPassword"],
   });
 
 export const userUpdateSchema = z.object({

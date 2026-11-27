@@ -65,6 +65,8 @@ export interface UserLocations {
   positions?: JobPositionEnum[] | [];
   locations: UserLocation[];
   audit: Audit;
+  credentialsEmailStatus: CredentialsEmailStatusEnum | null;
+  credentialsEmailSentAt: ISODateTimeString | null;
 }
 
 export interface UserWithLocation {

@@ -41,7 +41,12 @@ export const Users = () => {
   const [locationId, setLocationId] = useState(filters.locationId ?? "");
   const { data: locations, status: locationsStatus } = useGetLocationSimple();
   const { user: currentUser, isManager } = useAuth();
-  const { resetPassword, resettingUserId, statusOverrides } = usePasswordReset();
+  const {
+    resetPassword,
+    resettingUserId,
+    statusOverrides,
+    trackCredentialsEmail,
+  } = usePasswordReset();
   const [resetPasswordUser, setResetPasswordUser] =
     useState<UserPageItem | null>(null);
 
@@ -132,7 +137,7 @@ export const Users = () => {
           statusOverrides,
           resettingUserId,
           onResetPassword: setResetPasswordUser,
-          onRetryResetPassword: (user) => resetPassword(user.id),
+          onRetryResetPassword: setResetPasswordUser,
         })}
         data={data}
         meta={meta}
@@ -152,6 +157,7 @@ export const Users = () => {
           userId={selectedUserId}
           onClose={handleCloseUserModal}
           onSuccess={handleCloseUserModal}
+          onCreated={(created) => void trackCredentialsEmail(created.id)}
           key={selectedUserId ?? "default"}
         />
       )}

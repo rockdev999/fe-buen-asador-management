@@ -66,6 +66,7 @@ export interface UserLocationsDTO {
   locations: UserLocationDTO[];
   audit: Audit;
   credentialsEmailStatus?: CredentialsEmailStatusEnum | null;
+  credentialsEmailSentAt?: ISODateTimeString | null;
 }
 
 export interface CreateUserDTO {
@@ -74,7 +75,7 @@ export interface CreateUserDTO {
   lastName: string;
   username: string;
   email: string;
-  password?: string;
+  phone?: string;
   description?: string;
   positions?: JobPositionEnum[] | [];
 }
@@ -94,6 +95,16 @@ export interface UserSimpleDTO {
   username: string;
   positions?: JobPositionEnum[] | [];
   locations: UserLocationItemDTO[] | [];
+}
+
+export interface CreatedUserDTO {
+  id: UUID;
+  firstName: string;
+  lastName: string;
+  username: string;
+  email: string;
+  credentialsEmailStatus: CredentialsEmailStatusEnum;
+  credentialsEmailSentAt: ISODateTimeString | null;
 }
 
 /** Respuesta de POST /users/:id/reset-password. */

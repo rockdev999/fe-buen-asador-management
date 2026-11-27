@@ -19,7 +19,6 @@ interface UserColumnsOptions {
   resettingUserId: string | null;
   /** Abre la confirmación. */
   onResetPassword: (user: UserPageItem) => void;
-  /** Reintento directo tras un envío fallido (genera otra contraseña). */
   onRetryResetPassword: (user: UserPageItem) => void;
 }
 
@@ -59,7 +58,9 @@ export const getUserColumns = ({
       label: "Usuario",
       sortable: true,
       render: (row) => (
-        <span className="text-[11px] text-muted-foreground">{row.username}</span>
+        <span className="text-[11px] text-muted-foreground">
+          {row.username}
+        </span>
       ),
     },
     {
@@ -86,7 +87,9 @@ export const getUserColumns = ({
       sortable: true,
       render: (row) => {
         if (!row.positions?.length) {
-          return <span className="text-[11px] text-muted-foreground/40">—</span>;
+          return (
+            <span className="text-[11px] text-muted-foreground/40">—</span>
+          );
         }
         const MAX = 2;
         const visible = row.positions.slice(0, MAX);
@@ -115,7 +118,9 @@ export const getUserColumns = ({
       label: "Sucursales",
       render: (row) => {
         if (!row.locations?.length) {
-          return <span className="text-[11px] text-muted-foreground/40">--</span>;
+          return (
+            <span className="text-[11px] text-muted-foreground/40">--</span>
+          );
         }
 
         const MAX_VISIBLE = 1;
@@ -205,7 +210,9 @@ export const getUserColumns = ({
         const canReset =
           canResetPassword && row.active && row.id !== currentUserId;
         if (!canReset) {
-          return <span className="text-[11px] text-muted-foreground/40">—</span>;
+          return (
+            <span className="text-[11px] text-muted-foreground/40">—</span>
+          );
         }
 
         const isResetting = resettingUserId === row.id;
@@ -228,7 +235,7 @@ export const getUserColumns = ({
                 title="Genera una nueva contraseña temporal y reintenta el envío"
               >
                 <RotateCw size={12} />
-                Reintentar
+                Reenviar credenciales
               </Button>
             ) : (
               <Button

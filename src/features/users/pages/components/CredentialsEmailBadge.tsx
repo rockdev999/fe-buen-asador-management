@@ -12,12 +12,12 @@ const CREDENTIALS_EMAIL_BADGE: Record<
     icon: Loader2,
   },
   [CredentialsEmailStatusEnum.SENT]: {
-    label: "Correo enviado",
+    label: "Credenciales enviadas",
     className: "bg-green-50 text-green-700 border-green-200",
     icon: MailCheck,
   },
   [CredentialsEmailStatusEnum.FAILED]: {
-    label: "Falló el envío",
+    label: "Error al enviar",
     className: "bg-red-50 text-red-600 border-red-200",
     icon: MailWarning,
   },
